@@ -13,7 +13,9 @@ from sklearn.pipeline import make_pipeline
 from scipy.spatial.distance import mahalanobis
 from scipy.signal import find_peaks
 import matplotlib.pyplot as plt
-
+import math
+import statistics
+import matplotlib.pyplot as plt
 
 # ------------------------------------------------------------
 # 1.  Helper functions
@@ -49,11 +51,200 @@ def assert_no_dupes(df, key_cols, label):
 # 2.  Load Excel sheets
 # ------------------------------------------------------------
 DATA_DIR = Path(".")
-FIRST = pd.read_excel(DATA_DIR / "protokoly_po_obwodach_utf8-modif.xlsx")
-SECOND = pd.read_excel(DATA_DIR / "protokoly_po_obwodach_w_drugiej_turze_utf8-modif.xlsx")
+FIRST = pd.read_excel(DATA_DIR / "protokoly_po_obwodach_utf8.xlsx")
+SECOND = pd.read_excel(DATA_DIR / "protokoly_po_obwodach_w_drugiej_turze_utf8.xlsx")
 
 # compound key
 KEY1, KEY2 = "Teryt Gminy", "Nr komisji"
+
+use2 = [
+    'Liczba niewykorzystanych kart do głosowania',
+    'Liczba wyborców, którym wydano karty do głosowania w\xa0lokalu wyborczym (liczba podpisów w spisie oraz adnotacje o\xa0wydaniu karty bez potwierdzenia podpisem w\xa0spisie)',
+    'Liczba wyborców, którym wydano karty do głosowania w\xa0lokalu wyborczym oraz w\xa0głosowaniu korespondencyjnym (łącznie)',
+    'Liczba wyborców głosujących na podstawie zaświadczenia o\xa0prawie do głosowania',
+    'Liczba kart wyjętych z\xa0urny',
+    'Liczba kart ważnych',
+    'Liczba głosów ważnych oddanych łącznie na obu kandydatów (z\xa0kart ważnych)',
+    'NAWROCKI Karol Tadeusz',
+    'TRZASKOWSKI Rafał Kazimierz'
+]
+
+use2 = [
+    'NAWROCKI Karol Tadeusz',
+    'TRZASKOWSKI Rafał Kazimierz',
+]
+
+titles = {
+    'Liczba niewykorzystanych kart do głosowania': 'karty niewykorzystane',
+    'Liczba wyborców, którym wydano karty do głosowania w\xa0lokalu wyborczym (liczba podpisów w spisie oraz adnotacje o\xa0wydaniu karty bez potwierdzenia podpisem w\xa0spisie)' : 'karty wydane w lokalu',
+    'Liczba wyborców, którym wydano karty do głosowania w\xa0lokalu wyborczym oraz w\xa0głosowaniu korespondencyjnym (łącznie)' : 'karty wydane łącznie',
+    'Liczba wyborców głosujących na podstawie zaświadczenia o\xa0prawie do głosowania': 'zaświadczenia',
+    'Liczba kart wyjętych z\xa0urny' : 'karty wyjęte',
+    'Liczba kart ważnych' : 'karty ważne',
+    'Liczba głosów ważnych oddanych łącznie na obu kandydatów (z\xa0kart ważnych)' : 'głosy ważne',
+    'NAWROCKI Karol Tadeusz': 'NAWROCKI',
+    'TRZASKOWSKI Rafał Kazimierz' : 'TRZASKOWSKI'
+
+}
+
+
+def cl_band(n, p_cat, p_conf=0.95):
+    """Normal-approx 2-sided band for Bin(n, p_cat)."""
+    z     = abs(statistics.NormalDist().inv_cdf((1 - p_conf) / 2))
+    mean  = n * p_cat
+    sd    = math.sqrt(n * p_cat * (1 - p_cat))
+    lo    = max(0, int(math.floor(mean - z * sd)))
+    hi    = min(n, int(math.ceil (mean + z * sd)))
+    return lo, hi
+
+def mean_and_ci(counts, values, n, p_conf=0.95):
+    """Sample mean & normal-approx CI for a discrete variable."""
+    mean = sum(v * c for v, c in zip(values, counts)) / n
+    if n > 1:
+        var = sum(c * (v - mean) ** 2 for v, c in zip(values, counts)) / (n - 1)
+    else:
+        var = 0.0
+    z = abs(statistics.NormalDist().inv_cdf((1 - p_conf) / 2))
+    se = math.sqrt(var / n)
+    return mean, mean - z * se, mean + z * se
+
+def plot_histograms(
+        paired_histograms,
+        p_conf        = 0.95,
+        category_labels=None,
+        values_for_mean=None,
+        band_color    = "grey",
+        band_alpha    = 0.40
+    ):
+    """
+    paired_histograms : [(title, [c0,…,c{k-1}, total]), …]
+    category_labels   : list[str] (len k) – labels under bars
+    values_for_mean   : list[float] (len k) – supply to compute & draw mean±CI
+    """
+    palette = plt.cm.tab10.colors
+    for idx, (title, data) in enumerate(paired_histograms):
+        counts, n = data[:-1], data[-1]
+        k         = len(counts)
+
+        labels    = category_labels if category_labels else [str(i) for i in range(k)]
+        lo, hi    = cl_band(n, p_cat=1 / k, p_conf=p_conf)
+
+        fig, ax   = plt.subplots(figsize=(8, 4))
+        ax.bar(range(k), counts, color=palette[idx % len(palette)])
+        ax.axhspan(lo, hi, color=band_color, alpha=band_alpha)
+
+        ymax = max(max(counts), hi)
+        for c, v in enumerate(counts):
+            ax.text(c, v + 0.02*ymax, str(v), ha="center", va="bottom", fontsize=9)
+
+        ax.set_xticks(range(k), labels)
+        ax.set_ylim(0, 1.15*ymax)
+        ax.set_xlabel("category")
+        ax.set_ylabel("count")
+
+        subtitle = ""
+        if values_for_mean is not None and len(values_for_mean) == k:
+            mean, lo_m, hi_m = mean_and_ci(counts, values_for_mean, n, p_conf)
+            ax.axvline(mean, color="black", linestyle="--", lw=1.2)
+            ax.axvspan(lo_m, hi_m, color="black", alpha=0.10)
+            subtitle = f" | mean={mean:.2f} CI=[{lo_m:.2f}, {hi_m:.2f}]"
+
+        ax.set_title(f"{title} | n={n}, p={p_conf:.2f}, band=[{lo}, {hi}]{subtitle}")
+        fig.tight_layout()
+
+histograms = {}
+pentagrams = {}
+for e in use2:
+    s = [0]*10
+    p = [0]*5
+    count = 0
+    #SECOND[e]
+    for idx, row in SECOND.iterrows():
+        if not pd.isna(row[e]):
+            v = row[e]
+            if v < 50:
+                continue
+            s[round(v)%10] += 1
+            p[round(v)%5] += 1
+            count += 1
+    if 2000 <= count:
+        s.append(count)
+        p.append(count)
+        histograms [e] = s
+        pentagrams [e] = p
+
+
+haveHistograms = [e for e in use2 if e in histograms]
+plot_histograms([(titles[e], histograms[e]) for e in haveHistograms], p_conf=0.95
+                #,
+                #values_for_mean = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
+                )
+plot_histograms([(titles[e], pentagrams[e]) for e in haveHistograms], p_conf=0.95,
+                category_labels=['0 i 5','1 i 6', '2 i 7', '3 i 8', '4 i 9'])
+plot_histograms([(titles[e], histograms[e]) for e in haveHistograms], p_conf=0.97
+                #,values_for_mean = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
+                )
+plot_histograms([(titles[e], pentagrams[e]) for e in haveHistograms], p_conf=0.97,
+                category_labels=['0 i 5','1 i 6', '2 i 7', '3 i 8', '4 i 9'])
+plt.show()
+
+sys.exit(0)
+
+
+def cl_bandOld(n, p_conf=0.95, p_cat=0.1):
+    """Two-sided normal-approx. band for Bin(n, p_cat) at confidence p_conf."""
+    z = abs(statistics.NormalDist().inv_cdf((1 - p_conf) / 2))
+    mean = n * p_cat
+    sd   = math.sqrt(n * p_cat * (1 - p_cat))
+    lo   = max(0, int(math.floor(mean - z * sd)))
+    hi   = min(n, int(math.ceil (mean + z * sd)))
+    return lo, hi
+
+def plot_histogramsOld(paired_histograms, p_conf=0.95):
+    """
+    paired_histograms : [(title, [c0, …, c9, n]), …]
+    p_conf            : confidence level, e.g. 0.95
+    """
+    colours = plt.cm.tab10.colors
+    for idx, (title, data) in enumerate(paired_histograms):
+        counts, n   = data[:10], data[10]
+        lo, hi      = cl_band(n, p_conf)
+        cat_idx     = range(10)
+        color       = colours[idx % len(colours)]
+        
+        fig, ax = plt.subplots(figsize=(7, 4))
+        ax.bar(cat_idx, counts, color=color)
+        ax.axhspan(lo, hi, color='k', alpha=0.4)          # confidence band
+        
+        for c, v in zip(cat_idx, counts):                  # annotate bars
+            ax.text(c, v + 0.02*max(max(counts), hi), str(v),
+                    ha='center', va='bottom', fontsize=9)
+        
+        ax.set_xticks(cat_idx)
+        ax.set_xlabel("category")
+        ax.set_ylabel("count")
+        ax.set_ylim(0, 1.15*max(max(counts), hi))
+        ax.set_title(f"{title}  |  n={n}, p={p_conf:.2f}, band=[{lo}, {hi}]")
+        fig.tight_layout()
+    plt.show()    
+
+# ---------- example ---------------------------------------------------------
+# Delete this block and supply your own data.
+#H = [
+#    [12,  9, 11, 15,  8, 10,  7,  9, 11,  8, 100],
+#    [ 8, 14,  6, 12, 11, 14, 12,  7,  6, 10, 100],
+#    [11, 10,  9, 10, 12,  8, 11,  7, 13,  9, 100],
+#    [13,  8, 10,  9, 12, 11,  7, 10,  9, 11, 100],
+#    [10, 12,  8, 11,  9, 13,  9, 12,  8,  8, 100],
+#    [ 9, 10, 12,  8, 13,  9, 11,  8, 11,  9, 100],
+#]
+
+
+
+
+
+print (SECOND['Liczba kopert na kartę do głosowania w\xa0głosowaniu korespondencyjnym wrzuconych do urny'])
+
 
 # replace blank KEY2 with 0 and cast to int
 for df in (FIRST, SECOND):
@@ -62,6 +253,13 @@ FIRST[KEY1] = FIRST[KEY1].fillna(0).astype(int)
 
 assert_no_dupes(FIRST, [KEY1, KEY2], "FIRST")
 assert_no_dupes(SECOND, [KEY1, KEY2], "SECOND")
+
+columns1 = FIRST.columns.tolist()
+columns2 = SECOND.columns.tolist()
+
+print (columns1)
+print (columns2)
+sys.exit(0)
 
 # ------------------------------------------------------------
 # 3.  Design & target matrices

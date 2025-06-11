@@ -124,7 +124,12 @@ DELEGATURYfull = {
 
 DELEGATURY = [x for x in DELEGATURYfull - DELEGATURYbase]
 
-print (DELEGATURY);
+DELEGATURY = []
+
+HDR_GMINA_RE = re.compile(
+    r"\bw\s+(mieście|gminie)\s+([A-ZŁŚŻŹĆĄĘÓŃ][\w\s\-]*)",
+    re.I
+)
 
 BASE    = "https://{}.kbw.gov.pl/strona-glowna"
 MINIBASE= "https://{}.kbw.gov.pl"
@@ -191,6 +196,52 @@ HDR_RE = re.compile(
 )
 
 def parse_pdf(path: Path) -> list[dict]:
+    with pdfplumber.open(path) as pdf:
+        text = "\n".join(
+            p.extract_text(x_tolerance=2) or "" for p in pdf.pages
+        )
+
+    # ➊  spróbuj złapać gminę z nagłówka całego dokumentu
+    m_top = HDR_GMINA_RE.search(text[:600])      # wystarczy początek pliku
+    gmina_top = None
+    if m_top:
+        prefix = "m." if m_top.group(1).lower().startswith("mie") else "gm."
+        gmina_top = f"{prefix} {m_top.group(2).strip()}"
+
+    matches = list(HDR_RE.finditer(text))
+    rows = []
+
+    for i, m in enumerate(matches):
+        # ➋  jeśli HDR_RE znalazł własną gminę – bierz tę,
+        #    w przeciwnym razie użyj gmina_top
+        gmina = m.group(1).strip() if m.group(1) else gmina_top
+
+        komisja_nr   = int(m.group(2))
+        komisja_addr = m.group(3).strip().rstrip(", ")
+
+        # ─ fallback „z adresu” tylko gdy gminy wciąż brak
+        if not gmina:
+            tail_city = komisja_addr.split(",")[-1].strip()
+            if re.fullmatch(r"[A-Za-zÀ-ž\s\-]{2,}", tail_city):
+                gmina = f"m. {tail_city}"
+
+        start = m.end()
+        end   = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+        segment = text[start:end].replace("\n", " ")
+
+        for mem in MEMBER_RE.finditer(segment):
+            rows.append({
+                "pdf":           path.name,
+                "gmina":         gmina,            # ← już zawsze wypełnione
+                "komisja_nr":    komisja_nr,
+                "komisja_adres": komisja_addr,
+                "czlonek":       " ".join(mem.group(1).split()),
+                "komitet":       " ".join(mem.group(2).split()),
+            })
+    return rows
+
+
+def parse_pdfOld(path: Path) -> list[dict]:
     with pdfplumber.open(path) as pdf:
         text = "\n".join(p.extract_text(x_tolerance=2) or "" for p in pdf.pages)
 

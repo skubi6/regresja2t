@@ -9,31 +9,134 @@ ze wszystkich delegatur KBW.
 """
 
 from __future__ import annotations
+
+import warnings, logging
+warnings.filterwarnings("ignore", message="CropBox missing")
+logging.getLogger("PyPDF2").setLevel(logging.ERROR)
+logging.getLogger("pypdf").setLevel(logging.ERROR)       # nazwa w nowszych wersjach
+logging.getLogger("pdfplumber").setLevel(logging.ERROR)  # nadgorliwe logi pdfplumber
+logging.disable(logging.CRITICAL) 
+
 import re, time, sqlite3, requests, pdfplumber, pandas as pd
 from bs4 import BeautifulSoup
 from pathlib import Path
 from urllib.parse import urljoin
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
-
+import sys
 # ─────────── konfiguracja ────────────
-DELEGATURY = [
-    "jelenia-gora","legnica","walbrzych","wroclaw","bydgoszcz","torun",
-    "chelm","lublin","zamosc","gorzow","zielona-gora","kalisz","lodz",
-    "piotrkow","sieradz","krakow","nowy-sacz","plock","radom","siedlce",
-    "warszawa","opole","przemysl","rzeszow","tarnobrzeg","bialystok",
-    "lomza","suwalki","gdansk","slupsk","elblag","bielsko-biala",
-    "czestochowa","katowice","kielce","olsztyn","konin","poznan",
-    "koszalin","szczecin",
-]
-BASE    = "https://{}.kbw.gov.pl"
+#DELEGATURY = [
+#    "jelenia-gora","legnica","walbrzych","wroclaw","bydgoszcz","torun",
+#    "chelm","lublin","zamosc","gorzow","zielona-gora","kalisz","lodz",
+#    "piotrkow","sieradz","krakow","nowy-sacz","plock","radom","siedlce",
+#    "warszawa","opole","przemysl","rzeszow","tarnobrzeg","bialystok",
+#    "lomza","suwalki","gdansk","slupsk","elblag","bielsko-biala",
+#    "czestochowa","katowice","kielce","olsztyn","konin","poznan",
+#    "koszalin","szczecin",
+#]
+
+DELEGATURYbase = {
+    # Dolnośląskie
+    "jelenia-gora", "legnica", "walbrzych", "wroclaw",
+    # Kujawsko-pomorskie
+    "bydgoszcz", "torun",
+    # Lubelskie
+    "chelm", "lublin", "zamosc",
+    # Lubuskie
+    "gorzow", "zielona-gora",
+    # Łódzkie
+    "kalisz", "lodz", "piotrkow", "sieradz",
+    # Małopolskie
+    "krakow", "nowy-sacz",
+    # Mazowieckie
+    "plock", "radom", "siedlce", "warszawa",
+    # Opolskie
+    "opole",
+    # Podkarpackie
+    "przemysl", "rzeszow", "tarnobrzeg",
+    # Podlaskie
+    "bialystok", "lomza", "suwalki",
+    # Pomorskie
+    "gdansk", "slupsk", "elblag",
+    # Śląskie
+    "bielsko-biala", "czestochowa", "katowice",
+    # Świętokrzyskie
+    "kielce",
+    # Warmińsko-mazurskie
+    "olsztyn",
+    # Wielkopolskie
+    "konin", "poznan",
+    # Zachodniopomorskie
+    "koszalin", "szczecin",
+}
+DELEGATURYfull = {
+'biala-podlaska',
+'bialystok',
+'bielsko-biala',
+'bydgoszcz',
+'chelm',
+'ciechanow',
+'czestochowa',
+'danewyborcze',
+'elblag',
+'gdansk',
+'gorzow-wielkopolski',
+'jelenia-gora',
+'kalisz',
+'katowice',
+'kielce',
+'konin',
+'koszalin',
+'krakow',
+'krosno',
+'legnica',
+'leszno',
+'lodz',
+'lomza',
+'lublin',
+'nowy-sacz',
+'olsztyn',
+'opole',
+'ostroleka',
+'pila',
+'piotrkow-trybunalski',
+'plock',
+'poznan',
+'przemysl',
+'radom',
+'rzeszow',
+'siedlce',
+'sieradz',
+'skierniewice',
+'slupsk',
+'suwalki',
+'szczecin',
+'tarnobrzeg',
+'tarnow',
+'torun',
+'walbrzych',
+'warszawa',
+'wloclawek',
+'wroclaw',
+'zamosc',
+'zielona-gora',
+}
+
+DELEGATURY = [x for x in DELEGATURYfull - DELEGATURYbase]
+
+print (DELEGATURY);
+
+BASE    = "https://{}.kbw.gov.pl/strona-glowna"
+MINIBASE= "https://{}.kbw.gov.pl"
 HEADERS = {"User-Agent":"Mozilla/5.0 (X11; Ubuntu)"}
 OUT_DIR = Path("pdf_okw"); OUT_DIR.mkdir(exist_ok=True)
 # ─────────────────────────────────────
 
 # ---------- 1. rekursywne wyszukiwanie PDF-ów ----------
-def list_pdfs_for_delegatura(city: str, max_depth: int = 2) -> list[str]:
+def list_pdfs_for_delegatura(city: str, max_depth: int = 4) -> list[str]:
     root, pdfs, seen = BASE.format(city), set(), set()
+    miniroot = MINIBASE.format(city)
+    print ('doing', root)
     queue = [(root, 0)]
     while queue:
         url, depth = queue.pop()
@@ -41,9 +144,11 @@ def list_pdfs_for_delegatura(city: str, max_depth: int = 2) -> list[str]:
             continue
         seen.add(url)
         try:
+            print ('   '*depth + '   ' +'depth', url)
             r = requests.get(url, headers=HEADERS, timeout=30)
             if "text/html" not in r.headers.get("Content-Type",""):
                 continue
+            print ('   '*depth + '   ' +'found')
             soup = BeautifulSoup(r.text, "html.parser")
         except requests.RequestException:
             continue
@@ -53,8 +158,12 @@ def list_pdfs_for_delegatura(city: str, max_depth: int = 2) -> list[str]:
             if lhref.endswith(".pdf") and "2025" in lhref and any(
                  k in lhref for k in ("postanowienie","powol","sklad","okw")):
                 pdfs.add(href)
-            elif href.startswith(root) and lhref.endswith(("/",".html",".htm")):
+            #elif href.startswith(root) and lhref.endswith(("/",".html",".htm")):
+            elif href.startswith(miniroot):
+                print ('   '*depth + '   ' +'append', href)
                 queue.append((href, depth+1))
+            else:
+                print ('   '*depth + '   ' +'ignore', href)
     return sorted(pdfs)
 
 # ---------- 2. pobieranie ----------
@@ -140,7 +249,6 @@ def extract_okw(
     if save_sqlite: 
         with sqlite3.connect(save_sqlite) as con:
             df.to_sql("okw", con, if_exists="replace", index=False)
-
     return df
 
 # ------------- CLI -------------
@@ -152,3 +260,6 @@ if __name__ == "__main__":
         save_sqlite=None,
     )
     print(df.head(), "\n\nŁącznie rekordów:", len(df))
+
+# https://olsztyn.kbw.gov.pl/strona-glowna good
+# https://olsztyn.kbw.gov.pl/strona_glowna

@@ -19,13 +19,13 @@ import pandas as pd
 
 # ──────────────── file paths ────────────────
 #HERE       = Path(__file__).parent
-FILE_SKLAD = "sklad_komisji_obwodowych_w_drugiej_turze_utf8-mini.xlsx"
-FILE_OKW   = "OKW_2025_full-mini.xlsx"
-OUT_FILE   = "commission_combined-mini.xlsx"
+#FILE_SKLAD = "sklad_komisji_obwodowych_w_drugiej_turze_utf8-mini.xlsx"
+#FILE_OKW   = "OKW_2025_full-mini.xlsx"
+#OUT_FILE   = "commission_combined-mini.xlsx"
 
-#FILE_SKLAD = "sklad_komisji_obwodowych_w_drugiej_turze_utf8.xlsx"
-#FILE_OKW   = "OKW_2025_full.xlsx"
-#OUT_FILE   = "commission_combined.xlsx"
+FILE_SKLAD = "sklad_komisji_obwodowych_w_drugiej_turze_utf8.xlsx"
+FILE_OKW   = "OKW_2025_full.xlsx"
+OUT_FILE   = "commission_combined.xlsx"
 
 # ─────────────── helper functions ───────────
 ROLE_ORDER = {
@@ -40,6 +40,10 @@ def strip_accents(txt: str) -> str:
                    if not unicodedata.combining(c))
 
 count = 0
+def norm_nameRev(txt: str) -> str:
+    head, sep, tail = txt.rpartition(" ")
+    return norm_name(f"{tail} {head}" if sep else txt)
+
 def norm_name(txt: str) -> str:
     res= re.sub(r"\s+", " ",
                 strip_accents(str(txt)).upper()).strip()
@@ -82,26 +86,26 @@ df_sklad["name_norm"]  = df_sklad["Nazwisko i imiona"].map(norm_name)
 df_sklad["comm_id"]    = list(zip(df_sklad["gmina_norm"],
                                   df_sklad["Nr obw."].astype(int)))
 
-print (list(zip(df_sklad["gmina_norm"],
-                                  df_sklad["Nr obw."].astype(int)))[:300])
+#print (list(zip(df_sklad["gmina_norm"],
+#                                  df_sklad["Nr obw."].astype(int)))[:300])
 
 df_okw["gmina_norm"]   = df_okw["gmina"].map(norm_gmina)
-df_okw["name_norm"]    = df_okw["czlonek"].map(norm_name)
+df_okw["name_norm"]    = df_okw["czlonek"].map(norm_nameRev)
 df_okw["is_uzup"]      = df_okw["komitet"].str.contains("uzupełnienie",
                                                         case=False, na=False)
 df_okw["candidate"]    = df_okw["komitet"].map(candidate_nom)
 df_okw["comm_id"]      = list(zip(df_okw["gmina_norm"],
                                   df_okw["komisja_nr"].astype(int)))
 
-print (list(zip(df_okw["gmina_norm"],
-                df_okw["komisja_nr"].astype(int)))[:300])
+#print (list(zip(df_okw["gmina_norm"],
+#                df_okw["komisja_nr"].astype(int)))[:300])
 
 # group OKW rows commission-wise for O(1) lookup
 okw_by_comm = {cid: grp for cid, grp in df_okw.groupby("comm_id")}
 
-print ()
-print ('groups')
-print (okw_by_comm)
+#print ()
+#print ('groups')
+#print (okw_by_comm)
 
 # 3.  ──  Build output rows  ────────────────
 out_rows  : list[dict] = []
@@ -126,9 +130,9 @@ for (powiat, nr), grp in df_okw.groupby(["gmina_norm", "komisja_nr"]):
     key = (powiat, nr)
     okw_powiat_idx[key] = grp
 
-print ()
-print ('okw_powiat_idx')
-print (okw_powiat_idx)
+#print ()
+#print ('okw_powiat_idx')
+#print (okw_powiat_idx)
 
 # ------------- ➋ new helper: smart lookup ------------------------------
 def find_okw_group(
@@ -154,7 +158,7 @@ rows = []
 for cid, part in df_sklad.groupby("comm_id"):
     base = part.iloc[0][["TERYT gminy", "Nazwa gminy",
                          "Powiat", "Nr obw."]].to_dict()
-    print ('base', base)
+    #print ('base', base)
     powiat_norm = strip_accents(str(base["Powiat"]).lower())
     nr_obw      = int(base["Nr obw."])
 

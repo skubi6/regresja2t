@@ -54,6 +54,12 @@ DATA_DIR = Path(".")
 FIRST = pd.read_excel(DATA_DIR / "protokoly_po_obwodach_utf8.xlsx")
 SECOND = pd.read_excel(DATA_DIR / "protokoly_po_obwodach_w_drugiej_turze_utf8.xlsx")
 
+print ('first')
+print (FIRST.columns.to_list())
+print ('second')
+print (SECOND.columns.to_list())
+
+
 # compound key
 KEY1, KEY2 = "Teryt Gminy", "Nr komisji"
 

@@ -13,6 +13,10 @@ from sklearn.pipeline import make_pipeline
 from scipy.spatial.distance import mahalanobis
 from scipy.signal import find_peaks
 import matplotlib.pyplot as plt
+import math
+import statistics
+
+
 
 PKWcolumns = [
     'Nr komisji',
@@ -82,7 +86,6 @@ def nan_diagnostic(X, y, tgt_name, KEY1, KEY2):
     offenders.to_excel(f"nan_offenders_{tgt_name}.xlsx", index=False)
     sys.exit(1)
 
-
 def assert_no_dupes(df, key_cols, label):
     dup = df.duplicated(key_cols, keep=False)
     if dup.any():
@@ -90,7 +93,6 @@ def assert_no_dupes(df, key_cols, label):
             f"\n❌ DUPLICATE KEYS in {label}:\n"
             f"{df.loc[dup, key_cols].to_string(index=False)}\n"
         )
-
 
 # ------------------------------------------------------------
 # 2.  Load Excel sheets
@@ -146,8 +148,9 @@ targets = [
     "TRZASKOWSKI Rafał Kazimierz",     # c2
 ]
 
-X = FIRST.set_index([KEY1, KEY2])[first_cols]
-Y = SECOND.set_index([KEY1, KEY2])[targets]
+X = FIRST.set_index([KEY1, KEY2]) #[first_cols]
+Y = SECOND.set_index([KEY1, KEY2]) #[targets]
+#Y = SECOND.set_index([KEY1, KEY2])
 
 # align common precincts
 X, Y = X.align(Y, join="inner", axis=0)
@@ -161,8 +164,8 @@ coefs, fits, resids = {}, {}, {}
 for tgt in targets:
     nan_diagnostic(X, Y[tgt], tgt, KEY1, KEY2)
     pipe = make_pipeline(StandardScaler(with_std=False), LinearRegression())
-    pipe.fit(X, Y[tgt])
-    fits[tgt] = pd.Series(pipe.predict(X), index=X.index)
+    pipe.fit(X[first_cols], Y[tgt])
+    fits[tgt] = pd.Series(pipe.predict(X[first_cols]), index=X.index)
     resids[tgt] = Y[tgt] - fits[tgt]
     coefs[tgt] = pipe.named_steps["linearregression"].coef_
     intercepts[tgt] = pipe.named_steps["linearregression"].intercept_
@@ -215,25 +218,26 @@ print("=========================================================================
 #  END of new block
 # ------------------------------------------------------------
 
+if False:
 
-
-# histogram for distance
-plt.figure(figsize=(35, 20))
-plt.hist(R["dist"], bins=800, alpha=0.8)
-plt.title("Mahalanobis distance")
-plt.xlabel("distance")
-plt.ylabel("precincts")
-plt.show()
+    # histogram for distance
+    plt.figure(figsize=(35, 20))
+    plt.hist(R["dist"], bins=800, alpha=0.8)
+    plt.title("Mahalanobis distance")
+    plt.xlabel("distance")
+    plt.ylabel("precincts")
+    plt.show()
 
 # ------------------------------------------------------------
 # 6.  Save top Mahalanobis outliers (old feature)
 # ------------------------------------------------------------
-TOP_N = 100
-outliers = (
-    R["dist"].nlargest(TOP_N).reset_index()  # MultiIndex -> columns
-)
-outliers.to_excel("top_outlier_precincts.xlsx", index=False)
-print("Mahalanobis outliers written to top_outlier_precincts.xlsx")
+
+
+#outliers = (
+#    R["dist"].nlargest(TOP_N).reset_index()  # MultiIndex -> columns
+#)
+#outliers.to_excel("top_outlier_precincts.xlsx", index=False)
+#print("Mahalanobis outliers written to top_outlier_precincts.xlsx")
 
 # ============================================================
 # 8A.  NEW: difference metric D  (c1 - c2) residual
@@ -242,7 +246,7 @@ c1, c2 = "NAWROCKI Karol Tadeusz", "TRZASKOWSKI Rafał Kazimierz"
 
 obs_diff = Y[c1] - Y[c2]
 fit_diff = fits[c1] - fits[c2]
-D = obs_diff - fit_diff            # Series on same MultiIndex
+Y["D"] = obs_diff - fit_diff            # Series on same MultiIndex
 
 # ------------------------------------------------------------
 # 8B.  Plot histogram of D & relative D
@@ -253,49 +257,224 @@ plt.figure (figsize=(60, 20))
 #axes[0].hist(D, bins=800, alpha=0.8, color="steelblue")
 #axes[0].set(title="Histogram D = (c1−c2) − predicted", xlabel="D", ylabel="precincts")
 
-plt.hist(D, bins=601, alpha=0.8, color="steelblue",range=(-300, 300))
-#plt.set(title="Histogram D = (c1−c2) − predicted", xlabel="D", ylabel="precincts",xlim=(-200, 200))
-plt.title="Histogram D = (c1−c2) − predicted"
-plt.xlabel="D"
-plt.ylabel="precincts"
-plt.xlim=(-200, 200)
+if False:
+    plt.hist(Y["D"], bins=601, alpha=0.8, color="steelblue",range=(-300, 300))
+    #plt.set(title="Histogram D = (c1−c2) − predicted", xlabel="D", ylabel="precincts",xlim=(-200, 200))
+    plt.title="Histogram D = (c1−c2) − predicted"
+    plt.xlabel="D"
+    plt.ylabel="precincts"
+    plt.xlim=(-200, 200)
 
-denom   = Y[c1] + Y[c2]
-D_rel   = D / denom
+
+    plt.show()
+
+denom   = (Y[c1] + Y[c2])**.5
+D_rel   = Y["D"] / denom
 D_rel   = D_rel.replace([np.inf, -np.inf], np.nan)   # guard against div-by-0
 D_rel   = D_rel.dropna()
+Y["Dnorm"] = D_rel
 
-#axes[1].hist(D_rel, bins=800, alpha=0.8, color="indianred")
-#axes[1].set(title="Histogram of D / (c1+c2)", xlabel="relative D", ylabel="precincts")
+if False:
+    plt.figure (figsize=(60, 20))
+    plt.hist(Y["Dnorm"], bins=800, alpha=0.8, color="indianred")
+    plt.title="Histogram of D / (c1+c2)^.5"
+    plt.xlabel="normalized D"
+    plt.ylabel="precincts"
 
-plt.tight_layout()
-plt.show()
+    plt.title="Histogram Dnorm = (c1−c2) − predicted (normalized)"
+    plt.xlabel="Dnorm"
+    plt.ylabel="precincts"
+    #plt.xlim=(-200, 200)
+
+
+    plt.tight_layout()
+    plt.show()
 
 # ------------------------------------------------------------
 # 8C.  List ±100 outliers for D and for relative D
 # ------------------------------------------------------------
 GMINA = FIRST.set_index([KEY1, KEY2])["Gmina"]  # bring Gmina by MultiIndex
 
-def export_outliers(series, name, k=100):
-    pos = (
-        series.nlargest(k)
-        .rename("metric")
-        .reset_index()
-        .merge(GMINA.reset_index(), on=[KEY1, KEY2], how="left")
-        [[KEY1, KEY2, "Gmina", "metric"]]
-    )
-    neg = (
-        series.nsmallest(k)
-        .rename("metric")
-        .reset_index()
-        .merge(GMINA.reset_index(), on=[KEY1, KEY2], how="left")
-        [[KEY1, KEY2, "Gmina", "metric"]]
-    )
-    pos.to_excel(f"outliers_positive_{name}.xlsx", index=False)
-    neg.to_excel(f"outliers_negative_{name}.xlsx", index=False)
-    print(f"Wrote top ±{k} outliers for {name} "
-          f"to outliers_positive_{name}.xlsx / outliers_negative_{name}.xlsx")
 
-export_outliers(D, "D")
-export_outliers(D_rel, "D_rel")
+writer = pd.ExcelWriter("outliers.xlsx", engine="xlsxwriter")
 
+# ---------- helper: take any Series of scores ----------------
+BASE = FIRST.set_index([KEY1, KEY2])          # full original columns
+BASE2 = SECOND.set_index([KEY1, KEY2])          # full original columns
+TOP_N = BASE.shape[0]//3
+
+def sheet_name(label, sign):
+    return f"{label}_{sign}"
+
+large = Y["Dnorm"].nlargest(TOP_N)
+small = Y["Dnorm"].nsmallest(TOP_N)
+mid = Y["Dnorm"].nsmallest(TOP_N*2).nlargest(TOP_N)
+
+largeFull = large.to_frame().join(BASE2, how="left").reset_index() 
+smallFull = small.to_frame().join(BASE2, how="left").reset_index() 
+midFull = mid.to_frame().join(BASE2, how="left").reset_index() 
+
+
+
+def add_outliers(series: pd.Series, label: str, k: int = TOP_N):
+    for sign, slicer in [("pos", series.nlargest(k)),
+                         ("neg", series.nsmallest(k))]:
+        sheet = sheet_name(label, sign)
+        df = (
+            slicer.rename("metric")
+                  .to_frame()
+                  .join(BASE, how="left")     # keep all original cols
+                  .reset_index()              # bring keys back as columns
+        )
+        df.to_excel(writer, sheet_name=sheet, index=False)
+
+# ---------- 6A. Mahalanobis ----------------------------------
+mah = (
+    R["dist"].nlargest(TOP_N)
+      .rename("metric")
+      .to_frame()
+      .join(BASE, how="left")
+      .reset_index()
+)
+mah.to_excel(writer, sheet_name="Mahalanobis", index=False)
+
+# ---------- 6B.  ±100 outliers for D and D_rel ---------------
+add_outliers(Y["D"],      "D")
+add_outliers(Y["Dnorm"],  "Dnorm")
+
+# ---------- 6C.  save & finish -------------------------------
+writer.close()
+print(f"✓  All outlier tables written to outliers.xlsx")
+
+
+# CYFERKI
+
+# compound key
+KEY1, KEY2 = "Teryt Gminy", "Nr komisji"
+
+use2 = [
+    'Liczba niewykorzystanych kart do głosowania',
+    'Liczba wyborców, którym wydano karty do głosowania w\xa0lokalu wyborczym (liczba podpisów w spisie oraz adnotacje o\xa0wydaniu karty bez potwierdzenia podpisem w\xa0spisie)',
+    'Liczba wyborców, którym wydano karty do głosowania w\xa0lokalu wyborczym oraz w\xa0głosowaniu korespondencyjnym (łącznie)',
+    'Liczba wyborców głosujących na podstawie zaświadczenia o\xa0prawie do głosowania',
+    'Liczba kart wyjętych z\xa0urny',
+    'Liczba kart ważnych',
+    'Liczba głosów ważnych oddanych łącznie na obu kandydatów (z\xa0kart ważnych)',
+    'NAWROCKI Karol Tadeusz',
+    'TRZASKOWSKI Rafał Kazimierz'
+]
+
+#use2 = [
+#    'NAWROCKI Karol Tadeusz',
+#    'TRZASKOWSKI Rafał Kazimierz',
+#]
+
+titles = {
+    'Liczba niewykorzystanych kart do głosowania': 'karty niewykorzystane',
+    'Liczba wyborców, którym wydano karty do głosowania w\xa0lokalu wyborczym (liczba podpisów w spisie oraz adnotacje o\xa0wydaniu karty bez potwierdzenia podpisem w\xa0spisie)' : 'karty wydane w lokalu',
+    'Liczba wyborców, którym wydano karty do głosowania w\xa0lokalu wyborczym oraz w\xa0głosowaniu korespondencyjnym (łącznie)' : 'karty wydane łącznie',
+    'Liczba wyborców głosujących na podstawie zaświadczenia o\xa0prawie do głosowania': 'zaświadczenia',
+    'Liczba kart wyjętych z\xa0urny' : 'karty wyjęte',
+    'Liczba kart ważnych' : 'karty ważne',
+    'Liczba głosów ważnych oddanych łącznie na obu kandydatów (z\xa0kart ważnych)' : 'głosy ważne',
+    'NAWROCKI Karol Tadeusz': 'NAWROCKI',
+    'TRZASKOWSKI Rafał Kazimierz' : 'TRZASKOWSKI'
+
+}
+
+
+def cl_band(n, p_cat, p_conf=0.95):
+    """Normal-approx 2-sided band for Bin(n, p_cat)."""
+    z     = abs(statistics.NormalDist().inv_cdf((1 - p_conf) / 2))
+    mean  = n * p_cat
+    sd    = math.sqrt(n * p_cat * (1 - p_cat))
+    lo    = max(0, int(math.floor(mean - z * sd)))
+    hi    = min(n, int(math.ceil (mean + z * sd)))
+    return lo, hi
+
+def mean_and_ci(counts, values, n, p_conf=0.95):
+    """Sample mean & normal-approx CI for a discrete variable."""
+    mean = sum(v * c for v, c in zip(values, counts)) / n
+    if n > 1:
+        var = sum(c * (v - mean) ** 2 for v, c in zip(values, counts)) / (n - 1)
+    else:
+        var = 0.0
+    z = abs(statistics.NormalDist().inv_cdf((1 - p_conf) / 2))
+    se = math.sqrt(var / n)
+    return mean, mean - z * se, mean + z * se
+
+def plot_histograms(
+        paired_histograms,
+        p_conf        = 0.95,
+        category_labels=None,
+        values_for_mean=None,
+        band_color    = "grey",
+        band_alpha    = 0.40
+    ):
+    """
+    paired_histograms : [(title, [c0,…,c{k-1}, total]), …]
+    category_labels   : list[str] (len k) – labels under bars
+    values_for_mean   : list[float] (len k) – supply to compute & draw mean±CI
+    """
+    palette = plt.cm.tab10.colors
+    for idx, (title, data) in enumerate(paired_histograms):
+        counts, n = data[:-1], data[-1]
+        k         = len(counts)
+
+        labels    = category_labels if category_labels else [str(i) for i in range(k)]
+        lo, hi    = cl_band(n, p_cat=1 / k, p_conf=p_conf)
+
+        fig, ax   = plt.subplots(figsize=(8, 4))
+        ax.bar(range(k), counts, color=palette[idx % len(palette)])
+        ax.axhspan(lo, hi, color=band_color, alpha=band_alpha)
+
+        ymax = max(max(counts), hi)
+        for c, v in enumerate(counts):
+            ax.text(c, v + 0.02*ymax, str(v), ha="center", va="bottom", fontsize=9)
+
+        ax.set_xticks(range(k), labels)
+        ax.set_ylim(0, 1.15*ymax)
+        ax.set_xlabel("category")
+        ax.set_ylabel("count")
+
+        subtitle = ""
+        if values_for_mean is not None and len(values_for_mean) == k:
+            mean, lo_m, hi_m = mean_and_ci(counts, values_for_mean, n, p_conf)
+            ax.axvline(mean, color="black", linestyle="--", lw=1.2)
+            ax.axvspan(lo_m, hi_m, color="black", alpha=0.10)
+            subtitle = f" | mean={mean:.2f} CI=[{lo_m:.2f}, {hi_m:.2f}]"
+
+        ax.set_title(f"{title} | n={n}, p={p_conf:.2f}, band=[{lo}, {hi}]{subtitle}")
+        fig.tight_layout()
+
+histograms = {}
+pentagrams = {}
+#for ttt, nm in [(smallFull, 'small'), (largeFull, 'large')]:
+for ttt, nm in [(largeFull, 'large')]:
+#for ttt, nm in [(smallFull, 'small'), (midFull, 'mid'), (largeFull, 'large')]:
+    for e in use2:
+        s = [0]*10
+        p = [0]*5
+        count = 0
+        for idx, row in ttt.iterrows():
+            if not pd.isna(row[e]):
+                v = row[e]
+                if v < 50:
+                    continue
+                s[round(v)%10] += 1
+                p[round(v)%5] += 1
+                count += 1
+        if 1000 <= count:
+            s.append(count)
+            p.append(count)
+            histograms [nm + ' ' + titles[e]] = s
+            pentagrams [nm + ' ' + titles[e]] = p
+
+
+#haveHistograms = [e for e in use2 if e in histograms]
+plot_histograms([(e, histograms[e]) for e in histograms], p_conf=0.95
+                )
+plot_histograms([(e, pentagrams[e]) for e in pentagrams], p_conf=0.95,
+                category_labels=['0 i 5','1 i 6', '2 i 7', '3 i 8', '4 i 9'])
+
+plt.show()

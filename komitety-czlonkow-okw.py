@@ -23,6 +23,7 @@ from pathlib import Path
 from urllib.parse import urljoin
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
+import datetime
 import sys
 # ─────────── konfiguracja ────────────
 #DELEGATURY = [
@@ -34,6 +35,57 @@ import sys
 #    "czestochowa","katowice","kielce","olsztyn","konin","poznan",
 #    "koszalin","szczecin",
 #]
+
+SKIP_URL_FRAGMENTS = (
+    "-2023-",
+    "-2024-",
+    "-2022-",
+    "-2021-",
+    "-2020-",
+    "-2019-",
+    "-2018-",
+    "-2017-",
+    "-2016-",
+    "-2015-",
+    "-2014-",
+    "-2013-",
+    "2023-r",
+    "2020-r",
+    "2015-r",
+    "2024-r",
+    "w-2014",
+    "w-2020",
+    "w-2015",
+    "wybory-i-referenda-w-toku-kadencji",
+    "finansowanie-kampanii-wyborczej",
+    "terytorialne-komisje",
+    "sejmu-i-do-senatu",
+    "parlamentu-europejskiego",
+    "wybory-samorzadowe",
+    "uzupelniajace-do-senatu",
+    "komunikaty-okregowej-komisji-wyborczej",
+    "/2011-r",
+    "/2012-r",
+    "/2013-r",
+    "/2014-r",
+    "/2015-r",
+    "/2016-r",
+    "/2017-r",
+    "/2018-r",
+    "/2019-r",
+    "/2020-r",
+    "/2021-r",
+    "/2022-r",
+    "/2023-r",
+    "/2024-r",
+    "wybory-uzupelniajace",
+    "sprawozdania-finansowe",
+    "wygasniecie-mandatu",
+    "konkurs-wybieram-wybory"
+)
+
+DATE_THRESHOLD = datetime.datetime(2025, 4, 20)          # 20 April 2025
+
 
 DELEGATURYbase = {
     # Dolnośląskie
@@ -142,8 +194,27 @@ HEADERS = {"User-Agent":"Mozilla/5.0 (X11; Ubuntu)"}
 OUT_DIR = Path("pdf_okw"); OUT_DIR.mkdir(exist_ok=True)
 # ─────────────────────────────────────
 
+def _parse_creation_date(raw: str | None) -> datetime | None:
+    """
+    Convert a PDF /CreationDate string to a datetime.
+    Accepts patterns like 'D:20250420123045+02\'00\'' or '20250420'.
+    """
+    if not raw:
+        return None
+    m = re.match(r"D?:?(\d{4})(\d{2})(\d{2})", raw)
+    if not m:
+        return None
+    try:
+        return datetime.datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+    except ValueError:
+        return None
+
+
+
+
+
 # ---------- 1. rekursywne wyszukiwanie PDF-ów ----------
-def list_pdfs_for_delegatura(city: str, max_depth: int = 7) -> list[str]:
+def list_pdfs_for_delegatura(city: str, max_depth: int = 6) -> list[str]:
     root, pdfs, seen = BASE.format(city), set(), set()
     miniroot = MINIBASE.format(city)
     print ('doing', root)
@@ -152,14 +223,14 @@ def list_pdfs_for_delegatura(city: str, max_depth: int = 7) -> list[str]:
         url, depth, preselected = queue[0]
         queue = queue[1:]
         if url in seen:
-            print ('   '*depth + '   ' +'seen ', url)
+            #print ('   '*depth + '   ' +'seen ', url)
             continue
         if depth > max_depth:
-            print ('   '*depth + '   ' +'deep ', depth, max_depth, url)
+            #print ('   '*depth + '   ' +'deep ', depth, max_depth, url)
             continue
         seen.add(url)
         try:
-            print ('   '*depth + '   ' +'depth', url)
+            print ('   '*depth + '   ' +'depth', depth, url)
             r = requests.get(url, headers=HEADERS, timeout=30)
             if "text/html" not in r.headers.get("Content-Type",""):
                 continue
@@ -171,6 +242,8 @@ def list_pdfs_for_delegatura(city: str, max_depth: int = 7) -> list[str]:
         for a in soup.find_all("a", href=True):
             href = urljoin(url, a["href"])
             lhref = href.lower()
+            if any(frag in lhref for frag in SKIP_URL_FRAGMENTS):
+                continue
             lPreselected = preselected or any (
                 k in lhref for k in ("postanowienie","skladach","skladzie","powol","sklad","okw"))
             
@@ -179,21 +252,41 @@ def list_pdfs_for_delegatura(city: str, max_depth: int = 7) -> list[str]:
                 print ('   '*depth + '   ' +'pdf   ', href)
                 pdfs.add(href)
             elif href.startswith(miniroot) and not lhref.endswith('.jpg'):
-                print ('   '*depth + '   ' +'append', depth+1, href)
+                #print ('   '*depth + '   ' +'append', depth+1, href)
                 queue.append((href, depth+1, lPreselected))
-            else:
-                print ('   '*depth + '   ' +'ignore', href)
+            #else:
+                #print ('   '*depth + '   ' +'ignore', href)
     return sorted(pdfs)
 
 # ---------- 2. pobieranie ----------
 def download(url: str, dest: Path, retries: int = 2) -> Path|None:
+    if any(frag in url for frag in SKIP_URL_FRAGMENTS):
+        return None
     if dest.exists():
         return dest
     for _ in range(retries+1):
         try:
-            r = requests.get(url, headers=HEADERS, timeout=90); r.raise_for_status()
-            dest.write_bytes(r.content); return dest
-        except requests.RequestException: time.sleep(3)
+            r = requests.get(url, headers=HEADERS, timeout=90, stream=True)
+            r.raise_for_status()
+            data = r.content                    # keep in memory
+            with pdfplumber.open(BytesIO(data)) as pdf:
+                cdt = _parse_creation_date(pdf.metadata.get("CreationDate"))
+            # 🗓️ ignore too-old files
+            if cdt and cdt < DATE_THRESHOLD:
+                return None                     # silently drop
+            dest.write_bytes(data)              # only now do we persist it
+            return dest
+        except requests.RequestException:
+            time.sleep(3)
+        except Exception as e:                  # parse errors → still save file
+            dest.write_bytes(data)
+            return dest
+        #OLD<<<
+        #try:
+        #    r = requests.get(url, headers=HEADERS, timeout=90); r.raise_for_status()
+        #    dest.write_bytes(r.content); return dest
+        #except requests.RequestException: time.sleep(3)
+        #>>>
     return None
 
 # ---------- 3. parsowanie ----------
@@ -216,8 +309,24 @@ def _clean_gmina(raw: str | None) -> str | None:
     g = re.sub(r"\s+", " ", g).strip()
     return g if re.match(r"^(m\.|gm\.)\s+[A-ZŁŚŻŹĆĄĘÓŃ]", g) else None
 
+
+
+r"""
 def parse_pdf(path: Path) -> list[dict]:
     with pdfplumber.open(path) as pdf:
+        text = "\n".join(p.extract_text(x_tolerance=2) or "" for p in pdf.pages)
+    ...
+
+"""
+
+
+
+def parse_pdf(path: Path) -> list[dict]:
+    with pdfplumber.open(path) as pdf:
+        creation_raw = pdf.metadata.get("CreationDate")
+        creation_dt  = _parse_creation_date(creation_raw)   # NEW
+        if creation_dt and creation_dt < DATE_THRESHOLD:
+            return []
         text = "\n".join(p.extract_text(x_tolerance=2) or "" for p in pdf.pages)
 
     # 2️⃣ – wyciągamy „m./gm. Nazwa” z pierwszych 600 znaków
@@ -226,7 +335,6 @@ def parse_pdf(path: Path) -> list[dict]:
     if m_top:
         prefix = "m." if m_top.group(1).lower().startswith("mie") else "gm."
         gmina_top = f"{prefix} {m_top.group(2).strip()}"
-
     matches = list(HDR_RE.finditer(text))
     rows = []
 
@@ -259,6 +367,7 @@ def parse_pdf(path: Path) -> list[dict]:
                 "komisja_adres": komisja_addr,
                 "czlonek"      : " ".join(mem.group(1).split()),
                 "komitet"      : " ".join(mem.group(2).split()),
+                "creation_dt"  : creation_dt,               # NEW
             })
     return rows
 
@@ -342,19 +451,21 @@ def extract_okw(
         save_excel : str|None = "OKW_2025.xlsx",
         save_csv   : str|None = None,
         save_sqlite: str|None = None,
+        partOne = False,
         partTwo = False
         
 ) -> pd.DataFrame:
 
     # indeksacja linków
-    links=set()
-    for city in tqdm(DELEGATURY, desc="Indeksuję delegatury"):
-        links.update(list_pdfs_for_delegatura(city))
+    if partOne:
+        links=set()
+        for city in tqdm(DELEGATURY, desc="Indeksuję delegatury"):
+            links.update(list_pdfs_for_delegatura(city))
 
-    # pobieranie
-    with ThreadPoolExecutor(max_workers=n_workers) as ex:
-        fut={ex.submit(download, url, OUT_DIR/Path(url).name):url for url in links}
-        list(tqdm(as_completed(fut), total=len(fut), desc="Pobieram PDF-y"))
+        # pobieranie
+        with ThreadPoolExecutor(max_workers=n_workers) as ex:
+            fut={ex.submit(download, url, OUT_DIR/Path(url).name):url for url in links}
+            list(tqdm(as_completed(fut), total=len(fut), desc="Pobieram PDF-y"))
 
     # parsowanie
     if partTwo:
@@ -382,6 +493,7 @@ if __name__ == "__main__":
         save_excel="OKW_2025_full.xlsx",
         save_csv  =None,
         save_sqlite=None,
+        partOne=False,
         partTwo=True,
     )
     print(df.head(), "\n\nŁącznie rekordów:", len(df))

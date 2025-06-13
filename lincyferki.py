@@ -15,9 +15,7 @@ from scipy.signal import find_peaks
 import matplotlib.pyplot as plt
 import math
 import statistics
-from datetime import datetime
 
-nowStart = datetime.now()
 
 
 PKWcolumns = [
@@ -88,6 +86,7 @@ def nan_diagnostic(X, y, tgt_name, KEY1, KEY2):
     offenders.to_excel(f"nan_offenders_{tgt_name}.xlsx", index=False)
     sys.exit(1)
 
+
 def assert_no_dupes(df, key_cols, label):
     dup = df.duplicated(key_cols, keep=False)
     if dup.any():
@@ -95,6 +94,7 @@ def assert_no_dupes(df, key_cols, label):
             f"\n❌ DUPLICATE KEYS in {label}:\n"
             f"{df.loc[dup, key_cols].to_string(index=False)}\n"
         )
+
 
 # ------------------------------------------------------------
 # 2.  Load Excel sheets
@@ -104,31 +104,14 @@ DATA_DIR = Path(".")
 #SECOND = pd.read_excel(DATA_DIR / "protokoly_po_obwodach_w_drugiej_turze_utf8-modif.xlsx")
 FIRST = pd.read_excel(DATA_DIR / "protokoly_po_obwodach_utf8.xlsx")
 SECOND = pd.read_excel(DATA_DIR / "protokoly_po_obwodach_w_drugiej_turze_utf8.xlsx")
-print (DATA_DIR / "commission_combined.xlsx")
-EXTRA = pd.read_excel(DATA_DIR / "commission_combined.xlsx")
-#print ('step 0')
-#print (EXTRA)
-
-EXTRA.rename(columns={"Nr obw.": "Nr komisji", "TERYT gminy" : "Teryt Gminy"}, inplace=True)
 
 # compound key
 KEY1, KEY2 = "Teryt Gminy", "Nr komisji"
-print ('step 1')
-
-print (EXTRA)
 
 # replace blank KEY2 with 0 and cast to int
-for df in (FIRST, SECOND, EXTRA):
+for df in (FIRST, SECOND):
     df[KEY2] = df[KEY2].replace("", 0).astype(int)
 FIRST[KEY1] = FIRST[KEY1].fillna(0).astype(int)
-
-SECOND_JOIN = (
-    SECOND.merge(EXTRA, on=[KEY1, KEY2], how="inner",
-                 suffixes=("", "_extra"))
-)
-
-print("Rows in joined SECOND+EXTRA:", len (SECOND), len(SECOND_JOIN))
-
 
 assert_no_dupes(FIRST, [KEY1, KEY2], "FIRST")
 assert_no_dupes(SECOND, [KEY1, KEY2], "SECOND")
@@ -167,11 +150,8 @@ targets = [
     "TRZASKOWSKI Rafał Kazimierz",     # c2
 ]
 
-X = FIRST.set_index([KEY1, KEY2]) #[first_cols]
-Y = SECOND.set_index([KEY1, KEY2]) #[targets]
-print("Columns in SECOND:", SECOND.columns.tolist())
-print("Columns in Y:", Y.columns.tolist())
-sys.exit(0)
+X = FIRST.set_index([KEY1, KEY2])[first_cols]
+Y = SECOND.set_index([KEY1, KEY2])[targets]
 #Y = SECOND.set_index([KEY1, KEY2])
 
 # align common precincts
@@ -186,11 +166,20 @@ coefs, fits, resids = {}, {}, {}
 for tgt in targets:
     nan_diagnostic(X, Y[tgt], tgt, KEY1, KEY2)
     pipe = make_pipeline(StandardScaler(with_std=False), LinearRegression())
-    pipe.fit(X[first_cols], Y[tgt])
-    Y['fits'+tgt] = pd.Series(pipe.predict(X[first_cols]), index=X.index)
-    Y['resids'+tgt] = Y[tgt] - Y['fits'+tgt]
+    pipe.fit(X, Y[tgt])
+    fits[tgt] = pd.Series(pipe.predict(X), index=X.index)
+    resids[tgt] = Y[tgt] - fits[tgt]
     coefs[tgt] = pipe.named_steps["linearregression"].coef_
     intercepts[tgt] = pipe.named_steps["linearregression"].intercept_
+
+
+# ------------------------------------------------------------
+# 5.  Mahalanobis distance (old feature, unchanged)
+# ------------------------------------------------------------
+R = pd.concat(resids, axis=1)
+inv_cov = np.linalg.inv(np.cov(R.T))
+R["dist"] = R.apply(lambda r: mahalanobis(r.values, np.zeros(len(r)), inv_cov), axis=1)
+
 
 
 # ------------------------------------------------------------
@@ -227,14 +216,59 @@ print(coef_tbl.to_string(float_format=float_fmt))
 print("==========================================================================\n")
 
 
+# ------------------------------------------------------------
+#  END of new block
+# ------------------------------------------------------------
+
+if False:
+
+    # histogram for distance
+    plt.figure(figsize=(35, 20))
+    plt.hist(R["dist"], bins=800, alpha=0.8)
+    plt.title("Mahalanobis distance")
+    plt.xlabel("distance")
+    plt.ylabel("precincts")
+    plt.show()
+
+# ------------------------------------------------------------
+# 6.  Save top Mahalanobis outliers (old feature)
+# ------------------------------------------------------------
+
+
+#outliers = (
+#    R["dist"].nlargest(TOP_N).reset_index()  # MultiIndex -> columns
+#)
+#outliers.to_excel("top_outlier_precincts.xlsx", index=False)
+#print("Mahalanobis outliers written to top_outlier_precincts.xlsx")
+
+# ============================================================
+# 8A.  NEW: difference metric D  (c1 - c2) residual
+# ============================================================
 c1, c2 = "NAWROCKI Karol Tadeusz", "TRZASKOWSKI Rafał Kazimierz"
 
-Y["obs_diff"] = Y[c1] - Y[c2]
-Y["fit_diff"] = Y['fits' + c1] - Y['fits' + c2]
-Y["D"] = Y["obs_diff"] - Y["fit_diff"]            # Series on same MultiIndex
-Y["Drev"] = -Y["obs_diff"] - Y["fit_diff"]            # Series on same MultiIndex
+obs_diff = Y[c1] - Y[c2]
+fit_diff = fits[c1] - fits[c2]
+Y["D"] = obs_diff - fit_diff            # Series on same MultiIndex
+
+# ------------------------------------------------------------
+# 8B.  Plot histogram of D & relative D
+# ------------------------------------------------------------
+#fig, axes = plt.subplots(1, 2, figsize=(60, 20))
+plt.figure (figsize=(60, 20))
+
+#axes[0].hist(D, bins=800, alpha=0.8, color="steelblue")
+#axes[0].set(title="Histogram D = (c1−c2) − predicted", xlabel="D", ylabel="precincts")
+
+if False:
+    plt.hist(Y["D"], bins=601, alpha=0.8, color="steelblue",range=(-300, 300))
+    #plt.set(title="Histogram D = (c1−c2) − predicted", xlabel="D", ylabel="precincts",xlim=(-200, 200))
+    plt.title="Histogram D = (c1−c2) − predicted"
+    plt.xlabel="D"
+    plt.ylabel="precincts"
+    plt.xlim=(-200, 200)
 
 
+    plt.show()
 
 denom   = (Y[c1] + Y[c2])**.5
 D_rel   = Y["D"] / denom
@@ -242,63 +276,68 @@ D_rel   = D_rel.replace([np.inf, -np.inf], np.nan)   # guard against div-by-0
 D_rel   = D_rel.dropna()
 Y["Dnorm"] = D_rel
 
-Drev_rel   = Y["D"] / denom
-Drev_rel   = Drev_rel.replace([np.inf, -np.inf], np.nan)   # guard against div-by-0
-Drev_rel   = Drev_rel.dropna()
-Y["Drevnorm"] = D_rel
+if False:
+    plt.figure (figsize=(60, 20))
+    plt.hist(Y["Dnorm"], bins=800, alpha=0.8, color="indianred")
+    plt.title="Histogram of D / (c1+c2)^.5"
+    plt.xlabel="normalized D"
+    plt.ylabel="precincts"
 
-nowAfterInit = datetime.now()
+    plt.title="Histogram Dnorm = (c1−c2) − predicted (normalized)"
+    plt.xlabel="Dnorm"
+    plt.ylabel="precincts"
+    #plt.xlim=(-200, 200)
 
-writerY = pd.ExcelWriter("Y.xlsx", engine="xlsxwriter")
-Y.to_excel(writerY, sheet_name="Y", index=False)
 
-writerY.close()
-print (nowAfterInit-nowStart)
-
-fig, (ax1, ax2) = plt.subplots(
-    nrows=1, ncols=2, figsize=(60, 20), constrained_layout=True
-)
-
-# ── left-hand histogram: raw D ────────────────────────────────────────────────
-ax1.hist(
-    Y["D"], bins=601, alpha=0.8, color="steelblue", range=(-300, 300)
-)
-ax1.axvline(0, color="black", linewidth=0.8)          # central line at 0
-ax1.set_title("Histogram D = (c1−c2) − predicted")
-ax1.set_xlabel("D")
-ax1.set_ylabel("precincts")
-ax1.set_xlim(-200, 200)
-
-# ── right-hand histogram: normalised D ────────────────────────────────────────
-ax2.hist(
-    Y["Dnorm"], bins=800, alpha=0.8, color="indianred", range=(-10, 10)
-)
-ax2.axvline(0, color="black", linewidth=0.8)          # central line at 0
-ax2.set_title("Histogram Dnorm = (c1−c2) − predicted (normalized)")
-ax2.set_xlabel("normalized D")
-ax2.set_ylabel("precincts")
-ax2.set_xlim(-10, 10)
-
-plt.show()
-
+    plt.tight_layout()
+    plt.show()
 
 # ------------------------------------------------------------
 # 8C.  List ±100 outliers for D and for relative D
 # ------------------------------------------------------------
+GMINA = FIRST.set_index([KEY1, KEY2])["Gmina"]  # bring Gmina by MultiIndex
+
+#def export_outliers(series, name, k=100):
+#    pos = (
+#        series.nlargest(k)
+#        .rename("metric")
+#        .reset_index()
+#        .merge(GMINA.reset_index(), on=[KEY1, KEY2], how="left")
+#        [[KEY1, KEY2, "Gmina", "metric"]]
+#    )
+#    neg = (
+#        series.nsmallest(k)
+#        .rename("metric")
+#        .reset_index()
+#        .merge(GMINA.reset_index(), on=[KEY1, KEY2], how="left")
+#        [[KEY1, KEY2, "Gmina", "metric"]]
+#    )
+#    pos.to_excel(f"outliers_positive_{name}.xlsx", index=False)
+#    neg.to_excel(f"outliers_negative_{name}.xlsx", index=False)
+#    print(f"Wrote top ±{k} outliers for {name} "
+#          f"to outliers_positive_{name}.xlsx / outliers_negative_{name}.xlsx")
+#
+#export_outliers(D, "D")
+#export_outliers(D_rel, "D_rel")
+
 
 writer = pd.ExcelWriter("outliers.xlsx", engine="xlsxwriter")
 
 # ---------- helper: take any Series of scores ----------------
-TOP_N = Y.shape[0]//3
+BASE = FIRST.set_index([KEY1, KEY2])          # full original columns
+BASE2 = SECOND.set_index([KEY1, KEY2])          # full original columns
+TOP_N = BASE.shape[0]//3
 
 def sheet_name(label, sign):
     return f"{label}_{sign}"
 
-criterion = "Dnorm"
+large = Y["D"].nlargest(TOP_N)
+small = Y["D"].nsmallest(TOP_N)
 
-large = Y.nlargest(TOP_N, criterion)
-small = Y.nsmallest(TOP_N, criterion)
-mid = Y.nsmallest(TOP_N*2, criterion).nlargest(TOP_N, criterion)
+largeFull = large.to_frame().join(BASE2, how="left").reset_index() 
+smallFull = small.to_frame().join(BASE2, how="left").reset_index() 
+
+
 
 def add_outliers(series: pd.Series, label: str, k: int = TOP_N):
     for sign, slicer in [("pos", series.nlargest(k)),
@@ -307,10 +346,20 @@ def add_outliers(series: pd.Series, label: str, k: int = TOP_N):
         df = (
             slicer.rename("metric")
                   .to_frame()
-                  .join(Y, how="left")     # keep all original cols
+                  .join(BASE, how="left")     # keep all original cols
                   .reset_index()              # bring keys back as columns
         )
         df.to_excel(writer, sheet_name=sheet, index=False)
+
+# ---------- 6A. Mahalanobis ----------------------------------
+mah = (
+    R["dist"].nlargest(TOP_N)
+      .rename("metric")
+      .to_frame()
+      .join(BASE, how="left")
+      .reset_index()
+)
+mah.to_excel(writer, sheet_name="Mahalanobis", index=False)
 
 # ---------- 6B.  ±100 outliers for D and D_rel ---------------
 add_outliers(Y["D"],      "D")
@@ -321,7 +370,41 @@ writer.close()
 print(f"✓  All outlier tables written to outliers.xlsx")
 
 
+
+
+# ------------------------------------------------------------
+# 1.  Helper functions
+# ------------------------------------------------------------
+def nan_diagnostic(X, y, tgt_name, KEY1, KEY2):
+    cols_with_nan = X.columns[X.isna().any()].tolist()
+    y_nan = y.isna().any()
+    if not cols_with_nan and not y_nan:
+        return
+    mask = X[cols_with_nan].isna().any(axis=1) | y.isna()
+    offenders = (
+        pd.concat([X.loc[mask, cols_with_nan], y.loc[mask]], axis=1)
+        .reset_index()[[KEY1, KEY2] + cols_with_nan + [tgt_name]]
+    )
+    keys = offenders[[KEY1, KEY2]].astype(str).agg(" · ".join, axis=1)
+    print(f"\n❌ NaNs in target '{tgt_name}':")
+    for k in keys:
+        print("  -", k)
+    offenders.to_excel(f"nan_offenders_{tgt_name}.xlsx", index=False)
+    sys.exit(1)
+
+
+def assert_no_dupes(df, key_cols, label):
+    dup = df.duplicated(key_cols, keep=False)
+    if dup.any():
+        raise SystemExit(
+            f"\n❌ DUPLICATE KEYS in {label}:\n"
+            f"{df.loc[dup, key_cols].to_string(index=False)}\n"
+        )
+
 # CYFERKI
+
+# compound key
+KEY1, KEY2 = "Teryt Gminy", "Nr komisji"
 
 use2 = [
     'Liczba niewykorzystanych kart do głosowania',
@@ -420,9 +503,8 @@ def plot_histograms(
 
 histograms = {}
 pentagrams = {}
-#for ttt, nm in [(small, 'small'), (large, 'large')]:
-for ttt, nm in [(large, 'large')]:
-#for ttt, nm in [(small, 'small'), (mid, 'mid'), (large, 'large')]:
+#for ttt, nm in [(smallFull, 'small'), (largeFull, 'large')]:
+for ttt, nm in [(largeFull, 'large')]:
     for e in use2:
         s = [0]*10
         p = [0]*5
@@ -444,8 +526,273 @@ for ttt, nm in [(large, 'large')]:
 
 #haveHistograms = [e for e in use2 if e in histograms]
 plot_histograms([(e, histograms[e]) for e in histograms], p_conf=0.95
+                #,
+                #values_for_mean = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
                 )
 plot_histograms([(e, pentagrams[e]) for e in pentagrams], p_conf=0.95,
                 category_labels=['0 i 5','1 i 6', '2 i 7', '3 i 8', '4 i 9'])
-
+#plot_histograms([(titles[e], histograms[e]) for e in haveHistograms], p_conf=0.97
+#                #,values_for_mean = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
+#                )
+#plot_histograms([(titles[e], pentagrams[e]) for e in haveHistograms], p_conf=0.97,
+#                category_labels=['0 i 5','1 i 6', '2 i 7', '3 i 8', '4 i 9'])
 plt.show()
+
+sys.exit(0)
+
+
+def cl_bandOld(n, p_conf=0.95, p_cat=0.1):
+    """Two-sided normal-approx. band for Bin(n, p_cat) at confidence p_conf."""
+    z = abs(statistics.NormalDist().inv_cdf((1 - p_conf) / 2))
+    mean = n * p_cat
+    sd   = math.sqrt(n * p_cat * (1 - p_cat))
+    lo   = max(0, int(math.floor(mean - z * sd)))
+    hi   = min(n, int(math.ceil (mean + z * sd)))
+    return lo, hi
+
+def plot_histogramsOld(paired_histograms, p_conf=0.95):
+    """
+    paired_histograms : [(title, [c0, …, c9, n]), …]
+    p_conf            : confidence level, e.g. 0.95
+    """
+    colours = plt.cm.tab10.colors
+    for idx, (title, data) in enumerate(paired_histograms):
+        counts, n   = data[:10], data[10]
+        lo, hi      = cl_band(n, p_conf)
+        cat_idx     = range(10)
+        color       = colours[idx % len(colours)]
+        
+        fig, ax = plt.subplots(figsize=(7, 4))
+        ax.bar(cat_idx, counts, color=color)
+        ax.axhspan(lo, hi, color='k', alpha=0.4)          # confidence band
+        
+        for c, v in zip(cat_idx, counts):                  # annotate bars
+            ax.text(c, v + 0.02*max(max(counts), hi), str(v),
+                    ha='center', va='bottom', fontsize=9)
+        
+        ax.set_xticks(cat_idx)
+        ax.set_xlabel("category")
+        ax.set_ylabel("count")
+        ax.set_ylim(0, 1.15*max(max(counts), hi))
+        ax.set_title(f"{title}  |  n={n}, p={p_conf:.2f}, band=[{lo}, {hi}]")
+        fig.tight_layout()
+    plt.show()    
+
+# ---------- example ---------------------------------------------------------
+# Delete this block and supply your own data.
+#H = [
+#    [12,  9, 11, 15,  8, 10,  7,  9, 11,  8, 100],
+#    [ 8, 14,  6, 12, 11, 14, 12,  7,  6, 10, 100],
+#    [11, 10,  9, 10, 12,  8, 11,  7, 13,  9, 100],
+#    [13,  8, 10,  9, 12, 11,  7, 10,  9, 11, 100],
+#    [10, 12,  8, 11,  9, 13,  9, 12,  8,  8, 100],
+#    [ 9, 10, 12,  8, 13,  9, 11,  8, 11,  9, 100],
+#]
+
+
+
+
+
+print (SECOND['Liczba kopert na kartę do głosowania w\xa0głosowaniu korespondencyjnym wrzuconych do urny'])
+
+
+# replace blank KEY2 with 0 and cast to int
+for df in (FIRST, SECOND):
+    df[KEY2] = df[KEY2].replace("", 0).astype(int)
+FIRST[KEY1] = FIRST[KEY1].fillna(0).astype(int)
+
+assert_no_dupes(FIRST, [KEY1, KEY2], "FIRST")
+assert_no_dupes(SECOND, [KEY1, KEY2], "SECOND")
+
+columns1 = FIRST.columns.tolist()
+columns2 = SECOND.columns.tolist()
+
+print (columns1)
+print (columns2)
+sys.exit(0)
+
+# ------------------------------------------------------------
+# 3.  Design & target matrices
+# ------------------------------------------------------------
+cands = [
+    "NAWROCKI Karol Tadeusz",  # c1
+    "TRZASKOWSKI Rafał Kazimierz",  # c2
+    "BARTOSZEWICZ Artur",
+    "BIEJAT Magdalena Agnieszka",
+    "BRAUN Grzegorz Michał",
+    "HOŁOWNIA Szymon Franciszek",
+    "JAKUBIAK Marek",
+    "MACIAK Maciej",
+    "MENTZEN Sławomir Jerzy",
+    "SENYSZYN Joanna",
+    "STANOWSKI Krzysztof Jakub",
+    "WOCH Marek Marian",
+    "ZANDBERG Adrian Tadeusz",
+]
+first_cols = [
+    "Liczba uprawnionych w chwili zakończenia",
+    "zaświadczenia",
+    "Liczba głosów nieważnych",
+] + cands
+
+targets = [
+    "Liczba głosów nieważnych",
+    "NAWROCKI Karol Tadeusz",          # c1
+    "TRZASKOWSKI Rafał Kazimierz",     # c2
+]
+
+X = FIRST.set_index([KEY1, KEY2])[first_cols]
+Y = SECOND.set_index([KEY1, KEY2])[targets]
+
+# align common precincts
+X, Y = X.align(Y, join="inner", axis=0)
+print("Precincts analysed:", len(X))
+
+intercepts = {}
+# ------------------------------------------------------------
+# 4.  OLS fits & residuals
+# ------------------------------------------------------------
+coefs, fits, resids = {}, {}, {}
+for tgt in targets:
+    nan_diagnostic(X, Y[tgt], tgt, KEY1, KEY2)
+    pipe = make_pipeline(StandardScaler(with_std=False), LinearRegression())
+    pipe.fit(X, Y[tgt])
+    fits[tgt] = pd.Series(pipe.predict(X), index=X.index)
+    resids[tgt] = Y[tgt] - fits[tgt]
+    coefs[tgt] = pipe.named_steps["linearregression"].coef_
+    intercepts[tgt] = pipe.named_steps["linearregression"].intercept_
+
+
+# ------------------------------------------------------------
+# 5.  Mahalanobis distance (old feature, unchanged)
+# ------------------------------------------------------------
+R = pd.concat(resids, axis=1)
+inv_cov = np.linalg.inv(np.cov(R.T))
+R["dist"] = R.apply(lambda r: mahalanobis(r.values, np.zeros(len(r)), inv_cov), axis=1)
+
+
+
+# ------------------------------------------------------------
+# 5A.  >>> NEW <<<  Collect and display regression coefficients
+# ------------------------------------------------------------
+#  (Put this right after the model-fitting loop that fills `coefs`)
+
+# 1.  During the loop you already stored
+#       coefs[tgt]  →  NumPy array of slopes (same order as `first_cols`)
+#     Add intercepts alongside:
+#            intercepts[tgt] = pipe.named_steps["linearregression"].intercept_
+#     Make sure the loop above now records this:
+#       intercepts = {}
+
+# ------------------------------------------------------------
+#  BEGIN block to add just below the loop  --------------------
+# ------------------------------------------------------------
+
+predictor_names = ["Intercept"] + first_cols
+
+coef_tbl = pd.DataFrame(index=predictor_names)
+
+for tgt in targets:
+    coef_tbl[tgt] = [intercepts[tgt]] + coefs[tgt].tolist()
+
+# convert to percent & round to 4 decimal places
+coef_tbl = (coef_tbl * 100).round(2)
+
+# custom float formatter for aligned output
+float_fmt = lambda x: f"{x:10.2f}"
+
+print("\n================ Linear-Hypothesis Coefficients (% units) ================")
+print(coef_tbl.to_string(float_format=float_fmt))
+print("==========================================================================\n")
+
+
+# ------------------------------------------------------------
+#  END of new block
+# ------------------------------------------------------------
+
+
+
+# histogram for distance
+plt.figure(figsize=(35, 20))
+plt.hist(R["dist"], bins=800, alpha=0.8)
+plt.title("Mahalanobis distance")
+plt.xlabel("distance")
+plt.ylabel("precincts")
+plt.show()
+
+# ------------------------------------------------------------
+# 6.  Save top Mahalanobis outliers (old feature)
+# ------------------------------------------------------------
+TOP_N = 100
+outliers = (
+    R["dist"].nlargest(TOP_N).reset_index()  # MultiIndex -> columns
+)
+outliers.to_excel("top_outlier_precincts.xlsx", index=False)
+print("Mahalanobis outliers written to top_outlier_precincts.xlsx")
+
+# ============================================================
+# 8A.  NEW: difference metric D  (c1 - c2) residual
+# ============================================================
+c1, c2 = "NAWROCKI Karol Tadeusz", "TRZASKOWSKI Rafał Kazimierz"
+
+obs_diff = Y[c1] - Y[c2]
+fit_diff = fits[c1] - fits[c2]
+D = obs_diff - fit_diff            # Series on same MultiIndex
+
+# ------------------------------------------------------------
+# 8B.  Plot histogram of D & relative D
+# ------------------------------------------------------------
+#fig, axes = plt.subplots(1, 2, figsize=(60, 20))
+plt.figure (figsize=(60, 20))
+
+#axes[0].hist(D, bins=800, alpha=0.8, color="steelblue")
+#axes[0].set(title="Histogram D = (c1−c2) − predicted", xlabel="D", ylabel="precincts")
+
+plt.hist(D, bins=601, alpha=0.8, color="steelblue",range=(-300, 300))
+#plt.set(title="Histogram D = (c1−c2) − predicted", xlabel="D", ylabel="precincts",xlim=(-200, 200))
+plt.title="Histogram D = (c1−c2) − predicted"
+plt.xlabel="D"
+plt.ylabel="precincts"
+plt.xlim=(-200, 200)
+
+denom   = Y[c1] + Y[c2]
+D_rel   = D / denom
+D_rel   = D_rel.replace([np.inf, -np.inf], np.nan)   # guard against div-by-0
+D_rel   = D_rel.dropna()
+
+#axes[1].hist(D_rel, bins=800, alpha=0.8, color="indianred")
+#axes[1].set(title="Histogram of D / (c1+c2)", xlabel="relative D", ylabel="precincts")
+
+plt.tight_layout()
+plt.show()
+
+# ------------------------------------------------------------
+# 8C.  List ±100 outliers for D and for relative D
+# ------------------------------------------------------------
+GMINA = FIRST.set_index([KEY1, KEY2])["Gmina"]  # bring Gmina by MultiIndex
+
+def export_outliers(series, name, k=100):
+    pos = (
+        series.nlargest(k)
+        .rename("metric")
+        .reset_index()
+        .merge(GMINA.reset_index(), on=[KEY1, KEY2], how="left")
+        [[KEY1, KEY2, "Gmina", "metric"]]
+    )
+    neg = (
+        series.nsmallest(k)
+        .rename("metric")
+        .reset_index()
+        .merge(GMINA.reset_index(), on=[KEY1, KEY2], how="left")
+        [[KEY1, KEY2, "Gmina", "metric"]]
+    )
+    pos.to_excel(f"outliers_positive_{name}.xlsx", index=False)
+    neg.to_excel(f"outliers_negative_{name}.xlsx", index=False)
+    print(f"Wrote top ±{k} outliers for {name} "
+          f"to outliers_positive_{name}.xlsx / outliers_negative_{name}.xlsx")
+
+export_outliers(D, "D")
+export_outliers(D_rel, "D_rel")
+
+
+

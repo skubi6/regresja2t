@@ -273,9 +273,7 @@ plt.show()
 writer = pd.ExcelWriter("outliers.xlsx", engine="xlsxwriter")
 
 # ---------- helper: take any Series of scores ----------------
-BASE = FIRST.set_index([KEY1, KEY2])          # full original columns
-BASE2 = SECOND.set_index([KEY1, KEY2])          # full original columns
-TOP_N = BASE.shape[0]//3
+TOP_N = Y.shape[0]//3
 
 def sheet_name(label, sign):
     return f"{label}_{sign}"
@@ -284,9 +282,9 @@ large = Y["Dnorm"].nlargest(TOP_N)
 small = Y["Dnorm"].nsmallest(TOP_N)
 mid = Y["Dnorm"].nsmallest(TOP_N*2).nlargest(TOP_N)
 
-largeFull = large.to_frame().join(BASE2, how="left").reset_index() 
-smallFull = small.to_frame().join(BASE2, how="left").reset_index() 
-midFull = mid.to_frame().join(BASE2, how="left").reset_index() 
+largeFull = large.to_frame().join(Y, how="left").reset_index() 
+smallFull = small.to_frame().join(Y, how="left").reset_index() 
+midFull = mid.to_frame().join(Y, how="left").reset_index() 
 
 
 
@@ -297,7 +295,7 @@ def add_outliers(series: pd.Series, label: str, k: int = TOP_N):
         df = (
             slicer.rename("metric")
                   .to_frame()
-                  .join(BASE, how="left")     # keep all original cols
+                  .join(Y, how="left")     # keep all original cols
                   .reset_index()              # bring keys back as columns
         )
         df.to_excel(writer, sheet_name=sheet, index=False)

@@ -40,59 +40,60 @@ pis = {
 }
 
 pis = {
-       'Adama Nawary',
-       'Adama Nawary, Pawła Tanajno',
-       'Adriana Zandberga',
-       'Aj',
-       'Aldony Anny Skirgiełło',
-       'Andrzeja Jana Kasela',
-       'Artura Bartoszewicza',
-       'Dawida Bohdana Jackiewicza',
-       'Dominiki Jasińskiej',
-       'Eugeniusza Maciejewskiego',
-       'Grzegorza Kołek',
-       'Grzegorza Michała Bra',
-       'Grzegorza Michała Bra, Grzegorza Michała Brauna',
-       'Grzegorza Michała Brauna',
-       'Grzegorza Michała Brauna, Grzegorza Michała Bra',
-       'Jakuba Perkowskiego',
-       'Jakubiaka',
-       'Jana Wojciecha Kubania',
-       
-       'Jolanty Dudy',
-       'Kajłola Nawrockiego',
-       'Kajłola Nawrockiego, Karola Nawrockiego',
-       'Karola Nawrockiego',
-       'Katarzyny Anny Łysik',
-       'Katarzyny Cichos',
-       'Krzysztofa Andrzeja Sitko',
-       'Krzysztofa Jakuba Stanowskiego',
-       'Krzysztofa Tołwińskiego',
-       'Macieja Maciaka',
-       
-       'Marcina Bugajskiego',
-       'Marka Jakubiaka',
-       'Marka Wocha',
-       'Marty Ratuszyńskiej',
-       'Pawła Tanajno',
-       'Piotra Daniela Lechowicza',
-       'Piotra Szumlewicza',
-       'Roberta Śledzia',
-       'Roberta Więcko',
-       'Romltalda Starosielca',
-       'Romualda Starosielca',
-       'Sebastiana Rossa',
-       'Si',
-       'Sławomira Jerzego Mentzena',
-       'Stanisława Żółtka',
-       'Tomasza Ziółkowskiego',
-       'Wiesława Lewickiego',
-       'Włodzimierza Rynkowskiego',
-       'Wocha',
-       'Wocha, Marka Wocha',
-       'Wojciecha Papis',
-       'Zbigniewa Litke'
-
+    'Adama Nawary',
+    'Adama Nawary, Pawła Tanajno',
+    'Adriana Zandberga',
+    'Aj',
+    'Aldony Anny Skirgiełło',
+    'Aldony Anny Skirgiełło, Aldony Anny Skirgiełi',
+    'Andrzeja Jana Kasela',
+    'Artura Bartoszewicza',
+    'Dawida Bohdana Jackiewicza',
+    'Dominiki Jasińskiej',
+    'Eugeniusza Maciejewskiego',
+    'Grzegorza Kołek',
+    'Grzegorza Michała Bra',
+    'Grzegorza Michała Bra, Grzegorza Michała Brauna',
+    'Grzegorza Michała Brauna',
+    'Grzegorza Michała Brauna, Grzegorza Michała Bra',
+    'Jakuba Perkowskiego',
+    'Jakubiaka',
+    'Jana Wojciecha Kubania',
+    
+    'Jolanty Dudy',
+    'Kajłola Nawrockiego',
+    'Kajłola Nawrockiego, Karola Nawrockiego',
+    'Karola Nawrockiego',
+    'Katarzyny Anny Łysik',
+    'Katarzyny Cichos',
+    'Krzysztofa Andrzeja Sitko',
+    'Krzysztofa Jakuba Stanowskiego',
+    'Krzysztofa Tołwińskiego',
+    'Macieja Maciaka',
+    
+    'Marcina Bugajskiego',
+    'Marka Jakubiaka',
+    'Marka Wocha',
+    'Marty Ratuszyńskiej',
+    'Pawła Tanajno',
+    'Piotra Daniela Lechowicza',
+    'Piotra Szumlewicza',
+    'Roberta Śledzia',
+    'Roberta Więcko',
+    'Romltalda Starosielca',
+    'Romualda Starosielca',
+    'Sebastiana Rossa',
+    'Si',
+    'Sławomira Jerzego Mentzena',
+    'Stanisława Żółtka',
+    'Tomasza Ziółkowskiego',
+    'Wiesława Lewickiego',
+    'Włodzimierza Rynkowskiego',
+    'Wocha',
+    'Wocha, Marka Wocha',
+    'Wojciecha Papis',
+    'Zbigniewa Litke'
+    
     }
 
 antypis = {
@@ -105,7 +106,8 @@ antypis = {
     'Szymona Hołowni',
     'Szymona Hoi',
     'Adriana Zandberga',
-    'Joanny Senyszyn',    
+    'Joanny Senyszyn',
+    'Rafała Trzaskowskiego, Rafai',
     
 }
 
@@ -124,10 +126,10 @@ def classify (row):
     if b in antypis:
         countPis -= 1
 
-    if a != '' and a != np.NaN and a not in znaneKomitety:
+    if a != '' and not pd.isna (a) and a not in znaneKomitety:
         print ('Nieznany komitet', a)
 
-    if b != '' and a != np.NaN and b not in znaneKomitety:
+    if b != '' and not pd.isna(b) and b not in znaneKomitety:
         print ('Nieznany komitet', b)
 
     if 0 <countPis:
@@ -136,6 +138,76 @@ def classify (row):
         return  "#0066CC"  # "blue"
     else:
         return "black"
+
+def squash(Y, Ylim, K):
+    """
+    For -Ylim <= Y <= Ylim: returns Y.
+    For Y > Ylim:       returns Ylim + K*(Y - Ylim).
+    For Y < -Ylim:      returns -Ylim + K*(Y + Ylim).
+    """
+    return np.where(
+        Y >  Ylim,  Ylim + K*(Y -  Ylim),
+    np.where(
+        Y < -Ylim, -Ylim + K*(Y + Ylim),
+                  Y
+    ))
+
+
+def squash_line_segments(ax, Ylimit, K, sign=+1, **plot_kw):
+    """
+    Draw the squashed diagonal on *ax*.
+
+    Parameters
+    ----------
+    ax        : matplotlib Axes in which the scatter already lives
+    Ylimit    : vertical cut-off (positive scalar)
+    K         : compression factor (0 < K < 1)
+    sign      : +1 → line for Y =  X
+                -1 → line for Y = –X
+    **plot_kw : forwarded to ax.plot (e.g. color, linewidth)
+    """
+    xmin, xmax = ax.get_xlim()
+
+    # convenience aliases
+    s = sign                  #  +1 or -1
+    L = Ylimit
+
+    # ---- middle segment (slope ±1, exists where |x| ≤ L) ----
+    mid_x0 = max(xmin, -L)
+    mid_x1 = min(xmax,  L)
+    if mid_x0 < mid_x1:                      # segment visible?
+        ax.plot([mid_x0, mid_x1],
+                [s*mid_x0, s*mid_x1],
+                **plot_kw)
+
+    if xmax >  L:
+        x0, x1 =  L, xmax
+        y0_raw, y1_raw = s*x0, s*x1            #  y0_raw is ±L
+        # y0 remains ±L, y1 gets squashed
+        y0 =  s*L
+        y1 = (-L + K*(y1_raw + L)) if y1_raw < -L else (L + K*(y1_raw - L))
+        ax.plot([x0, x1], [y0, y1], **plot_kw)
+
+    # ---- left outer segment (x < –L) ----
+    if xmin < -L:
+        #x0, x1 = -L, xmin
+        # raw y = s*x ; here raw-y is outside the band, so squash:
+        #   if raw-y >  L :   y =  L + K*(raw-y - L)
+        #   if raw-y < –L :   y = -L + K*(raw-y + L)
+        #y0_raw, y1_raw = s*x0, s*x1
+        #y0 = -s*L
+        #y1 = (-L + K*(y1_raw + L)) if y1_raw < -L else (L + K*(y1_raw - L))
+        #y1 = (L + K*(y0_raw - L)) if y0_raw > L else (-L + K*(y0_raw + L))
+        ax.plot([-L, xmin], [-s*L, s*((xmin+L)*K-L)], **plot_kw)
+
+    # ---- right outer segment (x >  L) ----
+
+
+Ylimit_D = 300    # ← your chosen limit for D
+K_D      = 0.2    # ← your chosen squeeze factor
+
+Ylimit_Dnorm = 5    # ← your chosen limit for D
+K_Dnorm      = 0.2    # ← your chosen squeeze factor
 
 nowStart = datetime.now()
 
@@ -156,49 +228,65 @@ denom = (Y[c1] + Y[c2]) ** 0.5
 obs_norm  = Y["obs_diff"]  / denom
 fit_norm  = Y["fit_diff"]  / denom
 
-fig_raw, ax_raw = plt.subplots(figsize=(38.4, 21.6), dpi=100)
-ax_raw.scatter(
-    Y["fit_diff"],
-    Y["obs_diff"],
-    s=4, marker=".", c=Y["color"], alpha=0.8
-)
-ax_raw.axvline(0, color="grey", linewidth=0.8)
-ax_raw.axhline(0, color="grey", linewidth=0.8)
-ax_raw.set_xlabel("fit_diff")
-ax_raw.set_ylabel("obs_diff")
-ax_raw.set_title("obs_diff vs fit_diff")
-fig_raw.tight_layout()
+if False:
+    fig_raw, ax_raw = plt.subplots(figsize=(38.4, 21.6), dpi=100)
+    ax_raw.scatter(
+        Y["fit_diff"],
+        Y["obs_diff"],
+        s=8, marker=".", c=Y["color"], alpha=0.8
+    )
+    ax_raw.axvline(0, color="grey", linewidth=0.8)
+    ax_raw.axhline(0, color="grey", linewidth=0.8)
+    ax_raw.set_xlabel("fit_diff")
+    ax_raw.set_ylabel("obs_diff")
+    ax_raw.set_title("obs_diff vs fit_diff")
+    fig_raw.tight_layout()
 
-# ---------- Window 2 : normalised --------------------------------------------
-fig_norm, ax_norm = plt.subplots(figsize=(38.4, 21.6), dpi=100)
-ax_norm.scatter(
-    fit_norm,
-    obs_norm,
-    s=4, marker=".", color=Y["color"], alpha=0.8
-)
-ax_norm.axvline(0, color="grey", linewidth=0.8)
-ax_norm.axhline(0, color="grey", linewidth=0.8)
-ax_norm.set_xlabel("fit_diff (norm)")
-ax_norm.set_ylabel("obs_diff (norm)")
-ax_norm.set_title("Normalised obs_diff vs fit_diff")
-fig_norm.tight_layout()
+    # ---------- Window 2 : normalised --------------------------------------------
+    fig_norm, ax_norm = plt.subplots(figsize=(38.4, 21.6), dpi=100)
+    ax_norm.scatter(
+        fit_norm,
+        obs_norm,
+        s=6, marker=".", color=Y["color"], alpha=0.8
+    )
+    ax_norm.axvline(0, color="grey", linewidth=0.8)
+    ax_norm.axhline(0, color="grey", linewidth=0.8)
+
+    ax_Dnorm.axhline( Ylimit_Dnorm, color="grey", linewidth=0.8)
+    ax_Dnorm.axhline(-Ylimit_Dnorm, color="grey", linewidth=0.8)
+
+    ax_norm.set_xlabel("fit_diff (norm)")
+    ax_norm.set_ylabel("obs_diff (norm)")
+    ax_norm.set_title("Normalised obs_diff vs fit_diff")
+    fig_norm.tight_layout()
 
 fig_D, ax_D = plt.subplots(figsize=(38.4, 21.6), dpi=100)
+D_trans = squash(Y["D"], Ylimit_D, K_D)
 ax_D.scatter(
     Y["fit_diff"],
-    Y["D"],
-    s=6, marker=".", color=Y["color"], alpha=0.8
+    D_trans,
+    s=8, marker=".", color=Y["color"], alpha=0.8
 )
-ax_D.axvline(0, color="grey", linewidth=0.8)
-ax_D.axhline(0, color="grey", linewidth=0.8)
 
 
 xmin, xmax = ax_D.get_xlim()
 x_vals = np.array([xmin, xmax])
-ax_D.plot(x_vals,  x_vals,  color="grey", linewidth=0.8)  # X = Y
-ax_D.plot(x_vals, -x_vals,  color="grey", linewidth=0.8)  # X = -Y
+#ax_D.plot(x_vals,  x_vals,  color="grey", linewidth=0.8)  # X = Y
+#ax_D.plot(x_vals, -x_vals,  color="grey", linewidth=0.8)  # X = -Y
 
-ax_D.set_ylim(-700, 700)   # ← pick your ymin,ymax here
+ax_D.set_ylim(-Ylimit_D*1.3, Ylimit_D*1.3)   # ← pick your ymin,ymax here
+
+ax_D.axvline(0, color="grey", linewidth=0.8)
+ax_D.axhline(0, color="grey", linewidth=0.8)
+
+ax_D.axhline( Ylimit_D, color="grey", linewidth=0.8)
+ax_D.axhline(-Ylimit_D, color="grey", linewidth=0.8)
+
+squash_line_segments(ax_D,     Ylimit_D,     K_D,  sign=+1,
+                     color="grey", linewidth=0.8)
+squash_line_segments(ax_D,     Ylimit_D,     K_D,  sign=-1,
+                     color="grey", linewidth=0.8)
+
 
 ax_D.set_xlabel("fit_diff")
 ax_D.set_ylabel("D")
@@ -206,10 +294,12 @@ ax_D.set_title("obs_diff vs fit_diff")
 fig_D.tight_layout()
 
 # ---------- Window 2 : normalised --------------------------------------------
+Dnorm_trans = squash(Y["Dnorm"], Ylimit_Dnorm, K_Dnorm)
+
 fig_Dnorm, ax_Dnorm = plt.subplots(figsize=(38.4, 21.6), dpi=100)
 ax_Dnorm.scatter(
     fit_norm,
-    Y["Dnorm"],
+    Dnorm_trans,
     s=6, marker=".", color=Y["color"], alpha=0.8
 )
 ax_Dnorm.axvline(0, color="grey", linewidth=0.8)
@@ -217,10 +307,23 @@ ax_Dnorm.axhline(0, color="grey", linewidth=0.8)
 
 xmin, xmax = ax_Dnorm.get_xlim()
 x_vals = np.array([xmin, xmax])
-ax_Dnorm.plot(x_vals,  x_vals,  color="grey", linewidth=0.8)  # X = Y
-ax_Dnorm.plot(x_vals, -x_vals,  color="grey", linewidth=0.8)  # X = -Y
+#y1n = squash(x_vals, Ylimit_Dnorm, K_Dnorm)
+#y2n = squash(-x_vals, Ylimit_Dnorm, K_Dnorm)
+#ax_Dnorm.plot(x_vals, y1n, color="grey", linewidth=0.8)
+#ax_Dnorm.plot(x_vals, y2n, color="grey", linewidth=0.8)
+
+#ax_Dnorm.plot(x_vals,  x_vals,  color="grey", linewidth=0.8)  # X = Y
+#ax_Dnorm.plot(x_vals, -x_vals,  color="grey", linewidth=0.8)  # X = -Y
 ax_Dnorm.set_xlim(xmin, xmax)
-ax_Dnorm.set_ylim(-12, 12)   # ← pick your ymin,ymax here
+ax_Dnorm.set_ylim(-Ylimit_Dnorm*1.3, Ylimit_Dnorm*1.3)   # ← pick your ymin,ymax here
+
+ax_Dnorm.axhline( Ylimit_Dnorm, color="grey", linewidth=0.8)
+ax_Dnorm.axhline(-Ylimit_Dnorm, color="grey", linewidth=0.8)
+
+squash_line_segments(ax_Dnorm, Ylimit_Dnorm, K_Dnorm, sign=+1,
+                     color="grey", linewidth=0.8)
+squash_line_segments(ax_Dnorm, Ylimit_Dnorm, K_Dnorm, sign=-1,
+                     color="grey", linewidth=0.8)
 
 ax_Dnorm.set_xlabel("fit_diff (norm)")
 ax_Dnorm.set_ylabel("D (norm)")

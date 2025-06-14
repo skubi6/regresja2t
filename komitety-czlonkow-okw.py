@@ -25,6 +25,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
 import datetime
 import sys
+import hashlib, base64
+
 # ─────────── konfiguracja ────────────
 #DELEGATURY = [
 #    "jelenia-gora","legnica","walbrzych","wroclaw","bydgoszcz","torun",
@@ -81,7 +83,9 @@ SKIP_URL_FRAGMENTS = (
     "wybory-uzupelniajace",
     "sprawozdania-finansowe",
     "wygasniecie-mandatu",
-    "konkurs-wybieram-wybory"
+    "konkurs-wybieram-wybory",
+    "informacje-prasowe",
+    "dla-mediow",
 )
 
 DATE_THRESHOLD = datetime.datetime(2025, 4, 20)          # 20 April 2025
@@ -121,7 +125,7 @@ DELEGATURYbase = {
     # Zachodniopomorskie
     "koszalin", "szczecin",
 }
-DELEGATURYfull = {
+DELEGATURYfull = [
 'biala-podlaska',
 'bialystok',
 'bielsko-biala',
@@ -172,11 +176,66 @@ DELEGATURYfull = {
 'wroclaw',
 'zamosc',
 'zielona-gora',
-}
+]
 
-DELEGATURY = [x for x in DELEGATURYfull]
+#DELEGATURY = [x for x in DELEGATURYfull]
 
-#DELEGATURY = ['lublin']
+#DELEGATURY = DELEGATURYfull
+DELEGATURY = [
+'biala-podlaska',
+'bialystok',
+'bielsko-biala',
+'bydgoszcz',
+'chelm',
+'ciechanow',
+'czestochowa',
+'danewyborcze',
+'elblag',
+'gdansk',
+'gorzow-wielkopolski',
+'jelenia-gora',
+'kalisz',
+'katowice',
+'kielce',
+'konin',
+'koszalin',
+'krakow',
+'krosno',
+'legnica',
+'leszno',
+'lodz',
+'lomza',
+'lublin',
+'nowy-sacz',
+'olsztyn',
+'opole',
+'ostroleka',
+'pila',
+'piotrkow-trybunalski',
+'plock',
+'poznan',
+'przemysl',
+'radom',
+'rzeszow',
+'siedlce',
+'sieradz',
+'skierniewice',
+'slupsk',
+'suwalki',
+'szczecin',
+'tarnobrzeg',
+'tarnow',
+'torun',
+'walbrzych',
+'warszawa',
+'wloclawek',
+'wroclaw',
+'zamosc',
+'zielona-gora',
+]
+
+
+#DELEGATURY = ['warszawa']
 
 #HDR_GMINA_RE = re.compile(
 #    r"\bw\s+(mieście|gminie)\s+([A-ZŁŚŻŹĆĄĘÓŃ][\w\s\-]*)",
@@ -223,10 +282,10 @@ def list_pdfs_for_delegatura(city: str, max_depth: int = 6) -> list[str]:
         url, depth, preselected = queue[0]
         queue = queue[1:]
         if url in seen:
-            #print ('   '*depth + '   ' +'seen ', url)
+            print ('   '*depth + '   ' +'seen ', url)
             continue
         if depth > max_depth:
-            #print ('   '*depth + '   ' +'deep ', depth, max_depth, url)
+            print ('   '*depth + '   ' +'deep ', depth, max_depth, url)
             continue
         seen.add(url)
         try:
@@ -245,17 +304,19 @@ def list_pdfs_for_delegatura(city: str, max_depth: int = 6) -> list[str]:
             if any(frag in lhref for frag in SKIP_URL_FRAGMENTS):
                 continue
             lPreselected = preselected or any (
-                k in lhref for k in ("postanowienie","skladach","skladzie","powol","sklad","okw"))
+                k in lhref for k in ("postanowienie","skladach","skladzie",
+                                     "powol","sklad","okw",
+                                     "obwody-glosowania"))
             
             #if lhref.endswith(".pdf") and "2025" in lhref and any(
             if lhref.endswith(".pdf") and lPreselected:
                 print ('   '*depth + '   ' +'pdf   ', href)
                 pdfs.add(href)
             elif href.startswith(miniroot) and not lhref.endswith('.jpg'):
-                #print ('   '*depth + '   ' +'append', depth+1, href)
+                print ('   '*depth + '   ' +'append', depth+1, href)
                 queue.append((href, depth+1, lPreselected))
-            #else:
-                #print ('   '*depth + '   ' +'ignore', href)
+            else:
+                print ('   '*depth + '   ' +'ignore', href)
     return sorted(pdfs)
 
 # ---------- 2. pobieranie ----------
@@ -371,78 +432,24 @@ def parse_pdf(path: Path) -> list[dict]:
             })
     return rows
 
+def digest6_64(text: str) -> str:
+    """
+    64-char alphabet digest (A–Z a–z 0–9 - _), 6 chars long.
+    6 base-64 symbols = 36 bits of entropy.
+    """
+    raw = hashlib.sha256(text.encode()).digest()        # 32-byte hash
+    b64 = base64.urlsafe_b64encode(raw).decode().rstrip('=')  # URL-safe base-64
+    return b64[:6]                                      # first 6 symbols
 
-def parse_pdfO2(path: Path) -> list[dict]:
-    with pdfplumber.open(path) as pdf:
-        text = "\n".join(
-            p.extract_text(x_tolerance=2) or "" for p in pdf.pages
-        )
-
-    # ➊  spróbuj złapać gminę z nagłówka całego dokumentu
-    m_top = HDR_GMINA_RE.search(text[:600])      # wystarczy początek pliku
-    gmina_top = None
-    if m_top:
-        prefix = "m." if m_top.group(1).lower().startswith("mie") else "gm."
-        gmina_top = f"{prefix} {m_top.group(2).strip()}"
-
-    matches = list(HDR_RE.finditer(text))
-    rows = []
-
-    for i, m in enumerate(matches):
-        # ➋  jeśli HDR_RE znalazł własną gminę – bierz tę,
-        #    w przeciwnym razie użyj gmina_top
-        gmina = m.group(1).strip() if m.group(1) else gmina_top
-
-        komisja_nr   = int(m.group(2))
-        komisja_addr = m.group(3).strip().rstrip(", ")
-
-        # ─ fallback „z adresu” tylko gdy gminy wciąż brak
-        if not gmina:
-            tail_city = komisja_addr.split(",")[-1].strip()
-            if re.fullmatch(r"[A-Za-zÀ-ž\s\-]{2,}", tail_city):
-                gmina = f"m. {tail_city}"
-
-        start = m.end()
-        end   = matches[i + 1].start() if i + 1 < len(matches) else len(text)
-        segment = text[start:end].replace("\n", " ")
-
-        for mem in MEMBER_RE.finditer(segment):
-            rows.append({
-                "pdf":           path.name,
-                "gmina":         gmina,            # ← już zawsze wypełnione
-                "komisja_nr":    komisja_nr,
-                "komisja_adres": komisja_addr,
-                "czlonek":       " ".join(mem.group(1).split()),
-                "komitet":       " ".join(mem.group(2).split()),
-            })
-    return rows
-
-
-def parse_pdfOld(path: Path) -> list[dict]:
-    with pdfplumber.open(path) as pdf:
-        text = "\n".join(p.extract_text(x_tolerance=2) or "" for p in pdf.pages)
-
-    matches = list(HDR_RE.finditer(text))
-    rows = []
-
-    for i, m in enumerate(matches):
-        gmina        = m.group(1).strip() if m.group(1) else None
-        komisja_nr   = int(m.group(2))
-        komisja_addr = m.group(3).strip().rstrip(", ")
-        start        = m.end()
-        end          = matches[i+1].start() if i+1 < len(matches) else len(text)
-        segment      = text[start:end].replace("\n"," ")
-
-        for mem in MEMBER_RE.finditer(segment):
-            rows.append({
-                "pdf"          : path.name,
-                "gmina"        : gmina,
-                "komisja_nr"   : komisja_nr,
-                "komisja_adres": komisja_addr,
-                "czlonek"      : " ".join(mem.group(1).split()),
-                "komitet"      : " ".join(mem.group(2).split()),
-            })
-    return rows
+def make_outfile(url: str, out_dir: Path) -> Path:
+    """
+    <basename-no-ext>-<digest6_64>.<original-ext>
+    Keeps the original .pdf / .PDF case.
+    """
+    p    = Path(url)
+    stem = p.stem               # basename without extension
+    ext  = p.suffix             # '.pdf' or '.PDF'
+    return out_dir / f"{stem}-{digest6_64(url)}{ext}"
 
 # ---------- 4. API eksportowe ----------
 def extract_okw(
@@ -464,7 +471,7 @@ def extract_okw(
 
         # pobieranie
         with ThreadPoolExecutor(max_workers=n_workers) as ex:
-            fut={ex.submit(download, url, OUT_DIR/Path(url).name):url for url in links}
+            fut={ex.submit(download, url, make_outfile(url, OUT_DIR)):url for url in links}
             list(tqdm(as_completed(fut), total=len(fut), desc="Pobieram PDF-y"))
 
     # parsowanie
@@ -493,7 +500,7 @@ if __name__ == "__main__":
         save_excel="OKW_2025_full.xlsx",
         save_csv  =None,
         save_sqlite=None,
-        partOne=False,
+        partOne=True,
         partTwo=True,
     )
     print(df.head(), "\n\nŁącznie rekordów:", len(df))

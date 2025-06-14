@@ -4,7 +4,7 @@ commission_merge.py
 Joins two PKW spreadsheets:
 
   • sklad_komisji_obwodowych_w_drugiej_turze_utf8.xlsx
-  • OKW_2025_full.xlsx.gz2          (gzip-compressed .xlsx)
+  • OKW_2025_full.xlsx
 
 Creates one row per commission and, for every member, six attributes:
   name · candidate · uzupel · found · contradict
@@ -32,7 +32,7 @@ ROLE_ORDER = {
     "Przewodniczący"                : 0,
     "Zastępca Przewodniczącego"     : 1,
 }
-CAND_RE    = re.compile(r"POLSKIEJ\s+([A-ZŁŚŻŹĆĄĘÓŃ ]+)", re.I)
+CAND_RE    = re.compile(r"RZECZYPOSPOLITEJ POLSKIEJ\s+([A-ZŁŚŻŹĆĄĘÓŃ ]+)", re.I)
 STRIP_TOK  = r"\b(gm\.?|gmina|m\.)\b"
 
 def strip_accents(txt: str) -> str:
@@ -50,6 +50,12 @@ def norm_name(txt: str) -> str:
     #print ('<' + str(txt) + '> to <'+ res + '>')    
     return res
 
+def norm_gmina_sklad(gmina, powiat: str) -> str:
+    if 'Warszawa' == powiat:
+        return norm_gmina ('m. Warszawa')
+    else:
+        return norm_gmina (gmina)
+    
 def norm_gmina(txt: str) -> str:
     txt = str(txt).split("\n", 1)[0]               # drop “Załącznik …”
     txt = re.sub(STRIP_TOK, "", txt, flags=re.I)
@@ -81,7 +87,11 @@ print ('mark 2')
 # --------------------------------------------------------------------
 
 # 2.  ──  Normalise keys  ───────────────────
-df_sklad["gmina_norm"] = df_sklad["Nazwa gminy"].map(norm_gmina)
+#df_sklad["gmina_norm"] = df_sklad["Nazwa gminy"].map(norm_gmina)
+df_sklad["gmina_norm"] = [
+    norm_gmina_sklad(g, p)
+    for g, p in zip(df_sklad["Nazwa gminy"], df_sklad["Powiat"])
+]
 df_sklad["name_norm"]  = df_sklad["Nazwisko i imiona"].map(norm_name)
 df_sklad["comm_id"]    = list(zip(df_sklad["gmina_norm"],
                                   df_sklad["Nr obw."].astype(int)))
@@ -109,17 +119,6 @@ okw_by_comm = {cid: grp for cid, grp in df_okw.groupby("comm_id")}
 
 # 3.  ──  Build output rows  ────────────────
 out_rows  : list[dict] = []
-
-
-
-
-
-
-
-
-
-
-
 
 # ---------------- ➊ helper: fast index by (powiat, nr_obwodu) -----------
 # build once, right after df_okw is ready

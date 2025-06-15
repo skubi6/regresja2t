@@ -19,7 +19,6 @@ KEY1, KEY2 = "Teryt Gminy", "Nr komisji"
 c1, c2 = "NAWROCKI Karol Tadeusz", "TRZASKOWSKI Rafał Kazimierz"
 
 DATA_DIR = Path(".")
-Y = pd.read_excel(DATA_DIR / "Y.xlsx")
 EXTRA = pd.read_excel(DATA_DIR / "commission_combined.xlsx")
 EXTRA.rename(columns={"Nr obw.": "Nr komisji", "TERYT gminy" : "Teryt Gminy"}, inplace=True)
 
@@ -27,18 +26,25 @@ dup_mask  = EXTRA.duplicated([KEY1, KEY2], keep=False)
 dup_keys  = EXTRA.loc[dup_mask, [KEY1, KEY2]].drop_duplicates()
 n_dupes   = len(dup_keys)
 
-Y = Y.merge(
-    EXTRA,
-    #left_index=True,
-    on=[KEY1, KEY2],
-    how="left",
-    indicator=True,
-    suffixes=("", "_extra"),
-)
+def mergeY (label):
+    Y = pd.read_excel(DATA_DIR / f"Y{label}.xlsx")
 
-writerY = pd.ExcelWriter("Ymerged.xlsx", engine="xlsxwriter")
-Y.to_excel(writerY, sheet_name="Y", index=False)
+    Y = Y.merge(
+        EXTRA,
+        #left_index=True,
+        on=[KEY1, KEY2],
+        how="left",
+        indicator=True,
+        suffixes=("", "_extra"),
+    )
 
-writerY.close()
+    writerY = pd.ExcelWriter(f"Y{label}-merged.xlsx", engine="xlsxwriter")
+    Y.to_excel(writerY, sheet_name="Y", index=False)
+
+    writerY.close()
+
+for l in ["", "miasta", "wies", "zagranica"]:
+    print('label', l)
+    mergeY(l)
 nowAfterInit = datetime.now()
 print (nowAfterInit-nowStart)

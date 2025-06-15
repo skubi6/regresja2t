@@ -12,9 +12,9 @@ import matplotlib.pyplot as plt
 import math
 import statistics
 from datetime import datetime
+import argparse
 
-
-pis = {
+pisOld = {
     'Marka Jakubiaka',
     'Jakubiaka',
     'Krzysztofa Jakuba Stanowskiego',
@@ -215,218 +215,6 @@ KEY1, KEY2 = "Teryt Gminy", "Nr komisji"
 c1, c2 = "NAWROCKI Karol Tadeusz", "TRZASKOWSKI Rafał Kazimierz"
 
 DATA_DIR = Path(".")
-Y = pd.read_excel(DATA_DIR / "Ymerged.xlsx")
-Y["color"] = Y.apply(classify, axis=1)
-
-nowAfterInit = datetime.now()
-print (nowAfterInit-nowStart)
-
-nowRead = datetime.now()
-
-print ('reading time', nowRead-nowStart)
-denom = (Y[c1] + Y[c2]) ** 0.5
-obs_norm  = Y["obs_diff"]  / denom
-fit_norm  = Y["fit_diff"]  / denom
-
-if False:
-    fig_raw, ax_raw = plt.subplots(figsize=(38.4, 21.6), dpi=100)
-    ax_raw.scatter(
-        Y["fit_diff"],
-        Y["obs_diff"],
-        s=8, marker=".", c=Y["color"], alpha=0.8
-    )
-    ax_raw.axvline(0, color="grey", linewidth=0.8)
-    ax_raw.axhline(0, color="grey", linewidth=0.8)
-    ax_raw.set_xlabel("fit_diff")
-    ax_raw.set_ylabel("obs_diff")
-    ax_raw.set_title("obs_diff vs fit_diff")
-    fig_raw.tight_layout()
-
-    # ---------- Window 2 : normalised --------------------------------------------
-    fig_norm, ax_norm = plt.subplots(figsize=(38.4, 21.6), dpi=100)
-    ax_norm.scatter(
-        fit_norm,
-        obs_norm,
-        s=6, marker=".", color=Y["color"], alpha=0.8
-    )
-    ax_norm.axvline(0, color="grey", linewidth=0.8)
-    ax_norm.axhline(0, color="grey", linewidth=0.8)
-
-    ax_Dnorm.axhline( Ylimit_Dnorm, color="grey", linewidth=0.8)
-    ax_Dnorm.axhline(-Ylimit_Dnorm, color="grey", linewidth=0.8)
-
-    ax_norm.set_xlabel("fit_diff (norm)")
-    ax_norm.set_ylabel("obs_diff (norm)")
-    ax_norm.set_title("Normalised obs_diff vs fit_diff")
-    fig_norm.tight_layout()
-
-fig_D, ax_D = plt.subplots(figsize=(38.4, 21.6), dpi=100)
-D_trans = squash(Y["D"], Ylimit_D, K_D)
-ax_D.scatter(
-    Y["fit_diff"],
-    D_trans,
-    s=8, marker=".", color=Y["color"], alpha=0.8
-)
-
-
-xmin, xmax = ax_D.get_xlim()
-x_vals = np.array([xmin, xmax])
-#ax_D.plot(x_vals,  x_vals,  color="grey", linewidth=0.8)  # X = Y
-#ax_D.plot(x_vals, -x_vals,  color="grey", linewidth=0.8)  # X = -Y
-
-ax_D.set_ylim(-Ylimit_D*1.3, Ylimit_D*1.3)   # ← pick your ymin,ymax here
-
-ax_D.axvline(0, color="grey", linewidth=0.8)
-ax_D.axhline(0, color="grey", linewidth=0.8)
-
-ax_D.axhline( Ylimit_D, color="grey", linewidth=0.8)
-ax_D.axhline(-Ylimit_D, color="grey", linewidth=0.8)
-
-squash_line_segments(ax_D,     Ylimit_D,     K_D,  sign=+1,
-                     color="grey", linewidth=0.8)
-squash_line_segments(ax_D,     Ylimit_D,     K_D,  sign=-1,
-                     color="grey", linewidth=0.8)
-
-
-ax_D.set_xlabel("fit_diff")
-ax_D.set_ylabel("D")
-ax_D.set_title("obs_diff vs fit_diff")
-fig_D.tight_layout()
-
-# ---------- Window 2 : normalised --------------------------------------------
-Dnorm_trans = squash(Y["Dnorm"], Ylimit_Dnorm, K_Dnorm)
-
-fig_Dnorm, ax_Dnorm = plt.subplots(figsize=(38.4, 21.6), dpi=100)
-ax_Dnorm.scatter(
-    fit_norm,
-    Dnorm_trans,
-    s=6, marker=".", color=Y["color"], alpha=0.8
-)
-ax_Dnorm.axvline(0, color="grey", linewidth=0.8)
-ax_Dnorm.axhline(0, color="grey", linewidth=0.8)
-
-xmin, xmax = ax_Dnorm.get_xlim()
-x_vals = np.array([xmin, xmax])
-#y1n = squash(x_vals, Ylimit_Dnorm, K_Dnorm)
-#y2n = squash(-x_vals, Ylimit_Dnorm, K_Dnorm)
-#ax_Dnorm.plot(x_vals, y1n, color="grey", linewidth=0.8)
-#ax_Dnorm.plot(x_vals, y2n, color="grey", linewidth=0.8)
-
-#ax_Dnorm.plot(x_vals,  x_vals,  color="grey", linewidth=0.8)  # X = Y
-#ax_Dnorm.plot(x_vals, -x_vals,  color="grey", linewidth=0.8)  # X = -Y
-ax_Dnorm.set_xlim(xmin, xmax)
-ax_Dnorm.set_ylim(-Ylimit_Dnorm*1.3, Ylimit_Dnorm*1.3)   # ← pick your ymin,ymax here
-
-ax_Dnorm.axhline( Ylimit_Dnorm, color="grey", linewidth=0.8)
-ax_Dnorm.axhline(-Ylimit_Dnorm, color="grey", linewidth=0.8)
-
-squash_line_segments(ax_Dnorm, Ylimit_Dnorm, K_Dnorm, sign=+1,
-                     color="grey", linewidth=0.8)
-squash_line_segments(ax_Dnorm, Ylimit_Dnorm, K_Dnorm, sign=-1,
-                     color="grey", linewidth=0.8)
-
-ax_Dnorm.set_xlabel("fit_diff (norm)")
-ax_Dnorm.set_ylabel("D (norm)")
-ax_Dnorm.set_title("Normalised obs_diff vs fit_diff")
-fig_Dnorm.tight_layout()
-
-
-#fig_scatter = plt.figure(figsize=(38.4, 21.6), dpi=100)
-
-#ax = fig_scatter.add_subplot(1, 1, 1)
-#ax.scatter(
-#    Y["fit_diff"],
-#    Y["obs_diff"],
-#    s=4,              # 2 px × 2 px marker at 100 dpi  (area in pt²)
-#    marker=".",       # fast, solid dot
-#    color="black",
-#    alpha=0.8
-#)
-#ax.axvline(0, color="grey", linewidth=0.8)   # fit_diff = 0
-#ax.axhline(0, color="grey", linewidth=0.8)   # obs_diff = 0
-#ax.set_xlabel("fit_diff")
-#ax.set_ylabel("obs_diff")
-#ax.set_title("obs_diff as a function of fit_diff")
-#
-#fig_scatter.tight_layout()
-plt.show()
-
-sys.exit(0)
-
-
-fig, (ax1, ax2) = plt.subplots(
-    nrows=1, ncols=2, figsize=(60, 20), constrained_layout=True
-)
-
-
-# ── left-hand histogram: raw D ────────────────────────────────────────────────
-ax1.hist(
-    Y["D"], bins=601, alpha=0.8, color="steelblue", range=(-300, 300)
-)
-ax1.axvline(0, color="black", linewidth=0.8)          # central line at 0
-ax1.set_title("Histogram D = (c1−c2) − predicted")
-ax1.set_xlabel("D")
-ax1.set_ylabel("precincts")
-ax1.set_xlim(-200, 200)
-
-# ── right-hand histogram: normalised D ────────────────────────────────────────
-ax2.hist(
-    Y["Dnorm"], bins=800, alpha=0.8, color="indianred", range=(-10, 10)
-)
-ax2.axvline(0, color="black", linewidth=0.8)          # central line at 0
-ax2.set_title("Histogram Dnorm = (c1−c2) − predicted (normalized)")
-ax2.set_xlabel("normalized D")
-ax2.set_ylabel("precincts")
-ax2.set_xlim(-10, 10)
-
-plt.show()
-
-nowCalc = datetime.now()
-
-# ------------------------------------------------------------
-# 8C.  List ±100 outliers for D and for relative D
-# ------------------------------------------------------------
-
-writer = pd.ExcelWriter("outliers.xlsx", engine="xlsxwriter")
-
-# ---------- helper: take any Series of scores ----------------
-TOP_N = Y.shape[0]//3
-
-def sheet_name(label, sign):
-    return f"{label}_{sign}"
-
-criterion = "Dnorm"
-
-large = Y.nlargest(TOP_N, criterion)
-small = Y.nsmallest(TOP_N, criterion)
-mid = Y.nsmallest(TOP_N*2, criterion).nlargest(TOP_N, criterion)
-
-def add_outliers(series: pd.Series, label: str, k: int = TOP_N):
-    for sign, slicer in [("pos", series.nlargest(k)),
-                         ("neg", series.nsmallest(k))]:
-        sheet = sheet_name(label, sign)
-        df = (
-            slicer.rename("metric")
-                  .to_frame()
-                  .join(Y, how="left")     # keep all original cols
-                  .reset_index()              # bring keys back as columns
-        )
-        df.to_excel(writer, sheet_name=sheet, index=False)
-
-# ---------- 6B.  ±100 outliers for D and D_rel ---------------
-add_outliers(Y["D"],      "D")
-add_outliers(Y["Dnorm"],  "Dnorm")
-
-# ---------- 6C.  save & finish -------------------------------
-writer.close()
-print(f"✓  All outlier tables written to outliers.xlsx")
-
-nowCalcEnd = datetime.now()
-
-print ('outliers time', nowCalcEnd-nowCalc)
-
-
-# CYFERKI
 
 use2 = [
     'Liczba niewykorzystanych kart do głosowania',
@@ -481,6 +269,7 @@ def mean_and_ci(counts, values, n, p_conf=0.95):
 
 def plot_histograms(
         paired_histograms,
+        lVisible,
         p_conf        = 0.95,
         category_labels=None,
         values_for_mean=None,
@@ -520,37 +309,283 @@ def plot_histograms(
             ax.axvspan(lo_m, hi_m, color="black", alpha=0.10)
             subtitle = f" | mean={mean:.2f} CI=[{lo_m:.2f}, {hi_m:.2f}]"
 
-        ax.set_title(f"{title} | n={n}, p={p_conf:.2f}, band=[{lo}, {hi}]{subtitle}")
+        ax.set_title(f"{title} | n={n}, p={p_conf:.2f}, band=[{lo}, {hi}]{subtitle} {lVisible}")
         fig.tight_layout()
 
-histograms = {}
-pentagrams = {}
-#for ttt, nm in [(small, 'small'), (large, 'large')]:
-for ttt, nm in [(large, 'large')]:
-#for ttt, nm in [(small, 'small'), (mid, 'mid'), (large, 'large')]:
-    for e in use2:
-        s = [0]*10
-        p = [0]*5
-        count = 0
-        for idx, row in ttt.iterrows():
-            if not pd.isna(row[e]):
-                v = row[e]
-                if v < 50:
-                    continue
-                s[round(v)%10] += 1
-                p[round(v)%5] += 1
-                count += 1
-        if 1000 <= count:
-            s.append(count)
-            p.append(count)
-            histograms [nm + ' ' + titles[e]] = s
-            pentagrams [nm + ' ' + titles[e]] = p
+def displaySomething (l, cyferki):
+    lVisible = l or 'wszystko'
+    Y = pd.read_excel(DATA_DIR / f"Y{l}-merged.xlsx")
+    Y["color"] = Y.apply(classify, axis=1)
+
+    nowAfterInit = datetime.now()
+    #print (nowAfterInit-nowStart)
+
+    nowRead = datetime.now()
+
+    #print ('reading time', nowRead-nowStart)
+    denom = (Y[c1] + Y[c2]) ** 0.5
+    obs_norm  = Y["obs_diff"]  / denom
+    fit_norm  = Y["fit_diff"]  / denom
+
+    if False:
+        fig_raw, ax_raw = plt.subplots(figsize=(38.4, 21.6), dpi=100)
+        ax_raw.scatter(
+            Y["fit_diff"],
+            Y["obs_diff"],
+            s=8, marker=".", c=Y["color"], alpha=0.8
+        )
+        ax_raw.axvline(0, color="grey", linewidth=0.8)
+        ax_raw.axhline(0, color="grey", linewidth=0.8)
+        ax_raw.set_xlabel("fit_diff")
+        ax_raw.set_ylabel("obs_diff")
+        ax_raw.set_title("obs_diff vs fit_diff " + lVisible)
+        fig_raw.tight_layout()
+
+        # ---------- Window 2 : normalised --------------------------------------------
+        fig_norm, ax_norm = plt.subplots(figsize=(38.4, 21.6), dpi=100)
+        ax_norm.scatter(
+            fit_norm,
+            obs_norm,
+            s=6, marker=".", color=Y["color"], alpha=0.8
+        )
+        ax_norm.axvline(0, color="grey", linewidth=0.8)
+        ax_norm.axhline(0, color="grey", linewidth=0.8)
+
+        ax_Dnorm.axhline( Ylimit_Dnorm, color="grey", linewidth=0.8)
+        ax_Dnorm.axhline(-Ylimit_Dnorm, color="grey", linewidth=0.8)
+
+        ax_norm.set_xlabel("fit_diff (norm)")
+        ax_norm.set_ylabel("obs_diff (norm)")
+        ax_norm.set_title("Normalised obs_diff vs fit_diff " + lVisible)
+        fig_norm.tight_layout()
+
+    fig_D, ax_D = plt.subplots(figsize=(38.4, 21.6), dpi=100)
+    D_trans = squash(Y["D"], Ylimit_D, K_D)
+    ax_D.scatter(
+        Y["fit_diff"],
+        D_trans,
+        s=8, marker=".", color=Y["color"], alpha=0.8
+    )
 
 
-#haveHistograms = [e for e in use2 if e in histograms]
-plot_histograms([(e, histograms[e]) for e in histograms], p_conf=0.95
-                )
-plot_histograms([(e, pentagrams[e]) for e in pentagrams], p_conf=0.95,
-                category_labels=['0 i 5','1 i 6', '2 i 7', '3 i 8', '4 i 9'])
+    xmin, xmax = ax_D.get_xlim()
+    x_vals = np.array([xmin, xmax])
+    #ax_D.plot(x_vals,  x_vals,  color="grey", linewidth=0.8)  # X = Y
+    #ax_D.plot(x_vals, -x_vals,  color="grey", linewidth=0.8)  # X = -Y
 
-plt.show()
+    ax_D.set_ylim(-Ylimit_D*1.3, Ylimit_D*1.3)   # ← pick your ymin,ymax here
+
+    ax_D.axvline(0, color="grey", linewidth=0.8)
+    ax_D.axhline(0, color="grey", linewidth=0.8)
+
+    ax_D.axhline( Ylimit_D, color="grey", linewidth=0.8)
+    ax_D.axhline(-Ylimit_D, color="grey", linewidth=0.8)
+
+    squash_line_segments(ax_D,     Ylimit_D,     K_D,  sign=+1,
+                         color="grey", linewidth=0.8)
+    squash_line_segments(ax_D,     Ylimit_D,     K_D,  sign=-1,
+                         color="grey", linewidth=0.8)
+
+
+    ax_D.set_xlabel("fit_diff")
+    ax_D.set_ylabel("D")
+    ax_D.set_title("obs_diff vs fit_diff " + lVisible)
+    fig_D.tight_layout()
+
+    # ---------- Window 2 : normalised --------------------------------------------
+    Dnorm_trans = squash(Y["Dnorm"], Ylimit_Dnorm, K_Dnorm)
+
+    fig_Dnorm, ax_Dnorm = plt.subplots(figsize=(38.4, 21.6), dpi=100)
+    ax_Dnorm.scatter(
+        fit_norm,
+        Dnorm_trans,
+        s=6, marker=".", color=Y["color"], alpha=0.8
+    )
+    ax_Dnorm.axvline(0, color="grey", linewidth=0.8)
+    ax_Dnorm.axhline(0, color="grey", linewidth=0.8)
+
+    xmin, xmax = ax_Dnorm.get_xlim()
+    x_vals = np.array([xmin, xmax])
+    #y1n = squash(x_vals, Ylimit_Dnorm, K_Dnorm)
+    #y2n = squash(-x_vals, Ylimit_Dnorm, K_Dnorm)
+    #ax_Dnorm.plot(x_vals, y1n, color="grey", linewidth=0.8)
+    #ax_Dnorm.plot(x_vals, y2n, color="grey", linewidth=0.8)
+
+    #ax_Dnorm.plot(x_vals,  x_vals,  color="grey", linewidth=0.8)  # X = Y
+    #ax_Dnorm.plot(x_vals, -x_vals,  color="grey", linewidth=0.8)  # X = -Y
+    ax_Dnorm.set_xlim(xmin, xmax)
+    ax_Dnorm.set_ylim(-Ylimit_Dnorm*1.3, Ylimit_Dnorm*1.3)   # ← pick your ymin,ymax here
+
+    ax_Dnorm.axhline( Ylimit_Dnorm, color="grey", linewidth=0.8)
+    ax_Dnorm.axhline(-Ylimit_Dnorm, color="grey", linewidth=0.8)
+
+    squash_line_segments(ax_Dnorm, Ylimit_Dnorm, K_Dnorm, sign=+1,
+                         color="grey", linewidth=0.8)
+    squash_line_segments(ax_Dnorm, Ylimit_Dnorm, K_Dnorm, sign=-1,
+                         color="grey", linewidth=0.8)
+
+    ax_Dnorm.set_xlabel("fit_diff (norm)")
+    ax_Dnorm.set_ylabel("D (norm)")
+    ax_Dnorm.set_title("Normalised obs_diff vs fit_diff " + lVisible)
+    fig_Dnorm.tight_layout()
+
+
+    #fig_scatter = plt.figure(figsize=(38.4, 21.6), dpi=100)
+
+    #ax = fig_scatter.add_subplot(1, 1, 1)
+    #ax.scatter(
+    #    Y["fit_diff"],
+    #    Y["obs_diff"],
+    #    s=4,              # 2 px × 2 px marker at 100 dpi  (area in pt²)
+    #    marker=".",       # fast, solid dot
+    #    color="black",
+    #    alpha=0.8
+    #)
+    #ax.axvline(0, color="grey", linewidth=0.8)   # fit_diff = 0
+    #ax.axhline(0, color="grey", linewidth=0.8)   # obs_diff = 0
+    #ax.set_xlabel("fit_diff")
+    #ax.set_ylabel("obs_diff")
+    #ax.set_title("obs_diff as a function of fit_diff")
+    #
+    #fig_scatter.tight_layout()
+    plt.show()
+
+    if not cyferki:
+        return
+
+
+    fig, (ax1, ax2) = plt.subplots(
+        nrows=1, ncols=2, figsize=(60, 20), constrained_layout=True
+    )
+
+
+    # ── left-hand histogram: raw D ────────────────────────────────────────────────
+    ax1.hist(
+        Y["D"], bins=601, alpha=0.8, color="steelblue", range=(-300, 300)
+    )
+    ax1.axvline(0, color="black", linewidth=0.8)          # central line at 0
+    ax1.set_title("Histogram D = (c1−c2) − predicted " + lVisible)
+    ax1.set_xlabel("D")
+    ax1.set_ylabel("precincts")
+    ax1.set_xlim(-200, 200)
+
+    # ── right-hand histogram: normalised D ────────────────────────────────────────
+    ax2.hist(
+        Y["Dnorm"], bins=800, alpha=0.8, color="indianred", range=(-10, 10)
+    )
+    ax2.axvline(0, color="black", linewidth=0.8)          # central line at 0
+    ax2.set_title("Histogram Dnorm = (c1−c2) − predicted (normalized) " + lVisible)
+    ax2.set_xlabel("normalized D")
+    ax2.set_ylabel("precincts")
+    ax2.set_xlim(-10, 10)
+
+    plt.show()
+
+    nowCalc = datetime.now()
+
+    # ------------------------------------------------------------
+    # 8C.  List ±100 outliers for D and for relative D
+    # ------------------------------------------------------------
+
+    writer = pd.ExcelWriter("outliers.xlsx", engine="xlsxwriter")
+
+    # ---------- helper: take any Series of scores ----------------
+    TOP_N = Y.shape[0]//3
+
+    def sheet_name(label, sign):
+        return f"{label}_{sign}"
+
+    criterion = "Dnorm"
+
+    large = Y.nlargest(TOP_N, criterion)
+    small = Y.nsmallest(TOP_N, criterion)
+    mid = Y.nsmallest(TOP_N*2, criterion).nlargest(TOP_N, criterion)
+
+    def add_outliers(series: pd.Series, label: str, k: int = TOP_N):
+        for sign, slicer in [("pos", series.nlargest(k)),
+                             ("neg", series.nsmallest(k))]:
+            sheet = sheet_name(label, sign)
+            df = (
+                slicer.rename("metric")
+                      .to_frame()
+                      .join(Y, how="left")     # keep all original cols
+                      .reset_index()              # bring keys back as columns
+            )
+            df.to_excel(writer, sheet_name=sheet, index=False)
+
+    # ---------- 6B.  ±100 outliers for D and D_rel ---------------
+    add_outliers(Y["D"],      "D")
+    add_outliers(Y["Dnorm"],  "Dnorm")
+
+    # ---------- 6C.  save & finish -------------------------------
+    writer.close()
+    print(f"✓  All outlier tables written to outliers.xlsx")
+
+    nowCalcEnd = datetime.now()
+
+    print ('outliers time', nowCalcEnd-nowCalc)
+
+
+    # CYFERKI
+
+
+    histograms = {}
+    pentagrams = {}
+    #for ttt, nm in [(small, 'small'), (large, 'large')]:
+    for ttt, nm in [(large, 'large')]:
+    #for ttt, nm in [(small, 'small'), (mid, 'mid'), (large, 'large')]:
+        for e in use2:
+            s = [0]*10
+            p = [0]*5
+            count = 0
+            for idx, row in ttt.iterrows():
+                if not pd.isna(row[e]):
+                    v = row[e]
+                    if v < 50:
+                        continue
+                    s[round(v)%10] += 1
+                    p[round(v)%5] += 1
+                    count += 1
+            if 1000 <= count:
+                s.append(count)
+                p.append(count)
+                histograms [nm + ' ' + titles[e]] = s
+                pentagrams [nm + ' ' + titles[e]] = p
+
+
+    #haveHistograms = [e for e in use2 if e in histograms]
+    plot_histograms([(e, histograms[e]) for e in histograms], lVisible, p_conf=0.95
+                    )
+    plot_histograms([(e, pentagrams[e]) for e in pentagrams], lVisible, p_conf=0.95,
+                    category_labels=['0 i 5','1 i 6', '2 i 7', '3 i 8', '4 i 9'])
+
+    plt.show()
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Demo: accept a '-c' flag plus positional arguments"
+    )
+
+    # Add the -c flag (no argument, just True/False)
+    parser.add_argument(
+        '-c',
+        action='store_true',
+        help="Enable the 'c' mode"
+    )
+
+    # Positional arguments (zero-or-more)
+    parser.add_argument(
+        'items',
+        nargs='*',
+        help='List of positional arguments'
+    )
+
+    args = parser.parse_args()
+
+    print(f"-c flag present? {args.c}")
+    for idx, val in enumerate(args.items, 1):
+        print(f"  {idx}: {val}")
+        displaySomething (val, args.c)
+    
+if __name__ == "__main__":
+    main()

@@ -24,7 +24,7 @@ import pandas as pd
 #OUT_FILE   = "commission_combined-mini.xlsx"
 
 FILE_SKLAD = "sklad_komisji_obwodowych_w_drugiej_turze_utf8.xlsx"
-FILE_OKW   = "OKW_2025_full.xlsx"
+FILE_OKW   = "OKW_2025_full_cleaned.xlsx"
 OUT_FILE   = "commission_combined.xlsx"
 
 # ─────────────── helper functions ───────────
@@ -79,7 +79,7 @@ df_sklad = pd.read_excel(FILE_SKLAD)
 #with gzip.open(FILE_OKW, "rb") as gz:
 #    df_okw = pd.read_excel(gz.read())
 
-df_okw = pd.read_excel(FILE_OKW)
+df_okw = pd.read_excel(FILE_OKW, sheet_name="Sheet1")
 print ('mark 2')
     
 # # DEBUG – see a slice the user pointed at ---------------------------
@@ -89,7 +89,8 @@ print ('mark 2')
 # 2.  ──  Normalise keys  ───────────────────
 #df_sklad["gmina_norm"] = df_sklad["Nazwa gminy"].map(norm_gmina)
 df_sklad["gmina_norm"] = [
-    norm_gmina_sklad(g, p)
+#    norm_gmina_sklad(g, p)
+    norm_gmina(g)
     for g, p in zip(df_sklad["Nazwa gminy"], df_sklad["Powiat"])
 ]
 df_sklad["name_norm"]  = df_sklad["Nazwisko i imiona"].map(norm_name)
@@ -99,6 +100,7 @@ df_sklad["comm_id"]    = list(zip(df_sklad["gmina_norm"],
 #print (list(zip(df_sklad["gmina_norm"],
 #                                  df_sklad["Nr obw."].astype(int)))[:300])
 
+#print (df_okw.columns.tolist())
 df_okw["gmina_norm"]   = df_okw["gmina"].map(norm_gmina)
 df_okw["name_norm"]    = df_okw["czlonek"].map(norm_nameRev)
 df_okw["is_uzup"]      = df_okw["komitet"].str.contains("uzupełnienie",

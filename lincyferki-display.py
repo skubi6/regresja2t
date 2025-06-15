@@ -13,6 +13,7 @@ import math
 import statistics
 from datetime import datetime
 import argparse
+palette = plt.cm.tab10.colors
 
 pisOld = {
     'Marka Jakubiaka',
@@ -133,12 +134,14 @@ def classify (row):
         print ('Nieznany komitet', b)
 
     if 0 <countPis:
-        return  "#CC0000"  # "red"
+        return  "red" # "#CC0000"  # "red"
     elif countPis < 0:
-        return  "#0066CC"  # "blue"
+        return  "blue" # "#0066CC"  # "blue"
     else:
         return "black"
 
+colors = {"red": "#CC0000", "blue": "#0066CC", "black" : "black"}
+    
 def squash(Y, Ylim, K):
     """
     For -Ylim <= Y <= Ylim: returns Y.
@@ -211,8 +214,23 @@ K_Dnorm      = 0.2    # ← your chosen squeeze factor
 
 nowStart = datetime.now()
 
-KEY1, KEY2 = "Teryt Gminy", "Nr komisji"
-c1, c2 = "NAWROCKI Karol Tadeusz", "TRZASKOWSKI Rafał Kazimierz"
+terytGminy = {
+    2025: "Teryt Gminy",
+    2020: "Kod TERYT"
+}
+
+nrKomisji = {
+    2025: "Nr komisji",
+    2020: "Numer obwodu"
+}
+
+#KEY1, KEY2 = "Teryt Gminy", "Nr komisji"
+c = {
+        2025 : ["NAWROCKI Karol Tadeusz", "TRZASKOWSKI Rafał Kazimierz"],
+        2020 : ["Andrzej Sebastian DUDA", "Rafał Kazimierz TRZASKOWSKI"]
+}
+
+#c1, c2 = "NAWROCKI Karol Tadeusz", "TRZASKOWSKI Rafał Kazimierz"
 
 DATA_DIR = Path(".")
 
@@ -267,7 +285,99 @@ def mean_and_ci(counts, values, n, p_conf=0.95):
     se = math.sqrt(var / n)
     return mean, mean - z * se, mean + z * se
 
-def plot_histograms(
+def _draw_single_hist(ax, *,
+                      counts, n, labels,
+                      title, p_conf,
+                      bar_colour,
+                      band_color="grey", band_alpha=0.4,
+                      values_for_mean=None,
+                      lVisible):
+    """
+    Draw a single bar-histogram on the Axes 'ax'.
+    The arguments are exactly what your original inner code expected.
+    """
+    k        = len(counts)
+    lo, hi   = cl_band(n, p_cat=1 / k, p_conf=p_conf)
+    palette  = plt.cm.tab10.colors
+
+    # bars + confidence band
+    ax.bar(range(k), counts, color=bar_colour)
+    ax.axhspan(lo, hi, color=band_color, alpha=band_alpha)
+
+    # labels over bars
+    ymax = max(max(counts), hi)
+    for c, v in enumerate(counts):
+        ax.text(c, v + 0.02 * ymax, str(v),
+                ha="center", va="bottom", fontsize=9)
+
+    ax.set_xticks(range(k), labels)
+    ax.set_ylim(0, 1.15 * ymax)
+    ax.set_ylabel("count")
+    ax.set_title(f"{title} | n={n} p={p_conf:.2f}, band=[{lo}, {hi}]{subtitle} {lVisible}")
+
+    # optional mean ± CI marker
+    if values_for_mean is not None and len(values_for_mean) == k:
+        mean, lo_m, hi_m = mean_and_ci(counts, values_for_mean, n, p_conf)
+        ax.axvline(mean, color="black", linestyle="--", lw=1.2)
+        ax.axvspan(lo_m, hi_m, color="black", alpha=0.10)
+
+# ---------------------------------------------------------------------
+# --- 2.  draw a PAIR (histogram + pentagram) in one figure ----------
+# ---------------------------------------------------------------------
+def plot_histogram_pair(title,
+                        histo_data,        # list[ counts… , total ]
+                        penta_data,        # list[ counts… , total ]
+                        lVisible,
+                        p_conf,
+                        bar_colour):
+    """
+    Draw the (10-bin) histogram and the (5-bin) pentagram
+    for the same variable one below the other.
+    """
+    # unpack data ------------------------------------------------------
+    h_counts, h_n = histo_data[:-1], histo_data[-1]
+    p_counts, p_n = penta_data[:-1], penta_data[-1]
+
+    # x-tick labels
+    h_labels = [str(i) for i in range(10)]
+    p_labels = ['0 i 5', '1 i 6', '2 i 7', '3 i 8', '4 i 9']
+
+    # create the stacked axes -----------------------------------------
+    fig, (ax_top, ax_bot) = plt.subplots(
+        nrows=2, sharex=False, figsize=(8, 8))
+
+    # top: full histogram (10 bins) -----------------------------------
+    _draw_single_hist(
+        ax_top,
+        counts=h_counts,
+        n=h_n,
+        labels=h_labels,
+        title=f"{title} 10-bins | n={h_n} {lVisible}",
+        p_conf=p_conf,
+        bar_colour=bar_colour,
+        lVisible=lVisible
+    )
+
+    # bottom: pentagram (5 bins) --------------------------------------
+    _draw_single_hist(
+        ax_bot,
+        counts=p_counts,
+        n=p_n,
+        labels=p_labels,
+        title=f"{title} | n={p_n} p={p_conf:.2f}, band=[{lo}, {hi}]{subtitle} {lVisible}",
+        p_conf=p_conf,
+        bar_colour=bar_colour,
+        lVisible=lVisible
+    )
+
+    fig.tight_layout()
+    return fig            # return so caller can .savefig() if desired
+
+
+
+
+
+def plot_histogramsOld(
         paired_histograms,
         lVisible,
         p_conf        = 0.95,
@@ -312,18 +422,23 @@ def plot_histograms(
         ax.set_title(f"{title} | n={n}, p={p_conf:.2f}, band=[{lo}, {hi}]{subtitle} {lVisible}")
         fig.tight_layout()
 
-def displaySomething (l, cyferki):
+def displaySomething (l, *, histogramy, cyferki, rok, mergedInfix):
     lVisible = l or 'wszystko'
-    Y = pd.read_excel(DATA_DIR / f"Y{l}-merged.xlsx")
-    Y["color"] = Y.apply(classify, axis=1)
-
+    Y = pd.read_excel(DATA_DIR / f"Y{l}{rok}{mergedInfix}.xlsx")
+    if mergedInfix:
+        Y["class"] = Y.apply(classify, axis=1)
+    else:
+        Y["class"] = "black";
+        #Y.loc[:, "class"] = "black"
+    Y["color"] = Y["class"].map(colors)
+    
     nowAfterInit = datetime.now()
     #print (nowAfterInit-nowStart)
 
     nowRead = datetime.now()
 
     #print ('reading time', nowRead-nowStart)
-    denom = (Y[c1] + Y[c2]) ** 0.5
+    denom = (Y[c[rok][0]] + Y[c[rok][1]]) ** 0.5
     obs_norm  = Y["obs_diff"]  / denom
     fit_norm  = Y["fit_diff"]  / denom
 
@@ -359,100 +474,72 @@ def displaySomething (l, cyferki):
         ax_norm.set_title("Normalised obs_diff vs fit_diff " + lVisible)
         fig_norm.tight_layout()
 
-    fig_D, ax_D = plt.subplots(figsize=(38.4, 21.6), dpi=100)
-    D_trans = squash(Y["D"], Ylimit_D, K_D)
-    ax_D.scatter(
-        Y["fit_diff"],
-        D_trans,
-        s=8, marker=".", color=Y["color"], alpha=0.8
-    )
+    if histogramy:
+        fig_D, ax_D = plt.subplots(figsize=(38.4, 21.6), dpi=100)
+        D_trans = squash(Y["D"], Ylimit_D, K_D)
+        ax_D.scatter(
+            Y["fit_diff"],
+            D_trans,
+            s=8, marker=".", color=Y["color"], alpha=0.8
+        )
 
 
-    xmin, xmax = ax_D.get_xlim()
-    x_vals = np.array([xmin, xmax])
-    #ax_D.plot(x_vals,  x_vals,  color="grey", linewidth=0.8)  # X = Y
-    #ax_D.plot(x_vals, -x_vals,  color="grey", linewidth=0.8)  # X = -Y
+        xmin, xmax = ax_D.get_xlim()
+        x_vals = np.array([xmin, xmax])
+        #ax_D.plot(x_vals,  x_vals,  color="grey", linewidth=0.8)  # X = Y
+        #ax_D.plot(x_vals, -x_vals,  color="grey", linewidth=0.8)  # X = -Y
 
-    ax_D.set_ylim(-Ylimit_D*1.3, Ylimit_D*1.3)   # ← pick your ymin,ymax here
+        ax_D.set_ylim(-Ylimit_D*1.3, Ylimit_D*1.3)   # ← pick your ymin,ymax here
 
-    ax_D.axvline(0, color="grey", linewidth=0.8)
-    ax_D.axhline(0, color="grey", linewidth=0.8)
+        ax_D.axvline(0, color="grey", linewidth=0.8)
+        ax_D.axhline(0, color="grey", linewidth=0.8)
 
-    ax_D.axhline( Ylimit_D, color="grey", linewidth=0.8)
-    ax_D.axhline(-Ylimit_D, color="grey", linewidth=0.8)
+        ax_D.axhline( Ylimit_D, color="grey", linewidth=0.8)
+        ax_D.axhline(-Ylimit_D, color="grey", linewidth=0.8)
 
-    squash_line_segments(ax_D,     Ylimit_D,     K_D,  sign=+1,
-                         color="grey", linewidth=0.8)
-    squash_line_segments(ax_D,     Ylimit_D,     K_D,  sign=-1,
-                         color="grey", linewidth=0.8)
-
-
-    ax_D.set_xlabel("fit_diff")
-    ax_D.set_ylabel("D")
-    ax_D.set_title("obs_diff vs fit_diff " + lVisible)
-    fig_D.tight_layout()
-
-    # ---------- Window 2 : normalised --------------------------------------------
-    Dnorm_trans = squash(Y["Dnorm"], Ylimit_Dnorm, K_Dnorm)
-
-    fig_Dnorm, ax_Dnorm = plt.subplots(figsize=(38.4, 21.6), dpi=100)
-    ax_Dnorm.scatter(
-        fit_norm,
-        Dnorm_trans,
-        s=6, marker=".", color=Y["color"], alpha=0.8
-    )
-    ax_Dnorm.axvline(0, color="grey", linewidth=0.8)
-    ax_Dnorm.axhline(0, color="grey", linewidth=0.8)
-
-    xmin, xmax = ax_Dnorm.get_xlim()
-    x_vals = np.array([xmin, xmax])
-    #y1n = squash(x_vals, Ylimit_Dnorm, K_Dnorm)
-    #y2n = squash(-x_vals, Ylimit_Dnorm, K_Dnorm)
-    #ax_Dnorm.plot(x_vals, y1n, color="grey", linewidth=0.8)
-    #ax_Dnorm.plot(x_vals, y2n, color="grey", linewidth=0.8)
-
-    #ax_Dnorm.plot(x_vals,  x_vals,  color="grey", linewidth=0.8)  # X = Y
-    #ax_Dnorm.plot(x_vals, -x_vals,  color="grey", linewidth=0.8)  # X = -Y
-    ax_Dnorm.set_xlim(xmin, xmax)
-    ax_Dnorm.set_ylim(-Ylimit_Dnorm*1.3, Ylimit_Dnorm*1.3)   # ← pick your ymin,ymax here
-
-    ax_Dnorm.axhline( Ylimit_Dnorm, color="grey", linewidth=0.8)
-    ax_Dnorm.axhline(-Ylimit_Dnorm, color="grey", linewidth=0.8)
-
-    squash_line_segments(ax_Dnorm, Ylimit_Dnorm, K_Dnorm, sign=+1,
-                         color="grey", linewidth=0.8)
-    squash_line_segments(ax_Dnorm, Ylimit_Dnorm, K_Dnorm, sign=-1,
-                         color="grey", linewidth=0.8)
-
-    ax_Dnorm.set_xlabel("fit_diff (norm)")
-    ax_Dnorm.set_ylabel("D (norm)")
-    ax_Dnorm.set_title("Normalised obs_diff vs fit_diff " + lVisible)
-    fig_Dnorm.tight_layout()
+        squash_line_segments(ax_D,     Ylimit_D,     K_D,  sign=+1,
+                             color="grey", linewidth=0.8)
+        squash_line_segments(ax_D,     Ylimit_D,     K_D,  sign=-1,
+                             color="grey", linewidth=0.8)
 
 
-    #fig_scatter = plt.figure(figsize=(38.4, 21.6), dpi=100)
+        ax_D.set_xlabel("fit_diff")
+        ax_D.set_ylabel("D")
+        ax_D.set_title("obs_diff vs fit_diff " + lVisible)
+        fig_D.tight_layout()
 
-    #ax = fig_scatter.add_subplot(1, 1, 1)
-    #ax.scatter(
-    #    Y["fit_diff"],
-    #    Y["obs_diff"],
-    #    s=4,              # 2 px × 2 px marker at 100 dpi  (area in pt²)
-    #    marker=".",       # fast, solid dot
-    #    color="black",
-    #    alpha=0.8
-    #)
-    #ax.axvline(0, color="grey", linewidth=0.8)   # fit_diff = 0
-    #ax.axhline(0, color="grey", linewidth=0.8)   # obs_diff = 0
-    #ax.set_xlabel("fit_diff")
-    #ax.set_ylabel("obs_diff")
-    #ax.set_title("obs_diff as a function of fit_diff")
-    #
-    #fig_scatter.tight_layout()
-    plt.show()
+        # ---------- Window 2 : normalised --------------------------------------------
+        Dnorm_trans = squash(Y["Dnorm"], Ylimit_Dnorm, K_Dnorm)
 
-    if not cyferki:
-        return
+        fig_Dnorm, ax_Dnorm = plt.subplots(figsize=(38.4, 21.6), dpi=100)
+        ax_Dnorm.scatter(
+            fit_norm,
+            Dnorm_trans,
+            s=6, marker=".", color=Y["color"], alpha=0.8
+        )
+        ax_Dnorm.axvline(0, color="grey", linewidth=0.8)
+        ax_Dnorm.axhline(0, color="grey", linewidth=0.8)
 
+        xmin, xmax = ax_Dnorm.get_xlim()
+        x_vals = np.array([xmin, xmax])
+
+        ax_Dnorm.set_xlim(xmin, xmax)
+        ax_Dnorm.set_ylim(-Ylimit_Dnorm*1.3, Ylimit_Dnorm*1.3)   # ← pick your ymin,ymax here
+
+        ax_Dnorm.axhline( Ylimit_Dnorm, color="grey", linewidth=0.8)
+        ax_Dnorm.axhline(-Ylimit_Dnorm, color="grey", linewidth=0.8)
+
+        squash_line_segments(ax_Dnorm, Ylimit_Dnorm, K_Dnorm, sign=+1,
+                             color="grey", linewidth=0.8)
+        squash_line_segments(ax_Dnorm, Ylimit_Dnorm, K_Dnorm, sign=-1,
+                             color="grey", linewidth=0.8)
+
+        ax_Dnorm.set_xlabel("fit_diff (norm)")
+        ax_Dnorm.set_ylabel("D (norm)")
+        ax_Dnorm.set_title("Normalised obs_diff vs fit_diff " + lVisible)
+        fig_Dnorm.tight_layout()
+
+        plt.show()
 
     fig, (ax1, ax2) = plt.subplots(
         nrows=1, ncols=2, figsize=(60, 20), constrained_layout=True
@@ -484,13 +571,14 @@ def displaySomething (l, cyferki):
     nowCalc = datetime.now()
 
     # ------------------------------------------------------------
-    # 8C.  List ±100 outliers for D and for relative D
+    # 8C.  List ±N outliers for D and for relative D
     # ------------------------------------------------------------
 
-    writer = pd.ExcelWriter("outliers.xlsx", engine="xlsxwriter")
+    writer = pd.ExcelWriter(f"outliers{lVisible}{rok}.xlsx", engine="xlsxwriter")
 
     # ---------- helper: take any Series of scores ----------------
-    TOP_N = Y.shape[0]//3
+#    TOP_N = Y.shape[0]//3
+    TOP_N = 250
 
     def sheet_name(label, sign):
         return f"{label}_{sign}"
@@ -528,6 +616,8 @@ def displaySomething (l, cyferki):
 
     # CYFERKI
 
+    if not cyferki:
+        return
 
     histograms = {}
     pentagrams = {}
@@ -539,14 +629,14 @@ def displaySomething (l, cyferki):
             p = [0]*5
             count = 0
             for idx, row in ttt.iterrows():
-                if not pd.isna(row[e]):
+                if not pd.isna(row[e]) and ('all'==cyferki or row['class']==cyferki):
                     v = row[e]
                     if v < 50:
                         continue
                     s[round(v)%10] += 1
                     p[round(v)%5] += 1
                     count += 1
-            if 1000 <= count:
+            if 300 <= count:
                 s.append(count)
                 p.append(count)
                 histograms [nm + ' ' + titles[e]] = s
@@ -554,10 +644,25 @@ def displaySomething (l, cyferki):
 
 
     #haveHistograms = [e for e in use2 if e in histograms]
-    plot_histograms([(e, histograms[e]) for e in histograms], lVisible, p_conf=0.95
-                    )
-    plot_histograms([(e, pentagrams[e]) for e in pentagrams], lVisible, p_conf=0.95,
-                    category_labels=['0 i 5','1 i 6', '2 i 7', '3 i 8', '4 i 9'])
+    ccc = 0
+    for key in histograms.keys():
+        #if key not in pentagrams:                   # sanity check
+        #    continue
+        colour = palette[ccc % len(palette)]
+        ccc += 1
+        plot_histogram_pair(
+            title=key,
+            histo_data=histograms[key],
+            penta_data=pentagrams[key],
+            lVisible=lVisible + ' ' + cyferki,
+            p_conf=0.95,
+            bar_colour  = colour
+        )
+
+    #plot_histograms([(e, histograms[e]) for e in histograms], lVisible + ' ' + cyferki, p_conf=0.95
+    #                )
+    #plot_histograms([(e, pentagrams[e]) for e in pentagrams], lVisible + ' ' + cyferki, p_conf=0.95,
+    #                category_labels=['0 i 5','1 i 6', '2 i 7', '3 i 8', '4 i 9'])
 
     plt.show()
 
@@ -568,11 +673,26 @@ def main():
 
     # Add the -c flag (no argument, just True/False)
     parser.add_argument(
-        '-c',
+        '-m',
         action='store_true',
-        help="Enable the 'c' mode"
+        help="Histogramy główne"
+    )
+    parser.add_argument(
+        '-H',
+        action='store_true',
+        help="Histogramy główne"
     )
 
+    parser.add_argument(
+        '-c',
+        metavar='CYFERKI',
+        help="Histogramy z cyferkami (specify argument here)"
+    )
+    parser.add_argument(
+        '-y',
+        metavar='CYFERKI',
+        help="Histogramy z cyferkami (specify argument here)"
+    )
     # Positional arguments (zero-or-more)
     parser.add_argument(
         'items',
@@ -583,9 +703,15 @@ def main():
     args = parser.parse_args()
 
     print(f"-c flag present? {args.c}")
+    global KEY1
+    global KEY2
+    rok = int(args.y)
+    KEY1, KEY2 = terytGminy[rok], nrKomisji[rok]
+
     for idx, val in enumerate(args.items, 1):
         print(f"  {idx}: {val}")
-        displaySomething (val, args.c)
+        displaySomething (val, histogramy=args.H, cyferki=args.c, rok=rok,
+                          mergedInfix=('-merged' if args.m else ''))
     
 if __name__ == "__main__":
     main()

@@ -234,10 +234,6 @@ def buildLinRegression (
     predictor_names = ["Intercept"] + first_cols[rok]
     coef_tbl = pd.DataFrame(index=predictor_names)
 
-    predictor_names = ["Intercept"] + first_cols[rok]
-
-    coef_tbl = pd.DataFrame(index=predictor_names)
-
     for tgt in targets[rok]:
         coef_tbl[tgt] = [intercepts[tgt]] + coefs[tgt].tolist()
 

@@ -246,18 +246,6 @@ use2 = [
     'TRZASKOWSKI Rafał Kazimierz'
 ]
 
-use2 = [
-    #'Liczba niewykorzystanych kart do głosowania',
-    #'Liczba wyborców, którym wydano karty do głosowania w\xa0lokalu wyborczym (liczba podpisów w spisie oraz adnotacje o\xa0wydaniu karty bez potwierdzenia podpisem w\xa0spisie)',
-    #'Liczba wyborców, którym wydano karty do głosowania w\xa0lokalu wyborczym oraz w\xa0głosowaniu korespondencyjnym (łącznie)',
-    #'Liczba wyborców głosujących na podstawie zaświadczenia o\xa0prawie do głosowania',
-    #'Liczba kart wyjętych z\xa0urny',
-    #'Liczba kart ważnych',
-    #'Liczba głosów ważnych oddanych łącznie na obu kandydatów (z\xa0kart ważnych)',
-    'NAWROCKI Karol Tadeusz',
-    'TRZASKOWSKI Rafał Kazimierz'
-]
-
 #use2 = [
 #    'NAWROCKI Karol Tadeusz',
 #    'TRZASKOWSKI Rafał Kazimierz',
@@ -325,8 +313,7 @@ def _draw_single_hist(ax, *,
     ax.set_xticks(range(k), labels)
     ax.set_ylim(0, 1.15 * ymax)
     ax.set_ylabel("count")
-    #ax.set_title(f"{title} | n={n} p={p_conf:.2f}, band=[{lo}, {hi}]{subtitle} {lVisible}")
-    ax.set_title(f"{title} | n={n} p={p_conf:.2f}, band=[{lo}, {hi}] {lVisible}")
+    ax.set_title(f"{title} | n={n} p={p_conf:.2f}, band=[{lo}, {hi}]{subtitle} {lVisible}")
 
     # optional mean ± CI marker
     if values_for_mean is not None and len(values_for_mean) == k:
@@ -349,7 +336,6 @@ def plot_histogram_pair(title,
     """
     # unpack data ------------------------------------------------------
     h_counts, h_n = histo_data[:-1], histo_data[-1]
-    print ('h_n', h_n)
     p_counts, p_n = penta_data[:-1], penta_data[-1]
 
     # x-tick labels
@@ -366,8 +352,7 @@ def plot_histogram_pair(title,
         counts=h_counts,
         n=h_n,
         labels=h_labels,
-        #title=f"{title} 10-bins | n={h_n} {lVisible}",
-        title=title,
+        title=f"{title} 10-bins | n={h_n} {lVisible}",
         p_conf=p_conf,
         bar_colour=bar_colour,
         lVisible=lVisible
@@ -379,8 +364,7 @@ def plot_histogram_pair(title,
         counts=p_counts,
         n=p_n,
         labels=p_labels,
-        #title=f"{title} | n={p_n} p={p_conf:.2f}, band=[{lo}, {hi}]{subtitle} {lVisible}",
-        title=title,
+        title=f"{title} | n={p_n} p={p_conf:.2f}, band=[{lo}, {hi}]{subtitle} {lVisible}",
         p_conf=p_conf,
         bar_colour=bar_colour,
         lVisible=lVisible
@@ -389,48 +373,65 @@ def plot_histogram_pair(title,
     fig.tight_layout()
     return fig            # return so caller can .savefig() if desired
 
-def displaySomething (l, *, histogramy, addOutliers, cyferki, rok,
-                      ludnosc, diff, diffRegr, wojewodztwa, warszawa, mergedInfix):
+
+
+
+
+def plot_histogramsOld(
+        paired_histograms,
+        lVisible,
+        p_conf        = 0.95,
+        category_labels=None,
+        values_for_mean=None,
+        band_color    = "grey",
+        band_alpha    = 0.40
+    ):
+    """
+    paired_histograms : [(title, [c0,…,c{k-1}, total]), …]
+    category_labels   : list[str] (len k) – labels under bars
+    values_for_mean   : list[float] (len k) – supply to compute & draw mean±CI
+    """
+    palette = plt.cm.tab10.colors
+    for idx, (title, data) in enumerate(paired_histograms):
+        counts, n = data[:-1], data[-1]
+        k         = len(counts)
+
+        labels    = category_labels if category_labels else [str(i) for i in range(k)]
+        lo, hi    = cl_band(n, p_cat=1 / k, p_conf=p_conf)
+
+        fig, ax   = plt.subplots(figsize=(8, 4))
+        ax.bar(range(k), counts, color=palette[idx % len(palette)])
+        ax.axhspan(lo, hi, color=band_color, alpha=band_alpha)
+
+        ymax = max(max(counts), hi)
+        for c, v in enumerate(counts):
+            ax.text(c, v + 0.02*ymax, str(v), ha="center", va="bottom", fontsize=9)
+
+        ax.set_xticks(range(k), labels)
+        ax.set_ylim(0, 1.15*ymax)
+        ax.set_xlabel("category")
+        ax.set_ylabel("count")
+
+        subtitle = ""
+        if values_for_mean is not None and len(values_for_mean) == k:
+            mean, lo_m, hi_m = mean_and_ci(counts, values_for_mean, n, p_conf)
+            ax.axvline(mean, color="black", linestyle="--", lw=1.2)
+            ax.axvspan(lo_m, hi_m, color="black", alpha=0.10)
+            subtitle = f" | mean={mean:.2f} CI=[{lo_m:.2f}, {hi_m:.2f}]"
+
+        ax.set_title(f"{title} | n={n}, p={p_conf:.2f}, band=[{lo}, {hi}]{subtitle} {lVisible}")
+        fig.tight_layout()
+
+def displaySomething (l, *, histogramy, cyferki, rok, mergedInfix):
     lVisible = l or 'wszystko'
-    Y = pd.read_excel(DATA_DIR / f"Y{l}{rok}{mergedInfix}.xlsx")
+    Y = pd.read_excel(DATA_DIR / f"Y{l}B{rok}{mergedInfix}.xlsx")
     if mergedInfix:
         Y["class"] = Y.apply(classify, axis=1)
     else:
         Y["class"] = "black";
         #Y.loc[:, "class"] = "black"
     Y["color"] = Y["class"].map(colors)
-
-    if ludnosc:
-        gus = pd.read_excel(
-            "powierzchnia_i_ludnosc_w_przekroju_terytorialnym_w_2024_roku_tablice.xlsx",
-            sheet_name="Tabl. 2",
-            skiprows=3,        # drop the 5 rows *above* the real header
-            usecols="A:E",     # we only care about columns A–E
-            #dtype={"A": str},  # ensure leading zeros if any on TERYT
-        )
-        writerY = pd.ExcelWriter(f"Y{l}{rok}{mergedInfix}-merged.xlsx", engine="xlsxwriter")
-        gus.to_excel(writerY, sheet_name="gus1", index=True)
-        gus.columns = ['Teryt Gminy', 'B', 'C', 'D', 'Ludnosc']
-        gus.to_excel(writerY, sheet_name="gus2", index=True)
-        gus['Teryt Gminy']  = gus['Teryt Gminy'] + '01'
-        Y['Teryt Gminy']  = Y['Teryt Gminy'].astype(str)
-        #gus['Teryt Gminy'] = gus['Teryt Gminy'].astype(int)
-        #print ('Y')
-        #print (Y['Teryt Gminy'])
-        #print ('gus')
-        #print (gus['Teryt Gminy'])
-        Y = Y.merge(
-            gus,  # only bring in the population column
-            on='Teryt Gminy',
-            how='left'                        # keep all Y rows, fill gus-misses with NaN
-        )
-        Y.to_excel(writerY, sheet_name="merged1", index=True)
-        
-        Y['Ludnosc'] = Y['Ludnosc'].fillna(0)
-        Y.loc[Y['Powiat']=='Warszawa', 'Ludnosc'] = 2000000
-        Y.to_excel(writerY, sheet_name="merged2", index=True)
-        
-        writerY.close()
+    
     nowAfterInit = datetime.now()
     #print (nowAfterInit-nowStart)
 
@@ -540,74 +541,83 @@ def displaySomething (l, *, histogramy, addOutliers, cyferki, rok,
 
         plt.show()
 
-        fig, (ax1, ax2) = plt.subplots(
-            nrows=1, ncols=2, figsize=(60, 20), constrained_layout=True
-        )
+    fig, (ax1, ax2) = plt.subplots(
+        nrows=1, ncols=2, figsize=(60, 20), constrained_layout=True
+    )
 
 
-        # ── left-hand histogram: raw D ────────────────────────────────────────────────
-        ax1.hist(
-            Y["D"], bins=601, alpha=0.8, color="steelblue", range=(-300, 300)
-        )
-        ax1.axvline(0, color="black", linewidth=0.8)          # central line at 0
-        ax1.set_title("Histogram D = (c1−c2) − predicted " + lVisible)
-        ax1.set_xlabel("D")
-        ax1.set_ylabel("precincts")
-        ax1.set_xlim(-200, 200)
+    # ── left-hand histogram: raw D ────────────────────────────────────────────────
+    ax1.hist(
+        Y["D"], bins=601, alpha=0.8, color="steelblue", range=(-300, 300)
+    )
+    ax1.axvline(0, color="black", linewidth=0.8)          # central line at 0
+    ax1.set_title("Histogram D = (c1−c2) − predicted " + lVisible)
+    ax1.set_xlabel("D")
+    ax1.set_ylabel("precincts")
+    ax1.set_xlim(-200, 200)
 
-        # ── right-hand histogram: normalised D ────────────────────────────────────────
-        ax2.hist(
-            Y["Dnorm"], bins=800, alpha=0.8, color="indianred", range=(-10, 10)
-        )
-        ax2.axvline(0, color="black", linewidth=0.8)          # central line at 0
-        ax2.set_title("Histogram Dnorm = (c1−c2) − predicted (normalized) " + lVisible)
-        ax2.set_xlabel("normalized D")
-        ax2.set_ylabel("precincts")
-        ax2.set_xlim(-10, 10)
+    # ── right-hand histogram: normalised D ────────────────────────────────────────
+    ax2.hist(
+        Y["Dnorm"], bins=800, alpha=0.8, color="indianred", range=(-10, 10)
+    )
+    ax2.axvline(0, color="black", linewidth=0.8)          # central line at 0
+    ax2.set_title("Histogram Dnorm = (c1−c2) − predicted (normalized) " + lVisible)
+    ax2.set_xlabel("normalized D")
+    ax2.set_ylabel("precincts")
+    ax2.set_xlim(-10, 10)
 
-        plt.show()
+    plt.show()
 
     nowCalc = datetime.now()
 
     # ------------------------------------------------------------
-    # 8C.  List ±N outliers for D and for relative D
+    # 8C.  List ±N outliers for D, relative D and probability of interval of confidence
     # ------------------------------------------------------------
 
-    if addOutliers:
-        writer = pd.ExcelWriter(f"outliers{lVisible}{rok}.xlsx", engine="xlsxwriter")
+    writer = pd.ExcelWriter(f"outliers{lVisible}{rok}.xlsx", engine="xlsxwriter")
 
-        # ---------- helper: take any Series of scores ----------------
-        #    TOP_N = Y.shape[0]//3
-        TOP_N = 250
+    # ---------- helper: take any Series of scores ----------------
+#    TOP_N = Y.shape[0]//3
+    TOP_N = 500
 
-        def sheet_name(label, sign):
-            return f"{label}_{sign}"
+    def sheet_name(label, sign):
+        return f"{label}_{sign}"
 
-        criterion = "Dnorm"
+    criterion = "Dnorm"
 
-        #large = Y.nlargest(TOP_N, criterion)
-        #small = Y.nsmallest(TOP_N, criterion)
-        #mid = Y.nsmallest(TOP_N*2, criterion).nlargest(TOP_N, criterion)
+    large = Y.nlargest(TOP_N, criterion)
+    small = Y.nsmallest(TOP_N, criterion)
+    mid = Y.nsmallest(TOP_N*2, criterion).nlargest(TOP_N, criterion)
 
-        def add_outliers(series: pd.Series, label: str, k: int = TOP_N):
-            for sign, slicer in [("pos", series.nlargest(k)),
-                                 ("neg", series.nsmallest(k))]:
-                sheet = sheet_name(label, sign)
-                df = (
-                    slicer.rename("metric")
-                          .to_frame()
-                          .join(Y, how="left")     # keep all original cols
-                          .reset_index()              # bring keys back as columns
-                )
-                df.to_excel(writer, sheet_name=sheet, index=False)
+    def add_outliers(series: pd.Series, label: str,
+                     sign : str,  k: int = TOP_N):
+        slicer = series.nlargest(k) if "pos" == sign else series.nsmallest(k)
+        #for sign, slicer in [("pos", series.nlargest(k)),
+        #                     ("neg", series.nsmallest(k))]:
+        sheet = sheet_name(label, sign)
+        df = (
+            slicer.rename("metric")
+                  .to_frame()
+                  .join(Y, how="left")     # keep all original cols
+                  .reset_index()              # bring keys back as columns
+        )
+        df.to_excel(writer, sheet_name=sheet, index=False)
 
-        # ---------- 6B.  ±100 outliers for D and D_rel ---------------
-        add_outliers(Y["D"],      "D")
-        add_outliers(Y["Dnorm"],  "Dnorm")
+    # ---------- 6B.  ±N outliers for D, D_rel  ---------------
+    add_outliers(Y["D"], "D", "pos")
+    add_outliers(Y["D"], "D", "neg")
+    add_outliers(Y["Dnorm"], "Dnorm", "pos")
+    add_outliers(Y["Dnorm"], "Dnorm", "neg")
+    top_rows = (
+        Y[Y["D"] > 0]                  # 1. bierzemy tylko wiersze z D > 0
+        .nlargest(TOP_N, "x_edge")     # 2. wybieramy TOP_N wg największego x_edge
+    )
+    top_rows.to_excel(writer, sheet_name="x_edge", index=False)
+    #add_outliers(Y["x_edge"], "x_edge", "pos")
 
-        # ---------- 6C.  save & finish -------------------------------
-        writer.close()
-        print(f"✓  All outlier tables written to outliers.xlsx")
+    # ---------- 6C.  save & finish -------------------------------
+    writer.close()
+    print(f"✓  All outlier tables written to outliers.xlsx")
 
     nowCalcEnd = datetime.now()
 
@@ -618,82 +628,53 @@ def displaySomething (l, *, histogramy, addOutliers, cyferki, rok,
 
     if not cyferki:
         return
-    printed = set()
-    ludnoscAboveLabel = f">= {ludnosc}"
-    ludnoscBelowLabel = f"< {ludnosc}"
-    
+
     histograms = {}
     pentagrams = {}
-    for ttt, nm in [(Y, 'all')]:
+    #for ttt, nm in [(small, 'small'), (large, 'large')]:
+    for ttt, nm in [(large, 'large')]:
+    #for ttt, nm in [(small, 'small'), (mid, 'mid'), (large, 'large')]:
         for e in use2:
-            s = {}
-            p = {}
-            count = {}
+            s = [0]*10
+            p = [0]*5
+            count = 0
             for idx, row in ttt.iterrows():
-                smallKey = row['Województwo'] if wojewodztwa else ''
-                if warszawa and 'Warszawa' == row['Powiat']:
-                    smallKey = 'Warszawa'
-                #print ('smallkey', smallKey, type (smallKey), 's', s, type(s))
-                if ludnosc:
-                    gm = row['Gmina']
-                    if gm not in printed:
-                        printed.add(gm)
-                        if row["Ludnosc"] < ludnosc:
-                            None
-                            #print ('small', row['Gmina'], row["Ludnosc"], ludnosc)
-                        else:
-                            print  ('BIG', row['Gmina'])
-                    smallKey += ludnoscBelowLabel if row["Ludnosc"] < ludnosc else ludnoscAboveLabel
-                if diff:
-                    smallKey += "NAW wygrywa" if row['TRZASKOWSKI Rafał Kazimierz'] < row ['NAWROCKI Karol Tadeusz'] else "TRZA wygrywa"
-                if diffRegr:
-                    smallKey += "big D" if 0.2<row['Dnorm'] else "smallD "
-                if smallKey not in s:
-                    s[smallKey] = [0]*10
-                    p[smallKey] = [0]*5
-                    count[smallKey] = 0
-                    
                 if not pd.isna(row[e]) and ('all'==cyferki or row['class']==cyferki):
                     v = row[e]
                     if v < 50:
                         continue
-                    s[smallKey][round(v)%10] += 1
-                    p[smallKey][round(v)%5] += 1
-                    count[smallKey] += 1
-            for k in s:
-                if 200 <= count[k]:
-                    s[k].append(count[k])
-                    p[k].append(count[k])
-                    if k not in histograms:
-                        histograms[k] = {}
-                        pentagrams[k] = {}
-                    histograms [k][nm + ' ' + titles[e]] = s[k]
-                    pentagrams [k][nm + ' ' + titles[e]] = p[k]
+                    s[round(v)%10] += 1
+                    p[round(v)%5] += 1
+                    count += 1
+            if 300 <= count:
+                s.append(count)
+                p.append(count)
+                histograms [nm + ' ' + titles[e]] = s
+                pentagrams [nm + ' ' + titles[e]] = p
 
 
     #haveHistograms = [e for e in use2 if e in histograms]
-    for k in histograms:
-        ccc = 0
-        for key in histograms[k].keys():
-            #if key not in pentagrams:                   # sanity check
-            #    continue
-            colour = palette[ccc % len(palette)]
-            ccc += 1
-            plot_histogram_pair(
-                title=k+' '+key,
-                histo_data=histograms[k][key],
-                penta_data=pentagrams[k][key],
-                lVisible=lVisible + ' ' + cyferki,
-                p_conf=0.95,
-                bar_colour  = colour
-            )
-        plt.show()
+    ccc = 0
+    for key in histograms.keys():
+        #if key not in pentagrams:                   # sanity check
+        #    continue
+        colour = palette[ccc % len(palette)]
+        ccc += 1
+        plot_histogram_pair(
+            title=key,
+            histo_data=histograms[key],
+            penta_data=pentagrams[key],
+            lVisible=lVisible + ' ' + cyferki,
+            p_conf=0.95,
+            bar_colour  = colour
+        )
 
     #plot_histograms([(e, histograms[e]) for e in histograms], lVisible + ' ' + cyferki, p_conf=0.95
     #                )
     #plot_histograms([(e, pentagrams[e]) for e in pentagrams], lVisible + ' ' + cyferki, p_conf=0.95,
     #                category_labels=['0 i 5','1 i 6', '2 i 7', '3 i 8', '4 i 9'])
 
+    plt.show()
 
 def main():
     parser = argparse.ArgumentParser(
@@ -710,44 +691,6 @@ def main():
         '-H',
         action='store_true',
         help="Histogramy główne"
-    )
-
-    parser.add_argument(
-        '-w',
-        action='store_true',
-        help="województwa"
-    )
-
-    parser.add_argument(
-        '-W',
-        action='store_true',
-        help="Warszawa"
-    )
-
-    parser.add_argument(
-        '-D',
-        action='store_true',
-        help="sign of difference D = reported - rsult of lin regression"
-    )
-
-    parser.add_argument(
-        '-d',
-        action='store_true',
-        help="who won?"
-    )
-
-    parser.add_argument(
-        '-o',
-        action='store_true',
-        help="output outliers"
-    )
-
-    parser.add_argument(
-        '-l',
-        type=int,
-        default=0,
-        metavar='LUDNOSC',
-        help="Warszawa"
     )
 
     parser.add_argument(
@@ -778,10 +721,7 @@ def main():
     for idx, val in enumerate(args.items, 1):
         print(f"  {idx}: {val}")
         displaySomething (val, histogramy=args.H, cyferki=args.c, rok=rok,
-                          ludnosc=args.l, diff=args.d, diffRegr=args.D, wojewodztwa=args.w, addOutliers=args.o, warszawa=args.W,
                           mergedInfix=('-merged' if args.m else ''))
     
 if __name__ == "__main__":
     main()
-
-# kujawsko-pomorskie lubelskie mazowieckie warm-maz wielkop

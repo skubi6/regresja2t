@@ -3,6 +3,7 @@
 # 0.  Imports
 # ------------------------------------------------------------
 import sys
+
 from pathlib import Path
 
 import pandas as pd
@@ -60,10 +61,8 @@ def ci_diffH(N, p, q, x=0.95):
     z    = norm.ppf((1 + x) / 2)       # kwantyl 1-α/2
     return mu + z*sig
 
-# ------------------------------------------------------------
-# 1.  Helper functions
-# ------------------------------------------------------------
 def nan_diagnostic(X, y, tgt_name, KEY1, KEY2):
+    #cols_with_nan = X.columns[X.isna().any()].tolist()
     ignore = ['Powiat', 'Teryt Powiatu', 'Województwo', 'Gmina', 'Nr OKW', 'Typ gminy']
     cols_with_nan = (
         X.columns[X.isna().any()]          # columns that have at least one NaN
@@ -95,7 +94,7 @@ def nan_diagnostic(X, y, tgt_name, KEY1, KEY2):
     print ('tgt_name', tgt_name)
     raise "nans"
     keys = offenders[[KEY1, KEY2]].astype(str).agg(" · ".join, axis=1)
-    print(f"\n❌ NaNs in target '{tgt_name}':")
+    print(f"\n!!! NaNs in target '{tgt_name}':")
     for k in keys:
         print("  -", k)
     offenders.to_excel(f"nan_offenders_{tgt_name}.xlsx", index=False)
@@ -105,13 +104,11 @@ def assert_no_dupes(df, key_cols, label):
     dup = df.duplicated(key_cols, keep=False)
     if dup.any():
         raise SystemExit(
-            f"\n❌ DUPLICATE KEYS in {label}:\n"
+            f"\n!!! DUPLICATE KEYS in {label}:\n"
             f"{df.loc[dup, key_cols].to_string(index=False)}\n"
         )
 
-# ------------------------------------------------------------
-# 2.  Load Excel sheets
-# ------------------------------------------------------------
+
 DATA_DIR = Path(".")
 
 cands = {
@@ -144,7 +141,6 @@ cands = {
 	"Stanisław Józef ŻÓŁTEK"
     ]
 }
-
 first_cols = {
     2025: [
         'Liczba wyborców uprawnionych do głosowania (umieszczonych w\xa0spisie, z\xa0uwzględnieniem dodatkowych formularzy) w\xa0chwili zakończenia głosowania',
@@ -178,41 +174,23 @@ targets = {
 }
         
 
-print("Rows in joined SECOND+EXTRA:", len (SECOND), len(SECOND_JOIN))
-
-
-assert_no_dupes(FIRST, [KEY1, KEY2], "FIRST")
-assert_no_dupes(SECOND, [KEY1, KEY2], "SECOND")
-
-# ------------------------------------------------------------
-# 3.  Design & target matrices
-# ------------------------------------------------------------
-
-X = FIRST.set_index([KEY1, KEY2]) #[first_cols]
-Y = SECOND.set_index([KEY1, KEY2]) #[targets]
-print("Columns in SECOND:", SECOND.columns.tolist())
-print("Columns in Y:", Y.columns.tolist())
-
 #Y = SECOND.set_index([KEY1, KEY2])
-
-# align common precincts
 
 def buildLinRegression (
         Xarg, Yarg, filename, rok
 ):
     nowFunStart = datetime.now()
-   
+    # align common precincts
     Xarg, Yarg = Xarg.align(Yarg, join="inner", axis=0)
-    print("Precincts analysed:", len(Xarg))
 
     intercepts = {}
     coefs, fits, resids = {}, {}, {}
 
     ALPHAS = np.logspace(-3, 3, 13)      # 1e-3 … 1e3
-    
+
     for tgt in targets[rok]:
         nan_diagnostic(Xarg, Yarg[tgt], tgt, KEY1, KEY2)
-        
+
         pipe = make_pipeline(
             SimpleImputer(strategy="median"),    # 1. imputacja braków
             StandardScaler(),                    # 2. pełna standaryzacja
@@ -220,7 +198,7 @@ def buildLinRegression (
         )
 
         try:
-            pipe.fit(Xarg[first_cols], Yarg[tgt])
+            pipe.fit(Xarg[first_cols[rok]], Yarg[tgt])
         except Exception:
             writerD = pd.ExcelWriter("debug.xlsx", engine="xlsxwriter")
             Xarg.to_excel(writerD, sheet_name="Xarg", index=True)
@@ -229,29 +207,34 @@ def buildLinRegression (
             raise
 
         print("doing", tgt)
-        Yarg['fits'+tgt] = pd.Series(pipe.predict(Xarg[first_cols]), index=Xarg.index)
-        Yarg['resids'+tgt] = Yarg[tgt] - Yarg['fits'+tgt]
-        coefs[tgt] = pipe.named_steps["linearregression"].coef_
-        intercepts[tgt] = pipe.named_steps["linearregression"].intercept_
+        # -------- prognozy ------------------------------------------------------
+        Yarg["fits" + tgt] = pd.Series(
+            pipe.predict(Xarg[first_cols[rok]]),
+            index=Xarg.index
+        )
+        print(Yarg["fits" + tgt])
+        Yarg["resids" + tgt] = Yarg[tgt] - Yarg["fits" + tgt]
 
+        # -------- współczynniki w ORYGINALNEJ skali cech ------------------------
+        scaler = pipe.named_steps["standardscaler"]
+        ridge  = pipe.named_steps["ridgecv"]
 
-    # ------------------------------------------------------------
-    # 5A.  >>> NEW <<<  Collect and display regression coefficients
-    # ------------------------------------------------------------
-    #  (Put this right after the model-fitting loop that fills `coefs`)
+        beta_std = ridge.coef_                       # współczynniki po skalowaniu
+        beta_orig = beta_std / scaler.scale_         # „od-standaryzowanie”
 
-    # 1.  During the loop you already stored
-    #       coefs[tgt]  →  NumPy array of slopes (same order as `first_cols`)
-    #     Add intercepts alongside:
-    #            intercepts[tgt] = pipe.named_steps["linearregression"].intercept_
-    #     Make sure the loop above now records this:
-    #       intercepts = {}
+        intercept_orig = (
+            ridge.intercept_
+            - np.sum(scaler.mean_ * beta_orig)       # korekta interceptu
+        )
 
-    # ------------------------------------------------------------
-    #  BEGIN block to add just below the loop  --------------------
-    # ------------------------------------------------------------
+        coefs[tgt]      = beta_orig
+        intercepts[tgt] = intercept_orig
 
-    predictor_names = ["Intercept"] + first_cols
+    # tabela współczynników
+    predictor_names = ["Intercept"] + first_cols[rok]
+    coef_tbl = pd.DataFrame(index=predictor_names)
+
+    predictor_names = ["Intercept"] + first_cols[rok]
 
     coef_tbl = pd.DataFrame(index=predictor_names)
 
@@ -268,13 +251,13 @@ def buildLinRegression (
     print(coef_tbl.to_string(float_format=float_fmt))
     print("==========================================================================\n")
 
-
     c1, c2 = c[rok][0], c[rok][1]
 
     Yarg["obs_diff"] = Yarg[c1] - Yarg[c2]
     Yarg["fit_diff"] = Yarg['fits' + c1] - Yarg['fits' + c2]
     Yarg["D"] = Yarg["obs_diff"] - Yarg["fit_diff"]            # Series on same MultiIndex
     Yarg["Drev"] = -Yarg["obs_diff"] - Yarg["fit_diff"]            # Series on same MultiIndex
+
 
     N   = Xarg[first_cols[rok][0]]
     p   = Yarg["fits" + c1] / N
@@ -311,25 +294,30 @@ def buildLinRegression (
 
     # --- jaki poziom ufności miałby przedział z brzegiem w obserwowanym D --------
     z_edge           = (Yarg["obs_diff"] - mu).abs() / sigma
-    Yarg["x_edge"]   = 2 * norm.cdf(z_edge) - 1       # x ∈ (0, 1)    
+    Yarg["x_edge"]   = 2 * norm.cdf(z_edge) - 1       # x ∈ (0, 1)
 
     denom   = (Yarg[c1] + Yarg[c2])**.5
-    D_rel   = Yarg["D"] / denom
+
+    D_rel = pd.Series(                                              # keep original index
+        np.divide(                                                  # element-wise D / denom
+            Yarg["D"].to_numpy(dtype=float),                        # numerator
+            denom.to_numpy(dtype=float),                            # denominator
+            out=np.zeros_like(denom, dtype=float),                  # preset output with 0s
+            where=~((Yarg["D"] == 0) & (denom == 0))                # skip rows where both are 0
+        ),
+        index=Yarg.index
+    )
+
     D_rel   = D_rel.replace([np.inf, -np.inf], np.nan)   # guard against div-by-0
     D_rel   = D_rel.dropna()
     Yarg["Dnorm"] = D_rel
-
-    Drev_rel   = Yarg["D"] / denom
-    Drev_rel   = Drev_rel.replace([np.inf, -np.inf], np.nan)   # guard against div-by-0
-    Drev_rel   = Drev_rel.dropna()
-    Yarg["Drevnorm"] = D_rel
-
+    
     nowAfterInit = datetime.now()
 
     Yarg.reset_index(inplace=True)
 
     writerY = pd.ExcelWriter(filename, engine="xlsxwriter")
-    Yrev.to_excel(writerY, sheet_name="Y", index=False)
+    Yarg.to_excel(writerY, sheet_name="Yarg", index=False)
 
     writerY.close()
     nowFunStop = datetime.now()
@@ -351,23 +339,17 @@ def main():
     if 0<len(args.items):
         rok = int (args.items[0])
     print ('ROK', rok)
-    global KEY1
-    global KEY2
 
     FIRST = pd.read_excel(DATA_DIR / inputFileNames[rok][0])
     FIRST.loc[FIRST['Typ obszaru'].isin(['zagranica', 'statek']), terytGminy[rok]] = 9999999
     SECOND = pd.read_excel(DATA_DIR / inputFileNames[rok][1])
     SECOND.loc[SECOND['Typ obszaru'].isin(['zagranica', 'statek']), terytGminy[rok]] = 9999999
-    EXTRA = pd.DataFrame()
-    if inputFileNames[rok][2]:
-        EXTRA = pd.read_excel(DATA_DIR / inputFileNames[rok][2])
-        EXTRA.rename(columns={"Nr obw.": "Nr komisji", "TERYT gminy" : "Teryt Gminy"}, inplace=True)
-        EXTRA[KEY2] = EXTRA[KEY2].replace("", 0).astype(int)
+    global KEY1
+    global KEY2
     KEY1, KEY2 = terytGminy[rok], nrKomisji[rok]
     for df in (FIRST, SECOND):
         df[KEY2] = df[KEY2].replace("", 0).astype(int)
     FIRST[KEY1] = FIRST[KEY1].fillna(0).astype(int)
-    
 
     print ('step 1')
 

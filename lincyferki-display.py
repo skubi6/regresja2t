@@ -15,31 +15,6 @@ from datetime import datetime
 import argparse
 palette = plt.cm.tab10.colors
 
-pisOld = {
-    'Marka Jakubiaka',
-    'Jakubiaka',
-    'Krzysztofa Jakuba Stanowskiego',
-    'Romualda Starosielca',
-    'Wiesława Lewickiego',
-    'Eugeniusza Maciejewskiego',
-    'Karola Nawrockiego',
-    'Sławomira Jerzego Mentzena',
-    'Adama Nawary',
-    'Adama Nawary, Pawła Tanajno',
-    'Aldony Anny Skirgiełło',
-    'Andrzeja Jana Kasela',
-    'Artura Bartoszewicza',
-    'Dawida Bohdana Jackiewicza',
-    'Dominiki Jasińskiej',
-    'Eugeniusza Maciejewskiego',
-    'Grzegorza Kołek',
-    'Grzegorza Michała Bra',
-    'Grzegorza Michała Brauna',
-    'Grzegorza Michała Bra, Grzegorza Michała Brauna',
-    'Jakuba Perkowskiego',
-    'Jana Wojciecha Kubania'
-}
-
 pis = {
     'Adama Nawary',
     'Adama Nawary, Pawła Tanajno',
@@ -114,7 +89,7 @@ antypis = {
 
 znaneKomitety = pis | antypis
 
-def classify (row):
+def classifyAlt (row):
     countPis = 0
     a = row["member1_candidate"]
     b = row["member2_candidate"]
@@ -132,6 +107,24 @@ def classify (row):
 
     if b != '' and not pd.isna(b) and b not in znaneKomitety:
         print ('Nieznany komitet', b)
+
+    if 0 <countPis:
+        return  "red" # "#CC0000"  # "red"
+    elif countPis < 0:
+        return  "blue" # "#0066CC"  # "blue"
+    else:
+        return "black"
+
+def classify (row):
+    countPis = 0
+    a = row["member1_candidate"]
+    if a in pis:
+        countPis += 1
+    if a in antypis:
+        countPis -= 1
+
+    if a != '' and not pd.isna (a) and a not in znaneKomitety:
+        print ('Nieznany komitet', a)
 
     if 0 <countPis:
         return  "red" # "#CC0000"  # "red"
@@ -276,7 +269,6 @@ titles = {
 
 }
 
-
 def cl_band(n, p_cat, p_conf=0.95):
     """Normal-approx 2-sided band for Bin(n, p_cat)."""
     z     = abs(statistics.NormalDist().inv_cdf((1 - p_conf) / 2))
@@ -392,10 +384,12 @@ def plot_histogram_pair(title,
 def displaySomething (l, *, histogramy, addOutliers, cyferki, rok,
                       ludnosc, diff, diffRegr, wojewodztwa, warszawa, mergedInfix):
     lVisible = l or 'wszystko'
-    Y = pd.read_excel(DATA_DIR / f"Y{l}{rok}{mergedInfix}.xlsx")
+    Y = pd.read_excel(DATA_DIR / f"Y{l}C{rok}{mergedInfix}.xlsx")
     if mergedInfix:
+        print ('classify')
         Y["class"] = Y.apply(classify, axis=1)
     else:
+        print ('NO classify')
         Y["class"] = "black";
         #Y.loc[:, "class"] = "black"
     Y["color"] = Y["class"].map(colors)
@@ -585,8 +579,8 @@ def displaySomething (l, *, histogramy, addOutliers, cyferki, rok,
 
         criterion = "Dnorm"
 
-        #large = Y.nlargest(TOP_N, criterion)
-        #small = Y.nsmallest(TOP_N, criterion)
+        large = Y.nlargest(TOP_N, criterion)
+        small = Y.nsmallest(TOP_N, criterion)
         #mid = Y.nsmallest(TOP_N*2, criterion).nlargest(TOP_N, criterion)
 
         def add_outliers(series: pd.Series, label: str, k: int = TOP_N):

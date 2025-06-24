@@ -43,7 +43,8 @@ def mergeY (label):
 
     writerY.close()
 
-for l in ["", "miasta", "wies", "zagranica"]:
+#for l in ["", "miasta", "wies", "zagranica"]:
+for l in ["krajC2025"]:
     print('label', l)
     mergeY(l)
 nowAfterInit = datetime.now()

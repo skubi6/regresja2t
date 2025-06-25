@@ -148,6 +148,7 @@ cands = {
 first_cols = {
     2025: [
         'Liczba wyborców uprawnionych do głosowania (umieszczonych w\xa0spisie, z\xa0uwzględnieniem dodatkowych formularzy) w\xa0chwili zakończenia głosowania',
+        'w tym z powodu postawienia znaku „X” obok nazwiska dwóch lub większej liczby kandydatów',
         'Liczba wyborców głosujących na podstawie zaświadczenia o\xa0prawie do głosowania',
         'Liczba głosów nieważnych (z\xa0kart ważnych)'
         ] + cands[2025],
@@ -166,17 +167,27 @@ c = {
 targets = {
     2025: [
         'Liczba głosów nieważnych (z\xa0kart ważnych)',
+        'w tym z powodu postawienia znaku „X” obok nazwisk obu kandydatów',
         "NAWROCKI Karol Tadeusz",          # c1
         "TRZASKOWSKI Rafał Kazimierz",     # c2
     ],
         
     2020: [
         'Liczba głosów nieważnych',
+        #'w tym z powodu postawienia znaku „X” obok nazwisk obu kandydatów'
         "Andrzej Sebastian DUDA",          # c1
         "Rafał Kazimierz TRZASKOWSKI",     # c2
     ]
 }
-        
+
+targetTranslate = {
+        'Liczba głosów nieważnych (z\xa0kart ważnych)' : 'nieważne',
+        'w tym z powodu postawienia znaku „X” obok nazwisk obu kandydatów' : 'dwa X',
+        "NAWROCKI Karol Tadeusz" : 'NAWROCKI',          # c1
+        "TRZASKOWSKI Rafał Kazimierz" : 'TRZASKOWSKI',     # c2
+        "Andrzej Sebastian DUDA" : 'DUDA',          # c1
+        "Rafał Kazimierz TRZASKOWSKI" : 'TRZASKOWSKI',     # c2
+}
 
 
 # ------------------------------------------------------------
@@ -236,14 +247,14 @@ def buildLinRegression (
             - np.sum(scaler.mean_ * beta_orig)       # korekta interceptu
         )
 
-        coefs[tgt]      = beta_orig
-        intercepts[tgt] = intercept_orig
+        coefs[targetTranslate[tgt]]      = beta_orig
+        intercepts[targetTranslate[tgt]] = intercept_orig
         
     predictor_names = ["Intercept"] + first_cols[rok]
     coef_tbl = pd.DataFrame(index=predictor_names)
 
     for tgt in targets[rok]:
-        coef_tbl[tgt] = [intercepts[tgt]] + coefs[tgt].tolist()
+        coef_tbl[targetTranslate[tgt]] = [intercepts[targetTranslate[tgt]]] + coefs[targetTranslate[tgt]].tolist()
 
     # convert to percent & round to 4 decimal places
     coef_tbl = (coef_tbl * 100).round(2)

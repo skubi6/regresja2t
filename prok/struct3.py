@@ -60,15 +60,68 @@ def normalize_head(head: str) -> str:
     return cleaned.replace("Prokuraturę Okręgową", "Prokuratura Okręgowa")
 
 # ---------------------------------------------------------------------------
-# Tail-processing helpers for §3 ▸ subpart 2
+# Intro normaliser for §4 sub-parts
 # ---------------------------------------------------------------------------
-MAIN_INTROS = (
-    "obejmującą obszar właściwości Prokuratur Rejonowych:",
-    "obejmującą obszar właściwości Prokuratur Rejonowych w:",
+
+#_P4_INTRO_RX = re.compile(
+#    r"""^\s*w\s+obszarze\s+właściwości\s+
+#        Prokuratury\s+Okręgowej\s+
+#        (w\s+.+?)\s*:?\s*$""",
+#    flags=re.I | re.X,
+#)
+
+_P4_INTRO_RX = re.compile(
+    r"""^\s*                              # optional leading blanks
+        w\s+obszarze\s+właściwości\s+      # required phrase
+        Prokuratury\s+Okręgowej\s+         # fixed words
+        (?P<rest>.+?)                      # capture ‘w X…’ (with or without tag)
+        \s*:?\s*$                          # optional colon at the end
+    """,
+    flags=re.I | re.X,
 )
 
+
+
+def normalize_p4_intro(intro: str) -> str:
+    """
+    Convert ‘w obszarze … Prokuratury Okręgowej w X:’ →
+    ‘Prokuratura Okręgowa w X’.
+    Strict: raises ``ValueError`` on mismatch.
+    """
+    m = _P4_INTRO_RX.match(intro)
+    if not m:
+        raise ValueError("Unexpected §4 intro format: " + intro[:120])
+
+    return "Prokuratura Okręgowa " + m.group("rest").strip()
+
+
+
+# ---------------------------------------------------------------------------
+# Tail-processing helpers for §3 ▸ subpart 2
+# ---------------------------------------------------------------------------
+#MAIN_INTROS = (
+#    "obejmującą obszar właściwości Prokuratur Rejonowych:",
+#    "obejmującą obszar właściwości Prokuratur Rejonowych w:",
+#)
+
+
+_MAIN_INTRO_RX = re.compile(
+    r"""^\s*
+        obejmującą\s+obszar\s+właściwości\s+
+        Prokuratur\s+Rejonowych           # fixed words
+        (?:\s+w)?\s* :                    # 0‒1 “ w” then colon
+    """,
+    flags=re.I | re.X,
+)
+
+# quick detector used by the §3 flattening loop
 def _is_tail_list(tail: str) -> bool:
-    return any(tail.lstrip().startswith(intro) for intro in MAIN_INTROS)
+    return bool(_MAIN_INTRO_RX.match(tail.lstrip()))
+
+
+
+#def _is_tail_list(tail: str) -> bool:
+#    return any(tail.lstrip().startswith(intro) for intro in MAIN_INTROS)
 
 _AUX_IW_RE = re.compile(r"\s+i\s*w:")  # " i w:" – keep conjunction
 _AUX_W_RE = re.compile(r"\s+w:")       # " w:"  – remove entirely
@@ -82,17 +135,17 @@ def _strip_main_intro(tail: str) -> str:
     • Works even when stray new-lines or multiple spaces appear inside.
     • Raises ``ValueError`` if the intro is missing or misspelled.
     """
-    intro_rx = re.compile(
-        r"""^\s*                                   # any leading blanks
-            obejmującą\s+obszar\s+właściwości\s+
-            Prokuratur\s+Rejonowych                # core phrase
-            (?:\s+w)?\s*:                          # optional ' w' + colon
-            \s*                                    # trailing blanks/new-lines
-        """,
-        flags=re.I | re.X,
-    )
+    #intro_rx = re.compile(
+    #    r"""^\s*                                   # any leading blanks
+    #        obejmującą\s+obszar\s+właściwości\s+
+    #        Prokuratur\s+Rejonowych                # core phrase
+    #        (?:\s+w)?\s*:                          # optional ' w' + colon
+    #        \s*                                    # trailing blanks/new-lines
+    #    """,
+    #    flags=re.I | re.X,
+    #)
 
-    m = intro_rx.match(tail)
+    m = _MAIN_INTRO_RX.match(tail.lstrip()) # m = intro_rx.match(tail)
     if not m:
         raise ValueError("Tail lacks recognised main intro: " + tail[:120])
 
@@ -101,12 +154,12 @@ def _strip_main_intro(tail: str) -> str:
 
 
 
-def _strip_main_introOLD(tail: str) -> str:
-    work = tail.lstrip()
-    for intro in MAIN_INTROS:
-        if work.startswith(intro):
-            return work[len(intro) :]
-    raise ValueError("Tail lacks recognised main intro: " + tail[:120])
+#def _strip_main_introOLD(tail: str) -> str:
+#    work = tail.lstrip()
+#    for intro in MAIN_INTROS:
+#        if work.startswith(intro):
+#            return work[len(intro) :]
+#    raise ValueError("Tail lacks recognised main intro: " + tail[:120])
 
 
 def _remove_aux_intros(tail: str) -> str:
@@ -115,6 +168,27 @@ def _remove_aux_intros(tail: str) -> str:
 
 
 def split_tail_list(tail: str) -> List[str]:
+    """Convert *tail* into a list of ‘Prokuratura Rejonowa …’ strings."""
+    # 1️⃣ remove the main intro and auxiliary fragments
+    tail = _strip_main_intro(tail)
+    tail = _remove_aux_intros(tail.replace("\n", " "))
+
+    # 2️⃣ collapse duplicate whitespace
+    tail = re.sub(r"\s{2,}", " ", tail).strip()
+
+    # 3️⃣ split on “, ” or “ i ”
+    pieces = re.split(r",\s+|\s+i\s+", tail)
+    parts = [p.rstrip(",;").strip() for p in pieces if p.strip()]
+
+    # 4️⃣ prepend the required phrase
+    def _pref(s: str) -> str:
+        return (
+            "Prokuratura Rejonowa " if " w " in s else "Prokuratura Rejonowa w "
+        ) + s
+
+    return [_pref(p) for p in parts]
+
+def split_tail_listOLD(tail: str) -> List[str]:
     """Return *tail* as a list of prosecutor-office strings.
 
     Steps
@@ -281,6 +355,11 @@ def parse_hierarchy(raw: str) -> List[Part]:
                 raise ValueError(f"Subpart {sub_number} in §{part_number} lacks sub-subparts")
 
             sub_intro = sub_body_all[: m_first_ss.start()].strip()
+
+            # ---------- NEW: normalise §4 intro ---------------------------
+            if part_number == 4:
+                sub_intro = normalize_p4_intro(sub_intro)
+
             ss_body = sub_body_all[m_first_ss.start() :]
             sub_obj = SubPart(sub_number, sub_intro)
 

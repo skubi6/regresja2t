@@ -430,13 +430,23 @@ class SubPart:
     number: int
     intro: str
     subsubparts: List[SubSubPart] = field(default_factory=list)
+    p4_map: Dict[str, List[str]] = field(default_factory=dict)   # NEW
 
     def dump(self, indent: int = 0) -> str:
         pad = " " * indent
         head = f"{pad}{self.number})"
         if self.intro:
             head += f" {self.intro}"
-        lines = [head] + [ssp.dump(indent + 2) for ssp in self.subsubparts]
+        #lines = [head] + [ssp.dump(indent + 2) for ssp in self.subsubparts]
+        lines = [head]
+
+        # § 4 dictionary view
+        if self.p4_map:
+            d_lines = pprint.pformat(self.p4_map, width=100).splitlines()
+            lines += [f"{pad}  {l}" for l in d_lines]
+        else:
+            lines += [ssp.dump(indent + 2) for ssp in self.subsubparts]
+            
         return "\n".join(lines)
 
     def __str__(self) -> str:  # pragma: no cover
@@ -557,11 +567,19 @@ def parse_hierarchy(raw: str) -> List[Part]:
                     head_norm, tail_norm = split_p4_head_tail(ss_text)
                     #ss_text = f"{head_norm} dla {tail_norm}"  # store normalized
                     tail_list = parse_p4_tail_list(tail_norm)
-                    ss_text = f"{head_norm} dla {tail_list}"
+                    #ss_text = f"{head_norm} dla {tail_list}"
                     # store head for cross-validation later
-                    sub_obj.subsubparts.append(
-                        SubSubPart(letter, ss_text)
-                    )
+
+                    if head_norm in sub_obj.p4_map:
+                        raise ValueError(
+                            f\"Duplicate head '{head_norm}' in §4 subpart {sub_number}\"
+                        )
+                    sub_obj.p4_map[head_norm] = tail_list
+
+                    # keep raw SubSubPart only for debugging (optional)
+                    sub_obj.subsubparts.append(SubSubPart(letter, ss_text))
+                    BIZARRE
+                    continue   # skip normal append below
                 else:
                     sub_obj.subsubparts.append(SubSubPart(letter, ss_text))
                 
@@ -591,6 +609,12 @@ def _validate_links(parts: List["Part"]) -> None:
                 I = sp.intro
                 if I not in p3_map:
                     raise ValueError(f"§4 intro '{I}' not present in §3 dictionary")
+                for h in sp.p4_map:
+                    if h not in p3_dict[I]:
+                        raise ValueError(
+                            f"Head '{h}' under intro '{I}' missing from §3 list"
+                        )
+                    seen_pairs.add((I, h))
                 for ssp in sp.subsubparts:
                     head, _tail = split_p4_head_tail(ssp.text)
                     if head not in p3_map[I]:

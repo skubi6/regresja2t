@@ -88,8 +88,8 @@ b) Prokuraturę Okręgową w Legnicy – obejmującą obszar właściwości Prok
 c) Prokuraturę Okręgową w Opolu – obejmującą obszar właściwości Prokuratur Rejonowych w: Brzegu, Głubczycach, Kędzierzynie-Koźlu, Kluczborku, Nysie, Oleśnie, Opolu, Prudniku i Strzelcach Opolskich,
 d) Prokuraturę Okręgową w Świdnicy – obejmującą obszar właściwości Prokuratur Rejonowych w: Bystrzycy
 Kłodzkiej, Dzierżoniowie, Kłodzku, Świdnicy, Wałbrzychu i Ząbkowicach Śląskich,
-e) Prokuraturę Okręgową we Wrocławiu – obejmującą obszar właściwości Prokuratur Rejonowych w: Miliczu, Oleśnicy, Oławie, Strzelinie, Środzie Śląskiej, Trzebnicy, Wołowie, Wrocław-Fabryczna we Wrocławiu, Wrocław-Krzyki Wschód we Wrocławiu, Wrocław-Krzyki Zachód we Wrocławiu, Wrocław-Psie Pole we Wrocławiu,
-Wrocław-Stare Miasto we Wrocławiu i Wrocław-Śródmieście we Wrocławiu.
+e) Prokuraturę Okręgową we Wrocławiu – obejmującą obszar właściwości Prokuratur Rejonowych w: Miliczu, Oleśnicy, Oławie, Strzelinie, Środzie Śląskiej, Trzebnicy, Wołowie, dla Wrocławia-Fabryczna we Wrocławiu, dla Wrocławia-Krzyki Wschód we Wrocławiu, dla Wrocławia-Krzyki Zachód we Wrocławiu, dla Wrocławia-Psie Pole we Wrocławiu, 
+dla Wrocławia-Stare Miasto we Wrocławiu i dla Wrocławia-Śródmieście we Wrocławiu;
 § 4. Ustala się siedziby i obszary właściwości prokuratur rejonowych:
 1) w obszarze właściwości Prokuratury Okręgowej w Białymstoku:
 a) Prokuraturę Rejonową Białystok-Południe w Białymstoku dla części miasta Białystok w granicach przebiegających od przecięcia linii kolejowej z ul. gen. Franciszka Kleeberga w kierunku południowym, wzdłuż tej linii kolejowej do przecięcia z al. Jana Pawła II, środkiem al. Jana Pawła II w kierunku wschodnim do ronda przy posesji
@@ -649,7 +649,7 @@ Sarzyna,
 c) Prokuraturę Rejonową w Łańcucie dla miasta Łańcut oraz gmin: Białobrzegi, Czarna, Łańcut, Markowa, Rakszawa i Żołynia,
 d) Prokuraturę Rejonową w Ropczycach dla gmin: Iwierzyce, Ostrów, Ropczyce, Sędziszów Małopolski i Wielopole
 Skrzyńskie,
-e) Prokuraturę Rejonową dla miasta Rzeszów dla obszaru administracyjnego miasta Rzeszów,
+e) Prokuraturę Rejonową w Rzeszowie dla miasta Rzeszów dla obszaru administracyjnego miasta Rzeszów,
 f) Prokuraturę Rejonową w Rzeszowie dla miasta Dynów oraz gmin: Błażowa, Boguchwała, Chmielnik, Dynów,
 Głogów Małopolski, Hyżne, Kamień, Krasne, Lubenia, Sokołów Małopolski, Świlcza, Trzebownisko i Tyczyn,
 g) Prokuraturę Rejonową w Strzyżowie dla gmin: Czudec, Frysztak, Niebylec, Strzyżów i Wiśniowa;
@@ -680,9 +680,9 @@ Przechlewo i Rzeczenica,
 d) Prokuraturę Rejonową w Lęborku dla miast Lębork i Łeba oraz gmin: Cewice, Czarna Dąbrówka, Nowa Wieś
 Lęborska, Potęgowo i Wicko,
 e) Prokuraturę Rejonową w Miastku dla gmin: Kępice, Koczała, Miastko i Trzebielino,
-f)3) Prokuraturę Rejonową w Słupsku dla miast Słupsk i Ustka oraz gmin: Damnica, Dębnica Kaszubska, Główczyce,
+f) Prokuraturę Rejonową w Słupsku dla miast Słupsk i Ustka oraz gmin: Damnica, Dębnica Kaszubska, Główczyce,
 Kobylnica, Redzikowo, Smołdzino i Ustka;
-33a) w obszarze właściwości Prokuratury Okręgowej w Sosnowcu:
+99) w obszarze właściwości Prokuratury Okręgowej w Sosnowcu:
 a) Prokuraturę Rejonową w Będzinie dla miast: Będzin, Czeladź i Wojkowice oraz gmin Bobrowniki i Psary,
 b) Prokuraturę Rejonową w Dąbrowie Górniczej dla miast Dąbrowa Górnicza i Sławków,
 c) Prokuraturę Rejonową w Jaworznie dla miasta Jaworzno,
@@ -796,7 +796,7 @@ f) Prokuraturę Rejonową Warszawa-Śródmieście w Warszawie dla części miast
 części dzielnicy Śródmieście położonej na południe od osi Al. Jerozolimskich,
 g) Prokuraturę Rejonową Warszawa Śródmieście-Północ w Warszawie dla części miasta stołecznego Warszawy
 w granicach części dzielnicy Śródmieście położonej na północ od osi Al. Jerozolimskich,
-ga) Prokuraturę Rejonową Warszawa-Ursynów w Warszawie dla części miasta stołecznego Warszawy w granicach
+k) Prokuraturę Rejonową Warszawa-Ursynów w Warszawie dla części miasta stołecznego Warszawy w granicach
 ustalonych dla dzielnic: Ursynów i Wilanów,
 h) Prokuraturę Rejonową Warszawa-Wola w Warszawie dla części miasta stołecznego Warszawy w granicach ustalonych dla dzielnic Bemowo i Wola oraz gminy Izabelin,
 i) Prokuraturę Rejonową Warszawa-Żoliborz w Warszawie dla części miasta stołecznego Warszawy w granicach

@@ -60,6 +60,103 @@ def normalize_head(head: str) -> str:
     return cleaned.replace("Prokuraturę Okręgową", "Prokuratura Okręgowa")
 
 # ---------------------------------------------------------------------------
+# Para 4 sub-subpart helpers
+# ---------------------------------------------------------------------------
+
+def split_p4_head_tail(text: str) -> tuple[str, str]:
+    """
+    Split para-4 sub-subpart text on ' dla ' (strict) and normalise the head.
+
+    Returns (head, tail) where head is “Prokuratura Rejonowa …”.
+    """
+    #if " dla " not in text:
+    #    raise ValueError("Missing ' dla ' separator in §4 sub-subpart: " + text[:120])
+
+    #head_raw, tail = text.rsplit(" dla ", 1)
+    #matches = list(re.finditer(r"(?<!,) dla ", text))
+    #if not matches:
+    #    raise ValueError("Missing valid ' dla ' separator in §4 sub-subpart: " + text[:120])
+
+    #idx = matches[-1].start()        # position of the chosen separator
+    if " dla części " in text:
+        idx = text.find(" dla części ")          # first match
+    else:
+        # otherwise: last “ dla ” not preceded by “, ”
+        matches = list(re.finditer(r"(?<!,) dla ", text))
+        if not matches:
+            raise ValueError("Missing valid ' dla ' separator in §4 sub-subpart: " + text[:120])
+        idx = matches[-1].start()                # last valid match
+    head_raw = text[: idx]
+    print ('<'+head_raw+'>')
+    tail = text[idx + 5 :]           # len(\" dla \") == 5
+    #head = head_raw.strip().replace("Prokuraturę Rejonową", "Prokuratura Rejonowa")
+    head_clean = re.sub(r"^\d+\)\s*", "", head_raw.strip())
+    head = head_clean.replace("Prokuraturę Rejonową", "Prokuratura Rejonowa")
+    if "Prokuratura Rejonowa" not in head:  # still strict
+        raise ValueError("Bad head after normalisation: " + head_raw[:120])
+    return head, tail.strip()
+
+
+# ---------------------------------------------------------------------------
+# Tail-to-list converter for § 4
+# ---------------------------------------------------------------------------
+
+_WARSAW_SUB_RX = re.compile(
+    r"""części\s+miasta\s+stołecznego\s+Warszawy.*?dzielnic:\s*""",
+    flags=re.I | re.S,
+)
+_CITY_RX   = re.compile(r"""miast[ a]?\s*:?\s*""", flags=re.I)
+_ADMIN_CITY_RX = re.compile(
+    r"""obszaru\s+administracyjnego\s+miast[ a]?\s*:?\s*""",
+    flags=re.I,
+)
+
+_GMINA_RX  = re.compile(r"""gmin[ ay]?\s*:?\s*""", flags=re.I)
+_PART_RX   = re.compile(r"""części\s+""", flags=re.I)
+
+_SEP_RX = re.compile(r",\s+|\s+i\s+", flags=re.I)
+
+
+def parse_p4_tail_list(tail: str) -> List[str]:
+    """
+    Transform *tail* of a § 4 sub-subpart into a list according to intro
+    keywords. Raises ``ValueError`` if no recognised intro is found.
+    """
+    tail = tail.lstrip()
+
+    # --- 1. Warszawa subdivisions ----------------------------------------
+    m = _WARSAW_SUB_RX.match(tail)
+    if m:
+        rest = tail[m.end() :]
+        names = _SEP_RX.split(rest)
+        return [n.strip() for n in names if n.strip()]
+
+    # --- 2. City list -----------------------------------------------------
+    m = _CITY_RX.match(tail) or _ADMIN_CITY_RX.match(tail)
+    if m:
+        rest = tail[m.end() :]
+        cities = _SEP_RX.split(rest)
+        return [f"m. {c.strip()}" for c in cities if c.strip()]
+
+    # --- 3. Gmina list ----------------------------------------------------
+    m = _GMINA_RX.match(tail)
+    if m:
+        rest = tail[m.end() :]
+        gminy = _SEP_RX.split(rest)
+        return [f"gm. {g.strip()}" for g in gminy if g.strip()]
+
+    # --- 4. Part of a city -----------------------------------------------
+    if _PART_RX.match(tail):
+        # take the whole description until another intro appears
+        return [tail.rstrip(":").strip()]
+
+    # --- no recognised intro ---------------------------------------------
+    raise ValueError("Unrecognised §4 tail intro: " + tail[:120])
+
+
+
+
+# ---------------------------------------------------------------------------
 # Intro normaliser for §4 sub-parts
 # ---------------------------------------------------------------------------
 
@@ -72,6 +169,7 @@ def normalize_head(head: str) -> str:
 
 _P4_INTRO_RX = re.compile(
     r"""^\s*                              # optional leading blanks
+        (?:\d+\)\s+)?                     # ← optional '1) ' or '23) '
         w\s+obszarze\s+właściwości\s+      # required phrase
         Prokuratury\s+Okręgowej\s+         # fixed words
         (?P<rest>.+?)                      # capture ‘w X…’ (with or without tag)
@@ -82,18 +180,24 @@ _P4_INTRO_RX = re.compile(
 
 
 
-def normalize_p4_intro(intro: str) -> str:
-    """
-    Convert ‘w obszarze … Prokuratury Okręgowej w X:’ →
-    ‘Prokuratura Okręgowa w X’.
-    Strict: raises ``ValueError`` on mismatch.
-    """
-    m = _P4_INTRO_RX.match(intro)
+#def normalize_p4_intro(intro: str) -> str:
+#    """
+#    Convert ‘w obszarze … Prokuratury Okręgowej w X:’ →
+#    ‘Prokuratura Okręgowa w X’.
+#    Strict: raises ``ValueError`` on mismatch.
+#    """
+#    m = _P4_INTRO_RX.match(intro)
+#    if not m:
+#        raise ValueError("Unexpected §4 intro format: " + intro[:120])
+#
+#    return "Prokuratura Okręgowa " + m.group("rest").strip()
+
+def normalize_p4_intro(text: str) -> str:
+    """Return ‘Prokuratura Okręgowa …’ or raise on mismatch (strict)."""
+    m = _P4_INTRO_RX.match(text)
     if not m:
-        raise ValueError("Unexpected §4 intro format: " + intro[:120])
-
+        raise ValueError("Unexpected §4 intro format: " + text[:120])
     return "Prokuratura Okręgowa " + m.group("rest").strip()
-
 
 
 # ---------------------------------------------------------------------------
@@ -126,7 +230,7 @@ def _is_tail_list(tail: str) -> bool:
 _AUX_IW_RE = re.compile(r"\s+i\s*w:")  # " i w:" – keep conjunction
 _AUX_W_RE = re.compile(r"\s+w:")       # " w:"  – remove entirely
 
-
+_UCHYLONA_RE = re.compile(r"^\(uchylona\).\s*$", flags=re.I)
 
 def _strip_main_intro(tail: str) -> str:
     """
@@ -168,6 +272,48 @@ def _remove_aux_intros(tail: str) -> str:
 
 
 def split_tail_list(tail: str) -> List[str]:
+    """
+    Clean *tail* and return a list of prosecutor-office names, each
+    correctly prefixed according to the following rule-set:
+
+    • If the cleaned name already contains “ w ” or “ we ” **anywhere**, or
+      if it *starts* with “w ” / “we ” (case-insensitive), prepend
+      “Prokuratura Rejonowa ” (no w/we).
+
+    • Otherwise choose the prefix:
+        – “… we ”  if the name starts with capital W followed by a
+          consonant (Polish consonants included);
+        – “… w ”   in all other cases.
+    """
+    # 1️⃣  remove main + auxiliary intros, collapse whitespace
+    tail = _strip_main_intro(tail)
+    tail = _remove_aux_intros(tail.replace("\n", " "))
+    tail = re.sub(r"\s{2,}", " ", tail).strip()
+
+    # 2️⃣  split on  “, ”  or  “ i ”
+    parts = re.split(r",\s+|\s+i\s+", tail)
+    cleaned = [p.rstrip(",;").strip() for p in parts if p.strip()]
+
+    # 3️⃣  consonant set (lower-case) used for the “we” rule
+    _CONS = "bcćdfghjklłmnńprqstvwxzźż"
+
+    def _prefix(name: str) -> str:
+        s = name.lstrip()
+        low = s.lower()
+
+        # already contains or starts with " w " / " we "
+        if " w " in low or " we " in low or low.startswith(("w ", "we ")):
+            return "Prokuratura Rejonowa "
+
+        # decide between "we" vs "w"
+        if s.startswith("W") and len(s) > 1 and s[1].lower() in _CONS:
+            return "Prokuratura Rejonowa we "
+        return "Prokuratura Rejonowa w "
+
+    return [_prefix(n) + n.lstrip() for n in cleaned]
+
+
+def split_tail_listBAD(tail: str) -> List[str]:
     """Convert *tail* into a list of ‘Prokuratura Rejonowa …’ strings."""
     # 1️⃣ remove the main intro and auxiliary fragments
     tail = _strip_main_intro(tail)
@@ -181,12 +327,24 @@ def split_tail_list(tail: str) -> List[str]:
     parts = [p.rstrip(",;").strip() for p in pieces if p.strip()]
 
     # 4️⃣ prepend the required phrase
-    def _pref(s: str) -> str:
-        return (
-            "Prokuratura Rejonowa " if " w " in s else "Prokuratura Rejonowa w "
-        ) + s
 
-    return [_pref(p) for p in parts]
+    _CONS = "bcćdfghjklłmnńprstvwxzźż"  # Polish consonants (lower-case)
+
+    def _prefix(name: str) -> str:
+        # Rule 1 – already contains “ w ” or “ we ” → no “w/​we” in prefix
+        lowered = name.lower()
+        if " w " in lowered or " we " in lowered:
+            return "Prokuratura Rejonowa "
+
+        # Rule 2 – choose “w” vs “we”
+        stripped = name.lstrip()
+        if stripped.startswith("W") and len(stripped) > 1 and stripped[1].lower() in _CONS:
+            return "Prokuratura Rejonowa we "
+        return "Prokuratura Rejonowa w "
+
+    return [_prefix(p) + p for p in parts]
+
+
 
 def split_tail_listOLD(tail: str) -> List[str]:
     """Return *tail* as a list of prosecutor-office strings.
@@ -213,10 +371,30 @@ def split_tail_listOLD(tail: str) -> List[str]:
     cleaned = [p.rstrip(",").strip() for p in pieces if p.strip()]
 
     # --- 5: prepend the correct phrase -----------------------------------
-    def _with_prefix(s: str) -> str:
-        return ("Prokuratura Rejonowa " if " w " in s else "Prokuratura Rejonowa w ") + s
+    #def _with_prefix(s: str) -> str:
+    #    return ("Prokuratura Rejonowa " if " w " in s else "Prokuratura Rejonowa w ") + s
 
-    return [_with_prefix(p) for p in cleaned]
+    #return [_with_prefix(p) for p in cleaned]
+
+    _CONS = "bcćdfghjklłmnńprstvwxzźż"  # Polish consonants (lower-case)
+
+    def _prefix(name: str) -> str:
+        # Rule 1 – already contains “ w ” or “ we ” → no “w/​we” in prefix
+        lowered = name.lower()
+        if " w " in lowered or " we " in lowered:
+            return "Prokuratura Rejonowa "
+
+        # Rule 2 – choose “w” vs “we”
+        stripped = name.lstrip()
+        print ('<'+stripped+'>')
+        if stripped.startswith("W") and len(stripped) > 1 and stripped[1].lower() in _CONS:
+            return "Prokuratura Rejonowa we "
+        return "Prokuratura Rejonowa w "
+
+    return [_prefix(p) + p for p in cleaned]
+
+
+
 
 def split_tail_listBAD(tail: str) -> List[str]:
     """Return *tail* as list after strict clean-up (para 3 ▸ subpart 2)."""
@@ -354,11 +532,13 @@ def parse_hierarchy(raw: str) -> List[Part]:
             if not m_first_ss:
                 raise ValueError(f"Subpart {sub_number} in §{part_number} lacks sub-subparts")
 
-            sub_intro = sub_body_all[: m_first_ss.start()].strip()
+            sub_intro_raw = sub_body_all[: m_first_ss.start()].strip()
 
             # ---------- NEW: normalise §4 intro ---------------------------
             if part_number == 4:
-                sub_intro = normalize_p4_intro(sub_intro)
+                sub_intro = normalize_p4_intro(sub_intro_raw)
+            else:
+                sub_intro = sub_intro_raw
 
             ss_body = sub_body_all[m_first_ss.start() :]
             sub_obj = SubPart(sub_number, sub_intro)
@@ -367,13 +547,67 @@ def parse_hierarchy(raw: str) -> List[Part]:
                 m_ss = re.match(SUBSUBPART_RE, ss_chunk)
                 letter = re.search(r"[a-z]", m_ss.group(0)).group()
                 ss_text = ss_chunk[m_ss.end() :].strip()
-                sub_obj.subsubparts.append(SubSubPart(letter, ss_text))
 
+                if _UCHYLONA_RE.fullmatch(ss_text):
+                    continue
+
+                #sub_obj.subsubparts.append(SubSubPart(letter, ss_text))
+
+                if part_number == 4:
+                    head_norm, tail_norm = split_p4_head_tail(ss_text)
+                    #ss_text = f"{head_norm} dla {tail_norm}"  # store normalized
+                    tail_list = parse_p4_tail_list(tail_norm)
+                    ss_text = f"{head_norm} dla {tail_list}"
+                    # store head for cross-validation later
+                    sub_obj.subsubparts.append(
+                        SubSubPart(letter, ss_text)
+                    )
+                else:
+                    sub_obj.subsubparts.append(SubSubPart(letter, ss_text))
+                
             part_obj.subparts.append(sub_obj)
 
         parts.append(part_obj)
 
+    _validate_links(parts)
     return parts
+
+def _validate_links(parts: List["Part"]) -> None:
+    """Ensure every (I,H) pair appears in both §3 and §4."""
+    p3_map: Dict[str, set[str]] = {}
+    p4_pairs: set[tuple[str, str]] = set()
+
+    # --- gather from §3 -----------------------------------------------------
+    for p in parts:
+        if p.number == 3:
+            for I, val in p.ss_map.items():
+                if isinstance(val, list):
+                    p3_map[I] = set(val)
+
+    # --- gather & check from §4 --------------------------------------------
+    for p in parts:
+        if p.number == 4:
+            for sp in p.subparts:
+                I = sp.intro
+                if I not in p3_map:
+                    raise ValueError(f"§4 intro '{I}' not present in §3 dictionary")
+                for ssp in sp.subsubparts:
+                    head, _tail = split_p4_head_tail(ssp.text)
+                    if head not in p3_map[I]:
+                        #print (p3_map)
+                        #print (I)
+                        #print (p3_map[I])
+                        None
+                        raise ValueError(f"Head <<{head}>> under intro '{I}' missing from §3 list")
+                    p4_pairs.add((I, head))
+
+    # --- ensure §4 covered everything from §3 ------------------------------
+    for I, heads in p3_map.items():
+        for h in heads:
+            if (I, h) not in p4_pairs:
+                None
+                print ([ p for p in p4_pairs if I==p[0]])
+                raise ValueError(f"Missing §4 mapping for head '{h}' under intro '{I}'")
 
 # ---------------------------------------------------------------------------
 # CLI helper

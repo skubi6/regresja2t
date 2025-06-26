@@ -1,3 +1,4 @@
+
 """hierarchy_parser.py – strict parser for §-structured statute text.
 
 Updated 2025-06-26 — complete, executable version
@@ -12,6 +13,7 @@ Run:
 """
 
 from __future__ import annotations
+import pandas as pd
 
 import pprint
 import re
@@ -19,7 +21,6 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List
-
 # ---------------------------------------------------------------------------
 # Regex patterns anchored at line starts
 # ---------------------------------------------------------------------------
@@ -79,6 +80,8 @@ def split_p4_head_tail(text: str) -> tuple[str, str]:
 
     #idx = matches[-1].start()        # position of the chosen separator
     if " dla części " in text:
+        #if "wlotu" in text:
+        #    print ('CIESZYŃSKA', text)
         idx = text.find(" dla części ")          # first match
     else:
         # otherwise: last “ dla ” not preceded by “, ”
@@ -87,8 +90,10 @@ def split_p4_head_tail(text: str) -> tuple[str, str]:
             raise ValueError("Missing valid ' dla ' separator in §4 sub-subpart: " + text[:120])
         idx = matches[-1].start()                # last valid match
     head_raw = text[: idx]
-    print ('<'+head_raw+'>')
-    tail = text[idx + 5 :]           # len(\" dla \") == 5
+    #print ('<'+head_raw+'>')
+    tail = text[idx + 5 :]           # len(" dla ") == 5
+    if "wlotu" in text:
+        print ('CIESZYŃSKA tail', tail)
     #head = head_raw.strip().replace("Prokuraturę Rejonową", "Prokuratura Rejonowa")
     head_clean = re.sub(r"^\d+\)\s*", "", head_raw.strip())
     head = head_clean.replace("Prokuraturę Rejonową", "Prokuratura Rejonowa")
@@ -111,50 +116,303 @@ _ADMIN_CITY_RX = re.compile(
     flags=re.I,
 )
 
-_GMINA_RX  = re.compile(r"""gmin[ ay]?\s*:?\s*""", flags=re.I)
+#_GMINA_RX  = re.compile(r"""gmin[ ay]?\s*:?\s*""", flags=re.I)
+#_GMINA_RX = re.compile(
+#    r"""gmin(?:a|y)?      # gmina / gminy (optional tail)
+#        |gmin             # bare 'gmin' or 'gmin:'
+#    """,
+#    flags=re.I | re.X,
+#)
+
+#_GMINA_RX = re.compile(
+#    r"""gmin(?:a|y)?\s*:?\s*""",   # gmin  / gmina / gminy  plus optional colon
+#    flags=re.I | re.X,
+#)
+
+_GMINA_RX = re.compile(
+    r"""gmin(?:a|y)?\s*:?\s*""",   # matches gmin, gmin:, gmina, gminy:
+    flags=re.I | re.X,
+)
+
 _PART_RX   = re.compile(r"""części\s+""", flags=re.I)
 
-_SEP_RX = re.compile(r",\s+|\s+i\s+", flags=re.I)
+_SEP_RX = re.compile(r",\s+|\s+i\s+|\s+oraz\s+", flags=re.I)
+
+# ---------------------------------------------------------------------------
+# Tail-to-list converter for § 4  (handles mid-tail intros)
+# ---------------------------------------------------------------------------
+bad_WARSAW_INTRO_RX = re.compile(
+    r"""części\s+miasta\s+stołecznego\s+Warszawy.*?dzielnic:\s*""",
+    flags=re.I | re.S,
+)
+bad_CITY_INTRO_RX = re.compile(
+    r"""(?:miast[ a]?|obszaru\s+administracyjnego\s+miast[ a]?)\s*:?\s*""",
+    flags=re.I,
+)
+bad_GMINA_INTRO_RX = re.compile(r"""\s*gmin(?:a|y)?\s*:?\s*""", flags=re.I)
+bad_PART_INTRO_RX = re.compile(r"""części\s+""", flags=re.I)
+
+bad_SEP_RX = re.compile(r",\s+|\s+i\s+|\s+oraz\s+", flags=re.I)
+
+# ---------------------------------------------------------------------------
+# Tail-to-list converter for § 4  (supports mid-tail intros, “gmin:…”, etc.)
+# ---------------------------------------------------------------------------
+
+_WAW_INTRO_RX  = re.compile(
+    r"""części\s+miasta\s+stołecznego\s+Warszawy.*?dzielnic:\s*""",
+    flags=re.I | re.S,
+)
+
+#_CITY_INTRO_RX = re.compile(
+#    r"""(?:miast[ a]?|obszaru\s+administracyjnego\s+miast[ a]?)\s*:?\s*"""
+#)
+
+#_CITY_INTRO_RX = re.compile(
+#    r"""(?:                         # either …
+#          miast[ a]?                #   'miast'  or 'miasta'
+#        | obszaru\s+administracyjnego\s+miast[ a]?   # plural form
+#        | obszaru\s+administracyjnego\s+miasta       # NEW: singular form
+#       )\s*:?\s*""",
+#    flags=re.I | re.X,
+#)
+
+_CITY_INTRO_RX = re.compile(
+    r"""(?:                                     # alternatives
+          obszaru\s+administracyjnego\s+miasta   # ← singular form
+        | obszaru\s+administracyjnego\s+miast[ a]? # plural form
+        | miast[ :]                             # plain 'miast/miasta'
+       )\s*:?\s*""",
+    flags=re.I | re.X,
+)
 
 
-def parse_p4_tail_list(tail: str) -> List[str]:
+#_CITY_INTRO_RX = re.compile(
+#    r"""(?:                                # alternatives
+#          ^miast[ a]?\s*:?\s*$             # ← stand-alone 'miast/miasta'
+#        | obszaru\s+administracyjnego\s+miast[ a]?  # longer plural form
+#        | obszaru\s+administracyjnego\s+miasta      # longer singular form
+#       )""",
+#    flags=re.X,
+#)
+
+_PLAIN_MIASTA_RX = re.compile(
+    r"""(?:
+            ^                       |   # start of tail
+            ,\s+                    |   # comma-space
+            \si\s+                  |   #  i <space>
+            \soraz\s+                   #  oraz <space>
+        )miasta\s*:?\s+               # the word + opt colon/blanks
+    """,
+    flags=re.I | re.X,
+)
+
+
+_GMIN_INTRO_RX = re.compile(r"""\s*gmin(?:a|y)?\s*:?\s*""")
+_PART_INTRO_RX = re.compile(r"""^części\s+""")
+
+_SEP_RX = re.compile(r",\s+|\s+i\s+|\s+oraz\s+")
+
+def _extract_part_city(phrase: str) -> str:
     """
-    Transform *tail* of a § 4 sub-subpart into a list according to intro
-    keywords. Raises ``ValueError`` if no recognised intro is found.
+    From 'części miasta Kraków w …' → return 'Kraków'
+    From 'części miasta stołecznego Warszawy …' → 'Warszawy'
     """
-    tail = tail.lstrip()
+    m = re.search(r"""miasta\s+(?:stołecznego\s+)?([A-ZŁŚŻŹĆŃÓ][\w\- ]+)""", phrase, flags=re.I)
+    if not m:
+        raise ValueError("Cannot extract city name from ‘części …’ phrase: " + phrase[:120])
+    return m.group(1).strip()
 
-    # --- 1. Warszawa subdivisions ----------------------------------------
-    m = _WARSAW_SUB_RX.match(tail)
-    if m:
-        rest = tail[m.end() :]
-        names = _SEP_RX.split(rest)
-        return [n.strip() for n in names if n.strip()]
+_WARSZAW_INTRO = re.compile(
+    r"""części\s+miasta\s+stołecznego\s+Warszawy.*?dzielnic:\s*""",
+    flags=re.I | re.S,
+)
+_CITY_INTRO  = re.compile(r"""miast[ a]?""", flags=re.I)
+_ADMIN_CITY  = re.compile(r"""obszaru\s+administracyjnego\s+miast[ a]?""", flags=re.I)
+_GMINA_INTRO = re.compile(r"""gmin(?:a|y)?""", flags=re.I)
+_PART_INTRO  = re.compile(r"""części\s+miasta""", flags=re.I)     # descriptive
+_SEP_RE      = re.compile(r",\s+|\s+i\s+|\s+oraz\s+", flags=re.I)
 
-    # --- 2. City list -----------------------------------------------------
-    m = _CITY_RX.match(tail) or _ADMIN_CITY_RX.match(tail)
-    if m:
-        rest = tail[m.end() :]
-        cities = _SEP_RX.split(rest)
-        return [f"m. {c.strip()}" for c in cities if c.strip()]
+_INTRO_RX = re.compile(
+    r"""części\s+miasta|
+        gmin(?:a|y)?|
+        miast[ a]?|
+        obszaru\s+administracyjnego\s+miasta              # beginning of “obszaru administracyjnego …”
+    """,
+    flags=re.X,
+)
 
-    # --- 3. Gmina list ----------------------------------------------------
-    m = _GMINA_RX.match(tail)
-    if m:
-        rest = tail[m.end() :]
-        gminy = _SEP_RX.split(rest)
-        return [f"gm. {g.strip()}" for g in gminy if g.strip()]
-
-    # --- 4. Part of a city -----------------------------------------------
-    if _PART_RX.match(tail):
-        # take the whole description until another intro appears
-        return [tail.rstrip(":").strip()]
-
-    # --- no recognised intro ---------------------------------------------
-    raise ValueError("Unrecognised §4 tail intro: " + tail[:120])
+def _city_from_part(segment: str) -> str:
+    """Extract 'Kraków' from 'części miasta Kraków w …' (strict)."""
+    m = re.search(
+        r"""miasta\s+(?:stołecznego\s+)?([A-ZŁŚŻŹĆŃÓ][\w\- ]+)""",
+        segment,
+        flags=re.I,
+    )
+    if not m:
+        raise ValueError("Un-parseable descriptive phrase: " + segment[:120])
+    return m.group(1).strip()
 
 
+def parse_p4_tail_list(tail: str) -> list[tuple[str, str]]:
+    """
+    Returns list[ (name, opis) ]:
+        • ordinary locality → (prefixed-name, "")
+        • descriptive “części miasta …” → ("m. <city>", full phrase)
+    """
+    work = tail.lstrip()
+    segments: list[str] = []
+    debug = False
+    if "wlotu" in tail:
+        debug=True    
+        print ('CIESZYŃSKA tail (inner)', tail)
 
+    # ---- cut the tail into segments by each intro token -----------------
+    pos = 0
+    for m in _INTRO_RX.finditer(work):
+        if m.start() > pos:
+            if debug:
+                print ('CIESZYŃ segment', work[pos : m.start()].strip())
+            segments.append(work[pos : m.start()].strip())
+        pos = m.start()
+    segments.append(work[pos:].strip())
+
+    tuples: list[tuple[str, str]] = []
+    mode: str | None = None        # "city" | "gmina" | "warsaw" | "part"
+
+    for seg in segments:
+        if not seg:
+            continue
+
+        # 1️⃣ descriptive (“części miasta …”) — keep whole phrase
+        #if _PART_INTRO_RX.match(seg):
+        #    city = _extract_part_city(seg)
+        #    tuples.append((f"m. {city}", seg.rstrip(":")))
+        #    mode = "part"
+        #    continue
+        if _PART_INTRO_RX.match(seg):
+            # full descriptive phrase
+            phrase = seg.rstrip(":")
+            # cut city name before “ w granicach …” (if present)
+            city_full = _extract_part_city(seg)
+            city = re.split(r"\s+w\s+granicach\b", city_full, 1)[0].rstrip()
+            tuples.append((f"m. {city}", phrase))
+            mode = "part"
+            continue
+        
+        # 2️⃣ set mode if the segment *starts* with an intro keyword
+        first = seg.split(None, 1)[0]  # first word
+        if _WAW_INTRO_RX.match(first):
+            mode = "warsaw"
+            seg = seg[len(first):].lstrip()
+        elif _PLAIN_MIASTA_RX.match(seg):
+            mode = "city"
+            seg = seg[len(first):].lstrip()
+        elif _ADMIN_CITY_RX.match(seg):
+            mode = "city"
+            seg = seg[len(first):].lstrip()
+            print ('MATCH ADMIN', '<'+first+'>', '<'+seg+'>')
+        elif _CITY_INTRO_RX.match(seg):
+            mode = "city"
+            seg = seg[len(first):].lstrip()
+            print ('MATCH city', '<'+first+'>', '<'+seg+'>')
+        elif _GMIN_INTRO_RX.match(first):
+            mode = "gmina"
+            seg = seg[len(first):].lstrip()
+
+        # 3️⃣ split the remaining chunk only if it isn’t descriptive
+        for tok in _SEP_RX.split(seg):
+            tok = tok.replace("\n", " ").rstrip(",;.").strip()
+            if not tok:
+                continue
+            if mode == "city":
+                tuples.append((f"m. {tok}", ""))
+            elif mode == "gmina":
+                tuples.append((f"gm. {tok}", ""))
+            elif mode in ("warsaw", "part"):
+                tuples.append((tok, ""))
+            else:
+                print ('debug', '<'+first+'>', '<'+seg+'>', _PLAIN_MIASTA_RX.search(seg))
+                
+                raise ValueError("Locality with no active intro: ", seg, tail)
+
+    return tuples
+
+
+def parse_p4_tail_listOLD2(tail: str) -> list[tuple[str, str]]:
+    """
+    Return a list of *(name, opis)* tuples where *opis* is '' unless the
+    item is a descriptive *“części miasta …”* segment.
+    """
+    work = tail.lstrip()
+    tuples: list[tuple[str, str]] = []
+    mode: str | None = None  # "city" | "gmina" | "warsaw"
+
+    # --- helper to switch mode on a leading intro ------------------------
+    def _set_mode(seg: str) -> bool:
+        nonlocal mode
+        if _WARSZAW_INTRO.match(seg):
+            mode = "warsaw"; return True
+        if _CITY_INTRO.match(seg) or _ADMIN_CITY.match(seg):
+            mode = "city";   return True
+        if _GMINA_INTRO.match(seg):
+            mode = "gmina";  return True
+        return False
+
+    # --------------------------------------------------------------------
+    # 1. Split tail into *chunks* by every recognised intro (inclusive)
+    # --------------------------------------------------------------------
+    chunks: list[str] = []
+    pos = 0
+    intro_rx = re.compile(
+        r"""części\s+miasta|gmin(?:a|y)?|miast[ a]?|obszaru\s+administracyjnego\s+miast[ a]?""",
+        flags=re.I,
+    )
+    for m in intro_rx.finditer(work):
+        if m.start() > pos:
+            chunks.append(work[pos : m.start()].strip())
+        chunks.append(work[m.start() :].split(None, 1)[0])  # the intro word itself
+        pos = m.start()
+    if pos == 0:                                             # tail starts with intro
+        chunks.append(work)
+    elif pos < len(work):
+        chunks.append(work[pos:].strip())
+
+    # --------------------------------------------------------------------
+    # 2. Process each chunk
+    # --------------------------------------------------------------------
+    for chunk in chunks:
+        if not chunk:
+            continue
+
+        # --- descriptive phrase -----------------------------------------
+        if _PART_INTRO.match(chunk):
+            city = _city_from_part(chunk)
+            tuples.append((f"m. {city}", chunk.rstrip(":")))
+            mode = "part"   # switch to part-mode for any following localities
+            continue
+
+        # --- intro keyword sets mode but produces no tuples -------------
+        if _set_mode(chunk.split()[0]):   # first word is intro
+            # strip the intro word itself from chunk
+            chunk = chunk.split(None, 1)[1] if " " in chunk else ""
+            if not chunk:
+                continue
+
+        # --- ordinary locality list in current mode ---------------------
+        for name in _SEP_RE.split(chunk):
+            n = name.strip().replace("\n", " ").rstrip(",;")
+            if not n:
+                continue
+            if mode == "city":
+                tuples.append((f"m. {n}", ""))
+            elif mode == "gmina":
+                tuples.append((f"gm. {n}", ""))
+            elif mode == "warsaw" or mode == "part":
+                tuples.append((n, ""))
+            else:
+                raise ValueError("Locality with no active intro: " + tail[:120])
+
+    return tuples
 
 # ---------------------------------------------------------------------------
 # Intro normaliser for §4 sub-parts
@@ -239,31 +497,11 @@ def _strip_main_intro(tail: str) -> str:
     • Works even when stray new-lines or multiple spaces appear inside.
     • Raises ``ValueError`` if the intro is missing or misspelled.
     """
-    #intro_rx = re.compile(
-    #    r"""^\s*                                   # any leading blanks
-    #        obejmującą\s+obszar\s+właściwości\s+
-    #        Prokuratur\s+Rejonowych                # core phrase
-    #        (?:\s+w)?\s*:                          # optional ' w' + colon
-    #        \s*                                    # trailing blanks/new-lines
-    #    """,
-    #    flags=re.I | re.X,
-    #)
-
     m = _MAIN_INTRO_RX.match(tail.lstrip()) # m = intro_rx.match(tail)
     if not m:
         raise ValueError("Tail lacks recognised main intro: " + tail[:120])
 
     return tail[m.end() :]
-
-
-
-
-#def _strip_main_introOLD(tail: str) -> str:
-#    work = tail.lstrip()
-#    for intro in MAIN_INTROS:
-#        if work.startswith(intro):
-#            return work[len(intro) :]
-#    raise ValueError("Tail lacks recognised main intro: " + tail[:120])
 
 
 def _remove_aux_intros(tail: str) -> str:
@@ -312,104 +550,6 @@ def split_tail_list(tail: str) -> List[str]:
 
     return [_prefix(n) + n.lstrip() for n in cleaned]
 
-
-def split_tail_listBAD(tail: str) -> List[str]:
-    """Convert *tail* into a list of ‘Prokuratura Rejonowa …’ strings."""
-    # 1️⃣ remove the main intro and auxiliary fragments
-    tail = _strip_main_intro(tail)
-    tail = _remove_aux_intros(tail.replace("\n", " "))
-
-    # 2️⃣ collapse duplicate whitespace
-    tail = re.sub(r"\s{2,}", " ", tail).strip()
-
-    # 3️⃣ split on “, ” or “ i ”
-    pieces = re.split(r",\s+|\s+i\s+", tail)
-    parts = [p.rstrip(",;").strip() for p in pieces if p.strip()]
-
-    # 4️⃣ prepend the required phrase
-
-    _CONS = "bcćdfghjklłmnńprstvwxzźż"  # Polish consonants (lower-case)
-
-    def _prefix(name: str) -> str:
-        # Rule 1 – already contains “ w ” or “ we ” → no “w/​we” in prefix
-        lowered = name.lower()
-        if " w " in lowered or " we " in lowered:
-            return "Prokuratura Rejonowa "
-
-        # Rule 2 – choose “w” vs “we”
-        stripped = name.lstrip()
-        if stripped.startswith("W") and len(stripped) > 1 and stripped[1].lower() in _CONS:
-            return "Prokuratura Rejonowa we "
-        return "Prokuratura Rejonowa w "
-
-    return [_prefix(p) + p for p in parts]
-
-
-
-def split_tail_listOLD(tail: str) -> List[str]:
-    """Return *tail* as a list of prosecutor-office strings.
-
-    Steps
-    -----
-    1. Strip the main intro (“obejmującą obszar …”).
-    2. Remove every auxiliary intro (“ w:” and “ i w:”).
-    3. Replace newlines with spaces and collapse double spaces.
-    4. Split the cleaned text on “, ” or “ i ”.
-    5. Prepend:
-         • “Prokuratura Rejonowa ”  if the piece already contains “ w ”
-         • “Prokuratura Rejonowa w ” otherwise.
-    """
-    # --- 1: strict removal of the main intro ------------------------------
-    tail = _strip_main_intro(tail)
-
-    # --- 2 & 3: auxiliary intro removal + whitespace normalisation --------
-    tail = _remove_aux_intros(tail.replace("\n", " "))
-    tail = re.sub(r"\s{2,}", " ", tail).strip()
-
-    # --- 4: split into individual locality strings -----------------------
-    pieces = re.split(r",\s+|\s+i\s+", tail)
-    cleaned = [p.rstrip(",").strip() for p in pieces if p.strip()]
-
-    # --- 5: prepend the correct phrase -----------------------------------
-    #def _with_prefix(s: str) -> str:
-    #    return ("Prokuratura Rejonowa " if " w " in s else "Prokuratura Rejonowa w ") + s
-
-    #return [_with_prefix(p) for p in cleaned]
-
-    _CONS = "bcćdfghjklłmnńprstvwxzźż"  # Polish consonants (lower-case)
-
-    def _prefix(name: str) -> str:
-        # Rule 1 – already contains “ w ” or “ we ” → no “w/​we” in prefix
-        lowered = name.lower()
-        if " w " in lowered or " we " in lowered:
-            return "Prokuratura Rejonowa "
-
-        # Rule 2 – choose “w” vs “we”
-        stripped = name.lstrip()
-        print ('<'+stripped+'>')
-        if stripped.startswith("W") and len(stripped) > 1 and stripped[1].lower() in _CONS:
-            return "Prokuratura Rejonowa we "
-        return "Prokuratura Rejonowa w "
-
-    return [_prefix(p) + p for p in cleaned]
-
-
-
-
-def split_tail_listBAD(tail: str) -> List[str]:
-    """Return *tail* as list after strict clean-up (para 3 ▸ subpart 2)."""
-    tail = _strip_main_intro(tail)
-
-    tail = _remove_aux_intros(tail.replace("\n", " "))
-    # collapse double spaces produced by the replacements
-    tail = re.sub(r"\s{2,}", " ", tail)
-    items = re.split(r",\s+|\s+i\s+", tail)
-    # strip and drop any empty / trailing-comma artefacts
-    return [i.rstrip(",").strip() for i in items if i.strip()]
-    #tail = _remove_aux_intros(tail)
-    #items = re.split(r",\s+|\s+i\s+", tail)
-    #return [i.strip() for i in items if i.strip()]
-
 # ---------------------------------------------------------------------------
 # Data classes
 # ---------------------------------------------------------------------------
@@ -430,7 +570,7 @@ class SubPart:
     number: int
     intro: str
     subsubparts: List[SubSubPart] = field(default_factory=list)
-    p4_map: Dict[str, List[str]] = field(default_factory=dict)   # NEW
+    p4_map: Dict[str, List[tuple[str, str]]] = field(default_factory=dict)   # NEW
 
     def dump(self, indent: int = 0) -> str:
         pad = " " * indent
@@ -483,6 +623,28 @@ class Part:
 # ---------------------------------------------------------------------------
 # Parser
 # ---------------------------------------------------------------------------
+
+
+EXCEL_COLUMNS = ["gmina", "opis", "prokuratura rejonowa", "prokuratura okręgowa"]
+
+def _build_excel_rows(parts: List["Part"]) -> List[dict[str, str]]:
+    """Return a list of dictionaries—one per locality—for the Excel file."""
+    rows: List[dict[str, str]] = []
+    for part in parts:
+        if part.number != 4:              # only § 4 carries the mapping
+            continue
+        for sp in part.subparts:
+            okr = sp.intro                # Prokuratura Okręgowa
+            for rej, loc_list in sp.p4_map.items():   # head → list[(name, extra)]
+                for name, extra in loc_list:
+                    rows.append({
+                        "gmina": name,
+                        "opis":  extra,
+                        "prokuratura rejonowa": rej,
+                        "prokuratura okręgowa": okr,
+                    })
+    return rows
+
 def parse_hierarchy(raw: str) -> List[Part]:
     parts: List[Part] = []
 
@@ -567,19 +729,19 @@ def parse_hierarchy(raw: str) -> List[Part]:
                     head_norm, tail_norm = split_p4_head_tail(ss_text)
                     #ss_text = f"{head_norm} dla {tail_norm}"  # store normalized
                     tail_list = parse_p4_tail_list(tail_norm)
+                    if "wlotu" in tail_norm:
+                        print ('CIESZYŃSKA tail_list', tail_list)
                     #ss_text = f"{head_norm} dla {tail_list}"
                     # store head for cross-validation later
 
                     if head_norm in sub_obj.p4_map:
                         raise ValueError(
-                            f\"Duplicate head '{head_norm}' in §4 subpart {sub_number}\"
+                            f"Duplicate head '{head_norm}' in §4 subpart {sub_number}"
                         )
                     sub_obj.p4_map[head_norm] = tail_list
 
                     # keep raw SubSubPart only for debugging (optional)
                     sub_obj.subsubparts.append(SubSubPart(letter, ss_text))
-                    BIZARRE
-                    continue   # skip normal append below
                 else:
                     sub_obj.subsubparts.append(SubSubPart(letter, ss_text))
                 
@@ -610,11 +772,11 @@ def _validate_links(parts: List["Part"]) -> None:
                 if I not in p3_map:
                     raise ValueError(f"§4 intro '{I}' not present in §3 dictionary")
                 for h in sp.p4_map:
-                    if h not in p3_dict[I]:
+                    if h not in p3_map[I]:
                         raise ValueError(
                             f"Head '{h}' under intro '{I}' missing from §3 list"
                         )
-                    seen_pairs.add((I, h))
+                    p4_pairs.add((I, h))
                 for ssp in sp.subsubparts:
                     head, _tail = split_p4_head_tail(ssp.text)
                     if head not in p3_map[I]:
@@ -646,6 +808,11 @@ def _cli() -> None:
 
     try:
         structure = parse_hierarchy(text)
+        rows = _build_excel_rows(structure)
+        if rows:
+            df = pd.DataFrame(rows, columns=EXCEL_COLUMNS)
+            df.to_excel("prokuratury_mapping.xlsx", index=False)
+            print("Excel file written: prokuratury.xlsx")
         for part in structure:
             print(part)
             print()

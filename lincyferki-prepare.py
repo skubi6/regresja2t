@@ -201,7 +201,12 @@ def buildLinRegression (
         Xarg, Yarg, filename, rok
 ):
     nowFunStart = datetime.now()
-   
+
+    print ('Xarg.index')
+    print (Xarg.index)
+    print ('Yarg.index')
+    print (Yarg.index)
+    
     Xarg, Yarg = Xarg.align(Yarg, join="inner", axis=0)
     print("Precincts analysed:", len(Xarg))
 
@@ -257,13 +262,13 @@ def buildLinRegression (
         coef_tbl[targetTranslate[tgt]] = [intercepts[targetTranslate[tgt]]] + coefs[targetTranslate[tgt]].tolist()
 
     # convert to percent & round to 4 decimal places
-    coef_tbl = (coef_tbl * 100).round(2)
+    coef_tblStdout = (coef_tbl * 100).round(2)
 
     # custom float formatter for aligned output
     float_fmt = lambda x: f"{x:10.2f}"
 
     print("\n================ Linear-Hypothesis Coefficients (% units) ================")
-    print(coef_tbl.to_string(float_format=float_fmt))
+    print(coef_tblStdout.to_string(float_format=float_fmt))
     print("==========================================================================\n")
 
 
@@ -281,8 +286,10 @@ def buildLinRegression (
     Yarg["p"] = p
     Yarg["q"] = q
 
-    # --- parametry rozkładu różnicy Nawrocki-Trzaskowski ------------------------------------------
+    # --- parametry rozkładu różnicy Nawrocki-Trzaskowski, Nawrockiego, Trzaskowskiego
     mu   = N * (p - q)                                # E[A-B]
+    muNaw = N * p
+    muTrza = N * q
     var  = N * (p + q - (p - q)**2)                   # Var[A-B]
     sigma = np.sqrt(var)                              # odchylenie std.
 
@@ -290,26 +297,54 @@ def buildLinRegression (
     Yarg["diff_var"]  = var
     Yarg["diff_std"]  = sigma
 
+    varNaw  = N * p * (1 - p)          # Var[A]
+    varTrza = N * q * (1 - q)          # Var[B]
+    stdNaw  = np.sqrt(varNaw)
+    stdTrza = np.sqrt(varTrza)
+    
+    Yarg["naw_mu"]   = muNaw           # E[A]
+    Yarg["naw_var"]  = varNaw
+    Yarg["naw_std"]  = stdNaw
+    
+    Yarg["trza_mu"]  = muTrza          # E[B]
+    Yarg["trza_var"] = varTrza
+    Yarg["trza_std"] = stdTrza
+
+    for conf, tag in [(0.95, "95"), (0.995, "995"), (0.9995, "9995")]:
+        z = norm.ppf(0.5 + conf / 2)
+        Yarg[f"naw_ci{tag}_low"]  = muNaw  - z * stdNaw
+        Yarg[f"naw_ci{tag}_high"] = muNaw  + z * stdNaw
+        Yarg[f"trza_ci{tag}_low"] = muTrza - z * stdTrza
+        Yarg[f"trza_ci{tag}_high"] = muTrza + z * stdTrza
+        Yarg[f"diff_ci{tag}_low"]  = mu - z * sigma
+        Yarg[f"diff_ci{tag}_high"] = mu + z * sigma
+    
     # --- 95 % przedział ufności ---------------------------------------------------
 
-    conf = 0.95
-    z     = norm.ppf(0.5 + conf/2)                    # ≈ 1.95996
-    Yarg["diff_ci95_low"]  = mu - z * sigma
-    Yarg["diff_ci95_high"] = mu + z * sigma
+    #conf = 0.95
+    #z     = norm.ppf(0.5 + conf/2)                    # ≈ 1.95996
+    #Yarg["diff_ci95_low"]  = mu - z * sigma
+    #Yarg["diff_ci95_high"] = mu + z * sigma
 
-    conf = 0.995
-    z     = norm.ppf(0.5 + conf/2)                    # ≈ 1.95996
-    Yarg["diff_ci995_low"]  = mu - z * sigma
-    Yarg["diff_ci995_high"] = mu + z * sigma
+    #conf = 0.995
+    #z     = norm.ppf(0.5 + conf/2)                    # ≈ 1.95996
+    #Yarg["diff_ci995_low"]  = mu - z * sigma
+    #Yarg["diff_ci995_high"] = mu + z * sigma
 
-    conf = 0.9995
-    z     = norm.ppf(0.5 + conf/2)                    # ≈ 1.95996
-    Yarg["diff_ci9995_low"]  = mu - z * sigma
-    Yarg["diff_ci9995_high"] = mu + z * sigma
+    #conf = 0.9995
+    #z     = norm.ppf(0.5 + conf/2)                    # ≈ 1.95996
+    #Yarg["diff_ci9995_low"]  = mu - z * sigma
+    #Yarg["diff_ci9995_high"] = mu + z * sigma
 
     # --- jaki poziom ufności miałby przedział z brzegiem w obserwowanym D --------
     z_edge           = (Yarg["obs_diff"] - mu).abs() / sigma
     Yarg["x_edge"]   = 2 * norm.cdf(z_edge) - 1       # x ∈ (0, 1)
+
+    z_naw_edge  = (Yarg[c1] - muNaw).abs()  / stdNaw
+    z_trza_edge = (Yarg[c2] - muTrza).abs() / stdTrza
+    Yarg["naw_edge"]  = 2 * norm.cdf(z_naw_edge)  - 1   # ∈ (0, 1)
+    Yarg["trza_edge"] = 2 * norm.cdf(z_trza_edge) - 1
+    
 
     denom   = (Yarg[c1] + Yarg[c2])**.5
 
@@ -338,6 +373,18 @@ def buildLinRegression (
 
     writerY = pd.ExcelWriter(filename, engine="xlsxwriter")
     Yarg.to_excel(writerY, sheet_name="Y", index=False)
+    coef_tbl.to_excel(writerY, sheet_name="Coefficients", index=True)
+    ws  = writerY.sheets["Coefficients"]   # the new worksheet
+    wb  = writerY.book
+
+    # 1) show numbers as 12.34 %
+    percent_fmt = wb.add_format({"num_format": "0.00%"})
+    
+    # 2) set column widths
+    #    Excel’s width unit ≈ width of one “0” → ~0.19 cm with Calibri 11
+    #    → 5 cm ≈ 27 units, 2 cm ≈ 11 units
+    ws.set_column(0, 0, 20)                                # first col (labels)  ≈ 5 cm
+    ws.set_column(1, coef_tbl.shape[1], 12, percent_fmt)   # all coeff columns  ≈ 2 cm
 
     writerY.close()
     nowFunStop = datetime.now()
@@ -363,10 +410,29 @@ def main():
     global KEY2
     KEY1, KEY2 = terytGminy[rok], nrKomisji[rok]
 
-    FIRST = pd.read_excel(DATA_DIR / inputFileNames[rok][0])
+    FIRST = pd.read_excel(DATA_DIR / inputFileNames[rok][0],
+                          dtype={'Teryt Gminy': "Int64"})
     FIRST.loc[FIRST['Typ obszaru'].isin(['zagranica', 'statek']), terytGminy[rok]] = 9999999
-    SECOND = pd.read_excel(DATA_DIR / inputFileNames[rok][1])
+    SECOND = pd.read_excel(DATA_DIR / inputFileNames[rok][1],
+                          dtype={'Teryt Gminy': "Int64"})
     SECOND.loc[SECOND['Typ obszaru'].isin(['zagranica', 'statek']), terytGminy[rok]] = 9999999
+    GUS = pd.read_excel(
+            "powierzchnia_i_ludnosc_w_przekroju_terytorialnym_w_2024_roku_tablice.xlsx",
+            sheet_name="Tabl. 2",
+            skiprows=3,        # drop the 5 rows *above* the real header
+            usecols="A:E")
+    GUS.columns = ['Teryt Gminy', 'B', 'C', 'D', 'Ludnosc']
+    GUS['Teryt Gminy']  = GUS['Teryt Gminy'] + '01'
+    FIRST['Teryt Gminy']  = FIRST['Teryt Gminy'].astype(str)
+    SECOND['Teryt Gminy']  = SECOND['Teryt Gminy'].astype(str)
+    SECOND = SECOND.merge(
+        GUS,
+        on='Teryt Gminy',
+        how='left'
+    )
+    SECOND['Ludnosc'] = SECOND['Ludnosc'].fillna(0)
+    SECOND.loc[SECOND['Powiat']=='Warszawa', 'Ludnosc'] = 2000000
+    
     EXTRA = pd.DataFrame()
     if inputFileNames[rok][2]:
         EXTRA = pd.read_excel(DATA_DIR / inputFileNames[rok][2])
@@ -376,6 +442,16 @@ def main():
         df[KEY2] = df[KEY2].replace("", 0).astype(int)
     FIRST[KEY1] = FIRST[KEY1].fillna(0).astype(int)
     if 0 < EXTRA.shape[0]:
+        EXTRA[KEY1] = EXTRA[KEY1].astype(str)
+        print ('SECOND before[KEY1]')
+        print (SECOND[KEY1])
+        print ('SECOND before[KEY2]')
+        print (SECOND[KEY2])
+
+        print ('EXTRA[KEY1]')
+        print (EXTRA[KEY1])
+        print ('EXTRA[KEY2]')
+        print (EXTRA[KEY2])
         SECOND_JOIN = (
             SECOND.merge(EXTRA, on=[KEY1, KEY2], how="inner",
                          suffixes=("", "_extra"))
@@ -383,6 +459,12 @@ def main():
 
         print("Rows in joined SECOND+EXTRA:", len (SECOND), len(SECOND_JOIN))
         SECOND = SECOND_JOIN
+        print ('SECOND after[KEY1]')
+        print (SECOND[KEY1])
+        print ('SECOND after[KEY2]')
+        print (SECOND[KEY2])
+        SECOND[KEY1] = SECOND[KEY1].fillna(0).astype(int)
+
 
     
 
@@ -392,13 +474,23 @@ def main():
     assert_no_dupes(SECOND, [KEY1, KEY2], "SECOND")
 
     X = FIRST.set_index([KEY1, KEY2])
+    print ('SECOND')
+    print (SECOND)
     Y = SECOND.set_index([KEY1, KEY2])
     #print("Columns in SECOND:", SECOND.columns.tolist())
     print("Columns in Y:", Y.columns.tolist())
 
     #buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'miasto', 'dzielnica w m.st. Warszawa'})], f"Ymiasta{rok}.xlsx", rok)
     #buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'wieś', 'miasto i wieś'})], f"Ywies{rok}.xlsx", rok)
-    buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'wieś', 'miasto i wieś', 'miasto', 'dzielnica w m.st. Warszawa'})], f"YkrajC{rok}.xlsx", rok)
+    #print ('Y')
+    #print (Y)
+    buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'wieś', 'miasto i wieś', 'miasto', 'dzielnica w m.st. Warszawa'})], f"YkrajD{rok}.xlsx", rok)
+    buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'wieś', 'miasto i wieś'})], f"YwiesD{rok}.xlsx", rok)
+    buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'miasto', 'dzielnica w m.st. Warszawa'})], f"YmiastoD{rok}.xlsx", rok)
+
+    buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'wieś', 'miasto i wieś', 'miasto', 'dzielnica w m.st. Warszawa'}) & Y['Typ obwodu'].isin({"stały"})], f"YkrajDst{rok}.xlsx", rok)
+    buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'wieś', 'miasto i wieś'}) & Y['Typ obwodu'].isin({"stały"})], f"YwiesDst{rok}.xlsx", rok)
+    buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'miasto', 'dzielnica w m.st. Warszawa'}) & Y['Typ obwodu'].isin({"stały"})], f"YmiastoDst{rok}.xlsx", rok)
     #buildLinRegression (X.copy(), Y.copy(), f"Y{rok}.xlsx", rok)
     #buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'statek', 'zagranica'})], f"Yzagranica{rok}.xlsx", rok)
     

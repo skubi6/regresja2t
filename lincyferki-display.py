@@ -650,18 +650,20 @@ def displaySomething (filename, l, *, histogramy, addOutliers, cyferki, rok,
         #add_outliers(Y["Dnorm"],  "Dnorm")
         top_rows = (
             Y[Y["D"] > 0]                  # 1. bierzemy tylko wiersze z D > 0
-            .nlargest(TOP_N, "x_edge_")     # 2. wybieramy TOP_N wg największego x_edge
+            .nlargest(TOP_N, "x_edge")     # 2. wybieramy TOP_N wg największego x_edge
         )
         top_rows.to_excel(writer, sheet_name="x_edgePOS", index=False)
         bottom_rows = (
             Y[Y["D"] < 0]                  # 1. bierzemy tylko wiersze z D > 0
             .nlargest(TOP_N, "x_edge")     # 2. wybieramy TOP_N wg największego x_edge
         )
-        top_rows.to_excel(writer, sheet_name="x_edgeNEG", index=False)
-        add_outliers(Y["Dnaw"], "D", "pos")
-        add_outliers(Y["Dnaw"], "D", "neg")
-        add_outliers(Y["Dnaw_norm"], "Dnorm", "pos")
-        add_outliers(Y["Dnaw_norm"], "Dnorm", "neg")
+        bottom_rows.to_excel(writer, sheet_name="x_edgeNEG", index=False)
+
+        
+        add_outliers(Y["Dnaw"], "Dnaw", "pos")
+        add_outliers(Y["Dnaw"], "Dnaw", "neg")
+        add_outliers(Y["Dnaw_norm"], "Dnaw_norm", "pos")
+        add_outliers(Y["Dnaw_norm"], "Dnaw_norm", "neg")
         top_rows = (
             Y[Y["Dnaw"] > 0]                  # 1. bierzemy tylko wiersze z D > 0
             .nlargest(TOP_N, "naw_edge")     # 2. wybieramy TOP_N wg największego x_edge
@@ -671,8 +673,25 @@ def displaySomething (filename, l, *, histogramy, addOutliers, cyferki, rok,
             Y[Y["Dnaw"] < 0]                  # 1. bierzemy tylko wiersze z D > 0
             .nlargest(TOP_N, "naw_edge")     # 2. wybieramy TOP_N wg największego x_edge
         )
-        top_rows.to_excel(writer, sheet_name="naw_edgeNEG", index=False)
+        bottom_rows.to_excel(writer, sheet_name="naw_edgeNEG", index=False)
 
+        
+        add_outliers(Y["Dtrza"], "Dtrza", "pos")
+        add_outliers(Y["Dtrza"], "Dtrza", "neg")
+        add_outliers(Y["Dtrza_norm"], "Dtrza_norm", "pos")
+        add_outliers(Y["Dtrza_norm"], "Dtrza_norm", "neg")
+        top_rows = (
+            Y[Y["Dtrza"] > 0]                  # 1. bierzemy tylko wiersze z D > 0
+            .nlargest(TOP_N, "trza_edge")     # 2. wybieramy TOP_N wg największego x_edge
+        )
+        top_rows.to_excel(writer, sheet_name="trza_edgePOS", index=False)
+        bottom_rows = (
+            Y[Y["Dtrza"] < 0]                  # 1. bierzemy tylko wiersze z D > 0
+            .nlargest(TOP_N, "trza_edge")     # 2. wybieramy TOP_N wg największego x_edge
+        )
+        bottom_rows.to_excel(writer, sheet_name="trza_edgeNEG", index=False)
+
+        
         # ---------- 6C.  save & finish -------------------------------
         writer.close()
         print(f"✓  All outlier tables written to outliers.xlsx")

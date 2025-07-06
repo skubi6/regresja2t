@@ -650,30 +650,28 @@ def displaySomething (filename, l, *, histogramy, addOutliers, cyferki, rok,
         #add_outliers(Y["Dnorm"],  "Dnorm")
         top_rows = (
             Y[Y["D"] > 0]                  # 1. bierzemy tylko wiersze z D > 0
-            .nlargest(TOP_N, "x_edge_pos")     # 2. wybieramy TOP_N wg największego x_edge
+            .nlargest(TOP_N, "x_edge_")     # 2. wybieramy TOP_N wg największego x_edge
         )
-        top_rows.to_excel(writer, sheet_name="x_edge", index=False)
+        top_rows.to_excel(writer, sheet_name="x_edgePOS", index=False)
         bottom_rows = (
             Y[Y["D"] < 0]                  # 1. bierzemy tylko wiersze z D > 0
             .nlargest(TOP_N, "x_edge")     # 2. wybieramy TOP_N wg największego x_edge
         )
-        top_rows.to_excel(writer, sheet_name="x_edge_neg", index=False)
+        top_rows.to_excel(writer, sheet_name="x_edgeNEG", index=False)
         add_outliers(Y["Dnaw"], "D", "pos")
         add_outliers(Y["Dnaw"], "D", "neg")
         add_outliers(Y["Dnaw_norm"], "Dnorm", "pos")
         add_outliers(Y["Dnaw_norm"], "Dnorm", "neg")
-        #add_outliers(Y["D"],      "D")
-        #add_outliers(Y["Dnorm"],  "Dnorm")
         top_rows = (
-            Y[Y["D"] > 0]                  # 1. bierzemy tylko wiersze z D > 0
-            .nlargest(TOP_N, "x_edge_pos")     # 2. wybieramy TOP_N wg największego x_edge
+            Y[Y["Dnaw"] > 0]                  # 1. bierzemy tylko wiersze z D > 0
+            .nlargest(TOP_N, "naw_edge")     # 2. wybieramy TOP_N wg największego x_edge
         )
-        top_rows.to_excel(writer, sheet_name="x_edge", index=False)
+        top_rows.to_excel(writer, sheet_name="naw_edgePOS", index=False)
         bottom_rows = (
-            Y[Y["D"] < 0]                  # 1. bierzemy tylko wiersze z D > 0
-            .nlargest(TOP_N, "x_edge")     # 2. wybieramy TOP_N wg największego x_edge
+            Y[Y["Dnaw"] < 0]                  # 1. bierzemy tylko wiersze z D > 0
+            .nlargest(TOP_N, "naw_edge")     # 2. wybieramy TOP_N wg największego x_edge
         )
-        top_rows.to_excel(writer, sheet_name="x_edge_neg", index=False)
+        top_rows.to_excel(writer, sheet_name="naw_edgeNEG", index=False)
 
         # ---------- 6C.  save & finish -------------------------------
         writer.close()

@@ -418,19 +418,29 @@ def main():
     SECOND.loc[SECOND['Typ obszaru'].isin(['zagranica', 'statek']), terytGminy[rok]] = 9999999
     GUS = pd.read_excel(
             "powierzchnia_i_ludnosc_w_przekroju_terytorialnym_w_2024_roku_tablice.xlsx",
-            sheet_name="Tabl. 2",
+            sheet_name="Tabl. 21",
             skiprows=3,        # drop the 5 rows *above* the real header
-            usecols="A:E")
-    GUS.columns = ['Teryt Gminy', 'B', 'C', 'D', 'Ludnosc']
-    GUS['Teryt Gminy']  = GUS['Teryt Gminy'] + '01'
+            usecols="A:F")
+    GUS.columns = ['Teryt Gminy', 'nazwa gminy (GUS)', 'powierzchnia', 'D', 'E', 'Ludnosc']
+    GUS = GUS.drop(columns=["D", "E"])
+    #GUS['Teryt Gminy']  = GUS['Teryt Gminy'] + '01'
+    #GUS = GUS[GUS['Teryt Gminy'].str.rsplit(n=1, expand=True).iloc[:, 1].isin(["1", "2", "3"])]
+    pattern = r"\s[123]$"
+    GUS = GUS[GUS["Teryt Gminy"].str.contains(pattern, na=False)]
+    GUS["Teryt Gminy"] = GUS["Teryt Gminy"].str.replace(pattern, "", regex=True)
+    GUS["Teryt Gminy"] = GUS["Teryt Gminy"].str.replace(r"^0", "", regex=True)
     FIRST['Teryt Gminy']  = FIRST['Teryt Gminy'].astype(str)
     SECOND['Teryt Gminy']  = SECOND['Teryt Gminy'].astype(str)
+    print ("SECOND['Teryt Gminy']")
+    print (SECOND['Teryt Gminy'])
+    print ('GUS')
+    print(GUS['Teryt Gminy'])
     SECOND = SECOND.merge(
         GUS,
         on='Teryt Gminy',
         how='left'
     )
-    SECOND['Ludnosc'] = SECOND['Ludnosc'].fillna(0)
+    #SECOND['Ludnosc'] = SECOND['Ludnosc'].fillna(0)
     SECOND.loc[SECOND['Powiat']=='Warszawa', 'Ludnosc'] = 2000000
     
     EXTRA = pd.DataFrame()
@@ -459,10 +469,10 @@ def main():
 
         print("Rows in joined SECOND+EXTRA:", len (SECOND), len(SECOND_JOIN))
         SECOND = SECOND_JOIN
-        print ('SECOND after[KEY1]')
-        print (SECOND[KEY1])
-        print ('SECOND after[KEY2]')
-        print (SECOND[KEY2])
+        #print ('SECOND after[KEY1]')
+        #print (SECOND[KEY1])
+        #print ('SECOND after[KEY2]')
+        #print (SECOND[KEY2])
         SECOND[KEY1] = SECOND[KEY1].fillna(0).astype(int)
 
 

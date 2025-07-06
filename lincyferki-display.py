@@ -381,10 +381,11 @@ def plot_histogram_pair(title,
     fig.tight_layout()
     return fig            # return so caller can .savefig() if desired
 
-def displaySomething (l, *, histogramy, addOutliers, cyferki, rok,
+def displaySomething (filename, l, *, histogramy, addOutliers, cyferki, rok,
                       ludnosc, diff, diffRegr, wojewodztwa, warszawa, mergedInfix):
     lVisible = l or 'wszystko'
-    Y = pd.read_excel(DATA_DIR / f"Y{l}C{rok}{mergedInfix}.xlsx")
+    #Y = pd.read_excel(DATA_DIR / f"Y{l}C{rok}{mergedInfix}.xlsx")
+    Y = pd.read_excel(DATA_DIR / filename)
     if mergedInfix:
         print ('classify')
         Y["class"] = Y.apply(classify, axis=1)
@@ -394,38 +395,6 @@ def displaySomething (l, *, histogramy, addOutliers, cyferki, rok,
         #Y.loc[:, "class"] = "black"
     Y["color"] = Y["class"].map(colors)
 
-    if ludnosc:
-        gus = pd.read_excel(
-            "powierzchnia_i_ludnosc_w_przekroju_terytorialnym_w_2024_roku_tablice.xlsx",
-            sheet_name="Tabl. 2",
-            skiprows=3,        # drop the 5 rows *above* the real header
-            usecols="A:E",     # we only care about columns A–E
-            #dtype={"A": str},  # ensure leading zeros if any on TERYT
-        )
-        writerY = pd.ExcelWriter(f"Y{l}{rok}{mergedInfix}-merged.xlsx", engine="xlsxwriter")
-        gus.to_excel(writerY, sheet_name="gus1", index=True)
-        gus.columns = ['Teryt Gminy', 'B', 'C', 'D', 'Ludnosc']
-        gus.to_excel(writerY, sheet_name="gus2", index=True)
-        gus['Teryt Gminy']  = gus['Teryt Gminy'] + '01'
-        Y['Teryt Gminy']  = Y['Teryt Gminy'].astype(str)
-        #gus['Teryt Gminy'] = gus['Teryt Gminy'].astype(int)
-        #print ('Y')
-        #print (Y['Teryt Gminy'])
-        #print ('gus')
-        #print (gus['Teryt Gminy'])
-        Y = Y.merge(
-            gus,  # only bring in the population column
-            on='Teryt Gminy',
-            how='left'                        # keep all Y rows, fill gus-misses with NaN
-        )
-        Y.to_excel(writerY, sheet_name="merged1", index=True)
-        
-        Y['Ludnosc'] = Y['Ludnosc'].fillna(0)
-        Y.loc[Y['Powiat']=='Warszawa', 'Ludnosc'] = 2000000
-        Y.to_excel(writerY, sheet_name="merged2", index=True)
-        
-        writerY.close()
-    nowAfterInit = datetime.now()
     #print (nowAfterInit-nowStart)
 
     nowRead = datetime.now()
@@ -561,6 +530,82 @@ def displaySomething (l, *, histogramy, addOutliers, cyferki, rok,
 
         plt.show()
 
+        fig, ax1 = plt.subplots(
+            nrows=1, ncols=1, figsize=(60, 20), constrained_layout=True
+        )
+
+        # ── left-hand histogram: raw D ────────────────────────────────────────────────
+        #vals = ((Y["D"] + 2) // 4).astype(int)       # the integer data
+        edges = np.arange(-302.5, 301.5, 6)
+        ax1.hist(
+            Y["D"], bins=edges, alpha=0.8, color="steelblue")
+        ax1.set_xlim(-100, 100)
+        ax1.axvline(0, color="black", linewidth=0.8)          # central line at 0
+        ax1.set_title("Histogram D = (c1−c2) − predicted (grouped)" + lVisible)
+        ax1.set_xlabel("D")
+        ax1.set_ylabel("precincts")
+        ax1.set_xlim(-300, 300)
+
+        plt.show()
+        
+        fig, (ax1, ax2) = plt.subplots(
+            nrows=1, ncols=2, figsize=(60, 20), constrained_layout=True
+        )
+
+
+        # ── left-hand histogram: raw D ────────────────────────────────────────────────
+        ax1.hist(
+            Y["Dnaw"],
+            bins=601, alpha=0.8, color="blue", range=(-300, 300)
+        )
+        ax1.axvline(0, color="black", linewidth=0.8)          # central line at 0
+        ax1.set_title("Histogram delta NAW = NAWROCKI − predicted " + lVisible)
+        ax1.set_xlabel("D NAW")
+        ax1.set_ylabel("precincts")
+        ax1.set_xlim(-200, 200)
+
+        # ── right-hand histogram: normalised D ────────────────────────────────────────
+        ax2.hist(
+            Y["Dnaw_norm"], bins=800, alpha=0.8, color="steelblue", range=(-10, 10)
+        )
+        ax2.axvline(0, color="black", linewidth=0.8)          # central line at 0
+        ax2.set_title("Histogram delta NAW norm = NAWROCKI − predicted (normalized) " + lVisible)
+        ax2.set_xlabel("normalized D NAW")
+        ax2.set_ylabel("precincts")
+        ax2.set_xlim(-10, 10)
+
+        plt.show()
+
+
+        fig, (ax1, ax2) = plt.subplots(
+            nrows=1, ncols=2, figsize=(60, 20), constrained_layout=True
+        )
+
+
+        # ── left-hand histogram: raw D ────────────────────────────────────────────────
+        ax1.hist(
+            Y["Dtrza"],
+            bins=601, alpha=0.8, color="red", range=(-300, 300)
+        )
+        ax1.axvline(0, color="black", linewidth=0.8)          # central line at 0
+        ax1.set_title("Histogram delta TRZA = TRZASKOWSKI − predicted " + lVisible)
+        ax1.set_xlabel("D TRZA")
+        ax1.set_ylabel("precincts")
+        ax1.set_xlim(-200, 200)
+
+        # ── right-hand histogram: normalised D ────────────────────────────────────────
+        ax2.hist(
+            Y["Dtrza_norm"], bins=800, alpha=0.8, color="indianred", range=(-10, 10)
+        )
+        ax2.axvline(0, color="black", linewidth=0.8)          # central line at 0
+        ax2.set_title("Histogram delta TRZA norm = TRZASKOWSKI − predicted (normalized) " + lVisible)
+        ax2.set_xlabel("normalized D TRZA")
+        ax2.set_ylabel("precincts")
+        ax2.set_xlim(-10, 10)
+
+        plt.show()
+
+
     nowCalc = datetime.now()
 
     # ------------------------------------------------------------
@@ -568,11 +613,11 @@ def displaySomething (l, *, histogramy, addOutliers, cyferki, rok,
     # ------------------------------------------------------------
 
     if addOutliers:
-        writer = pd.ExcelWriter(f"outliers{lVisible}{rok}.xlsx", engine="xlsxwriter")
+        writer = pd.ExcelWriter(f"outliers-{filename}", engine="xlsxwriter")
 
         # ---------- helper: take any Series of scores ----------------
         #    TOP_N = Y.shape[0]//3
-        TOP_N = 250
+        TOP_N = 400
 
         def sheet_name(label, sign):
             return f"{label}_{sign}"
@@ -583,21 +628,52 @@ def displaySomething (l, *, histogramy, addOutliers, cyferki, rok,
         small = Y.nsmallest(TOP_N, criterion)
         #mid = Y.nsmallest(TOP_N*2, criterion).nlargest(TOP_N, criterion)
 
-        def add_outliers(series: pd.Series, label: str, k: int = TOP_N):
-            for sign, slicer in [("pos", series.nlargest(k)),
-                                 ("neg", series.nsmallest(k))]:
-                sheet = sheet_name(label, sign)
-                df = (
-                    slicer.rename("metric")
-                          .to_frame()
-                          .join(Y, how="left")     # keep all original cols
-                          .reset_index()              # bring keys back as columns
-                )
-                df.to_excel(writer, sheet_name=sheet, index=False)
+        def add_outliers(series: pd.Series, label: str, sign : str,  k: int = TOP_N):
+            slicer = series.nlargest(k) if "pos" == sign else series.nsmallest(k)
+            #for sign, slicer in [("pos", series.nlargest(k)),
+            #                     ("neg", series.nsmallest(k))]:
+            sheet = sheet_name(label, sign)
+            df = (
+                slicer.rename("metric")
+                .to_frame()
+                .join(Y, how="left")     # keep all original cols
+                .reset_index()              # bring keys back as columns
+            )
+            df.to_excel(writer, sheet_name=sheet, index=False)
 
         # ---------- 6B.  ±100 outliers for D and D_rel ---------------
-        add_outliers(Y["D"],      "D")
-        add_outliers(Y["Dnorm"],  "Dnorm")
+        add_outliers(Y["D"], "D", "pos")
+        add_outliers(Y["D"], "D", "neg")
+        add_outliers(Y["Dnorm"], "Dnorm", "pos")
+        add_outliers(Y["Dnorm"], "Dnorm", "neg")
+        #add_outliers(Y["D"],      "D")
+        #add_outliers(Y["Dnorm"],  "Dnorm")
+        top_rows = (
+            Y[Y["D"] > 0]                  # 1. bierzemy tylko wiersze z D > 0
+            .nlargest(TOP_N, "x_edge_pos")     # 2. wybieramy TOP_N wg największego x_edge
+        )
+        top_rows.to_excel(writer, sheet_name="x_edge", index=False)
+        bottom_rows = (
+            Y[Y["D"] < 0]                  # 1. bierzemy tylko wiersze z D > 0
+            .nlargest(TOP_N, "x_edge")     # 2. wybieramy TOP_N wg największego x_edge
+        )
+        top_rows.to_excel(writer, sheet_name="x_edge_neg", index=False)
+        add_outliers(Y["Dnaw"], "D", "pos")
+        add_outliers(Y["Dnaw"], "D", "neg")
+        add_outliers(Y["Dnaw_norm"], "Dnorm", "pos")
+        add_outliers(Y["Dnaw_norm"], "Dnorm", "neg")
+        #add_outliers(Y["D"],      "D")
+        #add_outliers(Y["Dnorm"],  "Dnorm")
+        top_rows = (
+            Y[Y["D"] > 0]                  # 1. bierzemy tylko wiersze z D > 0
+            .nlargest(TOP_N, "x_edge_pos")     # 2. wybieramy TOP_N wg największego x_edge
+        )
+        top_rows.to_excel(writer, sheet_name="x_edge", index=False)
+        bottom_rows = (
+            Y[Y["D"] < 0]                  # 1. bierzemy tylko wiersze z D > 0
+            .nlargest(TOP_N, "x_edge")     # 2. wybieramy TOP_N wg największego x_edge
+        )
+        top_rows.to_excel(writer, sheet_name="x_edge_neg", index=False)
 
         # ---------- 6C.  save & finish -------------------------------
         writer.close()
@@ -766,14 +842,15 @@ def main():
     print(f"-c flag present? {args.c}")
     global KEY1
     global KEY2
-    rok = 2025
     if args.y:
         rok = int(args.y)
+    else:
+        rok = 2025
     KEY1, KEY2 = terytGminy[rok], nrKomisji[rok]
 
     for idx, val in enumerate(args.items, 1):
         print(f"  {idx}: {val}")
-        displaySomething (val, histogramy=args.H, cyferki=args.c, rok=rok,
+        displaySomething (args.items[0], val, histogramy=args.H, cyferki=args.c, rok=rok,
                           ludnosc=args.l, diff=args.d, diffRegr=args.D, wojewodztwa=args.w, addOutliers=args.o, warszawa=args.W,
                           mergedInfix=('-merged' if args.m else ''))
     

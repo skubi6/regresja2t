@@ -279,6 +279,9 @@ def buildLinRegression (
     Yarg["D"] = Yarg["obs_diff"] - Yarg["fit_diff"]            # Series on same MultiIndex
     Yarg["Drev"] = -Yarg["obs_diff"] - Yarg["fit_diff"]            # Series on same MultiIndex
 
+    Yarg["Dnaw"] = Yarg[c1] - Yarg['fits' + c1]
+    Yarg["Dtrza"] = Yarg[c2] - Yarg['fits' + c2]
+
     N   = Xarg[first_cols[rok][0]]
     p   = Yarg["fits" + c1] / N
     q   = Yarg["fits" + c2] / N
@@ -362,6 +365,34 @@ def buildLinRegression (
     D_rel   = D_rel.dropna()
     Yarg["Dnorm"] = D_rel
 
+    Dnaw_rel = pd.Series(                                              # keep original index
+        np.divide(                                                  # element-wise D / denom
+            Yarg["Dnaw"].to_numpy(dtype=float),                        # numerator
+            denom.to_numpy(dtype=float),                            # denominator
+            out=np.zeros_like(denom, dtype=float),                  # preset output with 0s
+            where=~((Yarg["Dnaw"] == 0) & (denom == 0))                # skip rows where both are 0
+        ),
+        index=Yarg.index
+    )
+    
+    Dnaw_rel   = Dnaw_rel.replace([np.inf, -np.inf], np.nan)   # guard against div-by-0
+    Dnaw_rel   = Dnaw_rel.dropna()
+    Yarg["Dnaw_norm"] = Dnaw_rel
+
+    Dtrza_rel = pd.Series(                                              # keep original index
+        np.divide(                                                  # element-wise D / denom
+            Yarg["Dtrza"].to_numpy(dtype=float),                        # numerator
+            denom.to_numpy(dtype=float),                            # denominator
+            out=np.zeros_like(denom, dtype=float),                  # preset output with 0s
+            where=~((Yarg["Dtrza"] == 0) & (denom == 0))                # skip rows where both are 0
+        ),
+        index=Yarg.index
+    )
+    
+    Dtrza_rel   = Dtrza_rel.replace([np.inf, -np.inf], np.nan)   # guard against div-by-0
+    Dtrza_rel   = Dtrza_rel.dropna()
+    Yarg["Dtrza_norm"] = Dtrza_rel
+  
     #Drev_rel   = Yarg["D"] / denom
     #Drev_rel   = Drev_rel.replace([np.inf, -np.inf], np.nan)   # guard against div-by-0
     #Drev_rel   = Drev_rel.dropna()
@@ -431,10 +462,10 @@ def main():
     GUS["Teryt Gminy"] = GUS["Teryt Gminy"].str.replace(r"^0", "", regex=True)
     FIRST['Teryt Gminy']  = FIRST['Teryt Gminy'].astype(str)
     SECOND['Teryt Gminy']  = SECOND['Teryt Gminy'].astype(str)
-    print ("SECOND['Teryt Gminy']")
-    print (SECOND['Teryt Gminy'])
-    print ('GUS')
-    print(GUS['Teryt Gminy'])
+    #print ("SECOND['Teryt Gminy']")
+    #print (SECOND['Teryt Gminy'])
+    #print ('GUS')
+    #print(GUS['Teryt Gminy'])
     SECOND = SECOND.merge(
         GUS,
         on='Teryt Gminy',
@@ -484,8 +515,8 @@ def main():
     assert_no_dupes(SECOND, [KEY1, KEY2], "SECOND")
 
     X = FIRST.set_index([KEY1, KEY2])
-    print ('SECOND')
-    print (SECOND)
+    #print ('SECOND')
+    #print (SECOND)
     Y = SECOND.set_index([KEY1, KEY2])
     #print("Columns in SECOND:", SECOND.columns.tolist())
     print("Columns in Y:", Y.columns.tolist())
@@ -494,10 +525,16 @@ def main():
     #buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'wieś', 'miasto i wieś'})], f"Ywies{rok}.xlsx", rok)
     #print ('Y')
     #print (Y)
-    buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'wieś', 'miasto i wieś', 'miasto', 'dzielnica w m.st. Warszawa'})], f"YkrajD{rok}.xlsx", rok)
-    buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'wieś', 'miasto i wieś'})], f"YwiesD{rok}.xlsx", rok)
-    buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'miasto', 'dzielnica w m.st. Warszawa'})], f"YmiastoD{rok}.xlsx", rok)
+    #buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'wieś', 'miasto i wieś', 'miasto', 'dzielnica w m.st. Warszawa'})], f"YkrajD{rok}.xlsx", rok)
+    #buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'wieś', 'miasto i wieś'})], f"YwiesD{rok}.xlsx", rok)
+    #buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'miasto', 'dzielnica w m.st. Warszawa'})], f"YmiastoD{rok}.xlsx", rok)
 
+    buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'miasto', 'dzielnica w m.st. Warszawa'})
+                                    & Y['Typ obwodu'].isin({"stały"})
+                                    & (Y['Ludnosc'] >150000.0)], f"YmiastoDst150+{rok}.xlsx", rok)
+    buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'miasto', 'dzielnica w m.st. Warszawa'})
+                                    & Y['Typ obwodu'].isin({"stały"})
+                                    & (Y['Ludnosc'] <150000.0)], f"YmiastoDst150-{rok}.xlsx", rok)
     buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'wieś', 'miasto i wieś', 'miasto', 'dzielnica w m.st. Warszawa'}) & Y['Typ obwodu'].isin({"stały"})], f"YkrajDst{rok}.xlsx", rok)
     buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'wieś', 'miasto i wieś'}) & Y['Typ obwodu'].isin({"stały"})], f"YwiesDst{rok}.xlsx", rok)
     buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'miasto', 'dzielnica w m.st. Warszawa'}) & Y['Typ obwodu'].isin({"stały"})], f"YmiastoDst{rok}.xlsx", rok)

@@ -766,7 +766,9 @@ def main():
     print(f"-c flag present? {args.c}")
     global KEY1
     global KEY2
-    rok = int(args.y)
+    rok = 2025
+    if args.y:
+        rok = int(args.y)
     KEY1, KEY2 = terytGminy[rok], nrKomisji[rok]
 
     for idx, val in enumerate(args.items, 1):

@@ -189,6 +189,7 @@ targetTranslate = {
         "Rafał Kazimierz TRZASKOWSKI" : 'TRZASKOWSKI',     # c2
 }
 
+EXTRApredictor = "Liczba wyborców głosujących na podstawie zaświadczenia o prawie do głosowania" # z tabelki drugiej tury
 
 # ------------------------------------------------------------
 # 3.  Design & target matrices
@@ -198,7 +199,7 @@ targetTranslate = {
 #Y = SECOND.set_index([KEY1, KEY2])
 
 def buildLinRegression (
-        Xarg, Yarg, filename, rok
+        Xarg, Yarg, filename, rok, *, t2absentee=False
 ):
     nowFunStart = datetime.now()
 
@@ -224,8 +225,14 @@ def buildLinRegression (
             RidgeCV(alphas=ALPHAS, cv=5)         # 3. regresja z CV po alfach
         )
 
+        if t2absentee:
+            Xfeat = Xarg[first_cols[rok]].join(Yarg[[EXTRApredictor]])
+        else:
+            Xfeat = Xarg[first_cols[rok]]
+                
         try:
-            pipe.fit(Xarg[first_cols[rok]], Yarg[tgt])
+            #pipe.fit(Xarg[first_cols[rok]], Yarg[tgt])
+            pipe.fit(Xfeat, Yarg[tgt])
         except Exception:
             writerD = pd.ExcelWriter("debug.xlsx", engine="xlsxwriter")
             Xarg.to_excel(writerD, sheet_name="Xarg", index=True)
@@ -235,7 +242,7 @@ def buildLinRegression (
 
         print("doing", tgt)
         Yarg["fits" + tgt] = pd.Series(
-            pipe.predict(Xarg[first_cols[rok]]),
+            pipe.predict(Xfeat),
             index=Xarg.index
         )
         Yarg["resids" + tgt] = Yarg[tgt] - Yarg["fits" + tgt]

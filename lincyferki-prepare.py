@@ -29,12 +29,15 @@ nowStart = datetime.now()
 inputFileNames = {
     2025: ("protokoly_po_obwodach_utf8-fixed.xlsx",
            "protokoly_po_obwodach_w_drugiej_turze_utf8.xlsx",
-           "commission_combined.xlsx"),
+           "commission_combined.xlsx",
+           "obwody_geo.xlsx"),
     2020: ("2020-t1-wyniki_gl_na_kand_po_obwodach_utf8.xlsx",
            "2020-t2-wyniki_gl_na_kand_po_obwodach_utf8.xlsx",
            None),
     2015: ("2015-wyniki_tura1-1.xls", "2015-wyniki_tura2.xls", None)
 }
+
+prokFileName = 'prok/gmina_okregowa.xlsx'
 
 terytGminy = {
     2025: "Teryt Gminy",
@@ -489,7 +492,32 @@ def main():
     )
     #SECOND['Ludnosc'] = SECOND['Ludnosc'].fillna(0)
     SECOND.loc[SECOND['Powiat']=='Warszawa', 'Ludnosc'] = 2000000
-    
+
+    GEO = pd.DataFrame()
+    if inputFileNames[rok][3]:
+        GEO = pd.read_excel(DATA_DIR / inputFileNames[rok][3])
+        GEO.rename(columns={"Numer": "Nr komisji", "TERYT gminy" : "Teryt Gminy"}, inplace=True)
+    if 0 < GEO.shape[0]:
+        SECONDmerged = SECOND.merge(GEO, on=[KEY1, KEY2], how="left",
+                                     indicator=True,
+                                     suffixes=("", "_extra"),
+                                     validate="many_to_one")
+        mask_missing = SECONDmerged['_merge'] == 'left_only'
+        if mask_missing.any():
+            bad_keys = (
+                SECONDmerged.loc[mask_missing, [KEY1, KEY2]]
+                .drop_duplicates()
+                .to_dict('records')
+            )
+            raise KeyError(
+                f"{mask_missing.sum()} row(s) in SECOND had no match in GEO for "
+                f"({KEY1!s}, {KEY2!s}) pairs: {bad_keys}"
+            )
+        SECOND = SECONDmerged.drop(columns=['_merge'])
+# drop the helper column and keep only the successfully-matched rows
+SECOND = merged.drop(columns=['_merge'])
+
+
     EXTRA = pd.DataFrame()
     if inputFileNames[rok][2]:
         EXTRA = pd.read_excel(DATA_DIR / inputFileNames[rok][2])
@@ -500,15 +528,15 @@ def main():
     FIRST[KEY1] = FIRST[KEY1].fillna(0).astype(int)
     if 0 < EXTRA.shape[0]:
         EXTRA[KEY1] = EXTRA[KEY1].astype(str)
-        print ('SECOND before[KEY1]')
-        print (SECOND[KEY1])
-        print ('SECOND before[KEY2]')
-        print (SECOND[KEY2])
+        #print ('SECOND before[KEY1]')
+        #print (SECOND[KEY1])
+        #print ('SECOND before[KEY2]')
+        #print (SECOND[KEY2])
 
-        print ('EXTRA[KEY1]')
-        print (EXTRA[KEY1])
-        print ('EXTRA[KEY2]')
-        print (EXTRA[KEY2])
+        #print ('EXTRA[KEY1]')
+        #print (EXTRA[KEY1])
+        #print ('EXTRA[KEY2]')
+        #print (EXTRA[KEY2])
         SECOND_JOIN = (
             SECOND.merge(EXTRA, on=[KEY1, KEY2], how="inner",
                          suffixes=("", "_extra"))

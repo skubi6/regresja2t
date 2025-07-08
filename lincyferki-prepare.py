@@ -189,8 +189,9 @@ targetTranslate = {
         "Rafał Kazimierz TRZASKOWSKI" : 'TRZASKOWSKI',     # c2
 }
 
-EXTRApredictor = "Liczba wyborców głosujących na podstawie zaświadczenia o prawie do głosowania" # z tabelki drugiej tury
-
+# = "Liczba wyborców głosujących na podstawie zaświadczenia o prawie do głosowania" # z tabelki drugiej tury
+# = 'Liczba wyborców głosujących na podstawie zaświadczenia o prawie do głosowania'
+EXTRApredictor = 'Liczba wyborców głosujących na podstawie zaświadczenia o\xa0prawie do głosowania'
 # ------------------------------------------------------------
 # 3.  Design & target matrices
 # ------------------------------------------------------------
@@ -226,7 +227,7 @@ def buildLinRegression (
         )
 
         if t2absentee:
-            Xfeat = Xarg[first_cols[rok]].join(Yarg[[EXTRApredictor]])
+            Xfeat = Xarg[first_cols[rok]].join(Yarg[['zaswiadczenia2t']])
         else:
             Xfeat = Xarg[first_cols[rok]]
                 
@@ -243,7 +244,7 @@ def buildLinRegression (
         print("doing", tgt)
         Yarg["fits" + tgt] = pd.Series(
             pipe.predict(Xfeat),
-            index=Xarg.index
+            index=Xfeat.index
         )
         Yarg["resids" + tgt] = Yarg[tgt] - Yarg["fits" + tgt]
 
@@ -261,8 +262,10 @@ def buildLinRegression (
 
         coefs[targetTranslate[tgt]]      = beta_orig
         intercepts[targetTranslate[tgt]] = intercept_orig
-        
+
     predictor_names = ["Intercept"] + first_cols[rok]
+    if t2absentee:
+        predictor_names += ['zaswiadczenia2t']
     coef_tbl = pd.DataFrame(index=predictor_names)
 
     for tgt in targets[rok]:
@@ -453,6 +456,12 @@ def main():
     FIRST.loc[FIRST['Typ obszaru'].isin(['zagranica', 'statek']), terytGminy[rok]] = 9999999
     SECOND = pd.read_excel(DATA_DIR / inputFileNames[rok][1],
                           dtype={'Teryt Gminy': "Int64"})
+    print ('SECOND key col')
+    print (SECOND[EXTRApredictor])
+    print ('SECOND cols')
+    print (list(SECOND.columns))
+    SECOND = SECOND.rename (columns={EXTRApredictor : 'zaswiadczenia2t'})
+    print (list(SECOND.columns))
     SECOND.loc[SECOND['Typ obszaru'].isin(['zagranica', 'statek']), terytGminy[rok]] = 9999999
     GUS = pd.read_excel(
             "powierzchnia_i_ludnosc_w_przekroju_terytorialnym_w_2024_roku_tablice.xlsx",
@@ -536,6 +545,23 @@ def main():
     #buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'wieś', 'miasto i wieś'})], f"YwiesD{rok}.xlsx", rok)
     #buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'miasto', 'dzielnica w m.st. Warszawa'})], f"YmiastoD{rok}.xlsx", rok)
 
+    if True:
+        buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'miasto', 'dzielnica w m.st. Warszawa'})
+                                        & Y['Typ obwodu'].isin({"stały"})
+                                        & (Y['Ludnosc'] >150000.0)], f"YmiastoDst150+a{rok}.xlsx", rok,
+                            t2absentee=True)
+        buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'miasto', 'dzielnica w m.st. Warszawa'})
+                                        & Y['Typ obwodu'].isin({"stały"})
+                                        & (Y['Ludnosc'] <150000.0)], f"YmiastoDst150-a{rok}.xlsx", rok,
+                            t2absentee=True)
+        buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'wieś', 'miasto i wieś', 'miasto', 'dzielnica w m.st. Warszawa'}) & Y['Typ obwodu'].isin({"stały"})], f"YkrajDsta{rok}.xlsx", rok,
+                            t2absentee=True)
+        buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'wieś', 'miasto i wieś'}) & Y['Typ obwodu'].isin({"stały"})], f"YwiesDsta{rok}.xlsx", rok,
+                            t2absentee=True)
+        buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'miasto', 'dzielnica w m.st. Warszawa'}) & Y['Typ obwodu'].isin({"stały"})], f"YmiastoDsta{rok}.xlsx", rok,
+                            t2absentee=True)
+
+    
     buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'miasto', 'dzielnica w m.st. Warszawa'})
                                     & Y['Typ obwodu'].isin({"stały"})
                                     & (Y['Ludnosc'] >150000.0)], f"YmiastoDst150+{rok}.xlsx", rok)
@@ -545,6 +571,7 @@ def main():
     buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'wieś', 'miasto i wieś', 'miasto', 'dzielnica w m.st. Warszawa'}) & Y['Typ obwodu'].isin({"stały"})], f"YkrajDst{rok}.xlsx", rok)
     buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'wieś', 'miasto i wieś'}) & Y['Typ obwodu'].isin({"stały"})], f"YwiesDst{rok}.xlsx", rok)
     buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'miasto', 'dzielnica w m.st. Warszawa'}) & Y['Typ obwodu'].isin({"stały"})], f"YmiastoDst{rok}.xlsx", rok)
+
     #buildLinRegression (X.copy(), Y.copy(), f"Y{rok}.xlsx", rok)
     #buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'statek', 'zagranica'})], f"Yzagranica{rok}.xlsx", rok)
     

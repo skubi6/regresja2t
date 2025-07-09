@@ -23,6 +23,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import RidgeCV
+import re
 
 nowStart = datetime.now()
 
@@ -62,6 +63,17 @@ def ci_diffH(N, p, q, x=0.95):
     sig  = sqrt(diff_var(N, p, q))
     z    = norm.ppf((1 + x) / 2)       # kwantyl 1-α/2
     return mu + z*sig
+
+def haversine(lat1, lon1, lat2, lon2):
+    R = 6371.0  # Earth radius [km]
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    dphi       = math.radians(lat2 - lat1)
+    dlambda    = math.radians(lon2 - lon1)
+    a = (math.sin(dphi/2)**2 +
+         math.cos(phi1) * math.cos(phi2) * math.sin(dlambda/2)**2)
+    return 2 * R * math.atan2(math.sqrt(a), math.sqrt(1-a))
+
+
 
 # ------------------------------------------------------------
 # 1.  Helper functions
@@ -497,12 +509,13 @@ def main():
     if inputFileNames[rok][3]:
         GEO = pd.read_excel(DATA_DIR / inputFileNames[rok][3])
         GEO.rename(columns={"Numer": "Nr komisji", "TERYT gminy" : "Teryt Gminy"}, inplace=True)
+        GEO[KEY1] = GEO[KEY1].astype(str)
     if 0 < GEO.shape[0]:
         SECONDmerged = SECOND.merge(GEO, on=[KEY1, KEY2], how="left",
                                      indicator=True,
                                      suffixes=("", "_extra"),
                                      validate="many_to_one")
-        mask_missing = SECONDmerged['_merge'] == 'left_only'
+        mask_missing = (SECONDmerged['_merge'] == 'left_only') & (SECONDmerged['Teryt Gminy'] != '9999999')
         if mask_missing.any():
             bad_keys = (
                 SECONDmerged.loc[mask_missing, [KEY1, KEY2]]
@@ -514,10 +527,86 @@ def main():
                 f"({KEY1!s}, {KEY2!s}) pairs: {bad_keys}"
             )
         SECOND = SECONDmerged.drop(columns=['_merge'])
-# drop the helper column and keep only the successfully-matched rows
-SECOND = merged.drop(columns=['_merge'])
+
+        BLACKLIST = { # Teryt gmin, w kórych na pewno nie ma prokuratur rejonowych
+            "120405",
+        }
+
+        SEAT_COORDS = {}
+        mapping_df = pd.read_excel(prokFileName, sheet_name="mapping")
+        for seat_city in mapping_df["siedziba rejonowa"].dropna().unique():
+            mask = SECOND["Gmina"].str.fullmatch(
+                rf"m\. {re.escape(seat_city)}", na=False
+            ) & ~SECOND["Teryt Gminy"].astype(str).isin(BLACKLIST)
+            if not mask.any():
+                mask = SECOND["Gmina"].str.fullmatch(
+                    rf"gm\. {re.escape(seat_city)}", na=False
+                ) & ~SECOND["Teryt Gminy"].astype(str).isin(BLACKLIST)
+            if not mask.any():
+                raise ValueError(
+                    f"Seat city '{seat_city}' not found as 'm. {seat_city}' or 'gm. {seat_city}' in SECOND."
+                )
+            rows = SECOND[mask]
+            SEAT_COORDS[seat_city] = list(
+                rows[["lat", "lng"]].itertuples(index=False, name=None)
+            )
+        # helper: distance between a (lat,lng) and the seat of a given okręgowa
+        def min_dist_to_okregowa(lat, lng, okr_row):
+            seat_city = okr_row["siedziba rejonowa"]
+            coords = SEAT_COORDS[seat_city]
+            return min(haversine(lat, lng, lat2, lng2) for lat2, lng2 in coords)
+
+        g2rows = (
+            mapping_df.groupby("gmina")
+            .apply(lambda x: x.to_dict(orient="records"))
+            .to_dict()
+        )
+        def choose_okregowa(row):
+            if str(row["Teryt Gminy"]) == "999999":
+                return None
+
+            gmina = row["Gmina"]
+            powiat = row["Powiat"]
+            candidates = g2rows.get(gmina, [])
+
+            # no entry at all → leave blank (or raise, if you prefer)
+            if not candidates:
+                return None
+
+            # 4.2  exactly one candidate – trivial join
+            if len(candidates) == 1:
+                return candidates[0]["prokuratura okręgowa"]
+
+            if gmina.strip() == "gm. Czarna" and powiat.strip() == 'łańcucki':
+                for cand in candidates:
+                    if cand["siedziba rejonowa"] == "Lesko":
+                        return cand["prokuratura okręgowa"]
+            
+            # 4.3  several candidates – pick the geographically nearest seat
+            lat, lng = row["lat"], row["lng"]
+            dists = [
+                (min_dist_to_okregowa(lat, lng, cand), cand["prokuratura okręgowa"], cand["siedziba rejonowa"])
+                for cand in candidates
+            ]
+            dists.sort(key=lambda x: x[0])               # nearest first
+
+            # enforce “nearest : next” ≥ 1 : 2
+            if len(dists) >= 2 and dists[0][0] * 2 > dists[1][0]:
+                raise ValueError (
+                    f"Gmina '{gmina}': distance ratio {dists[0][0]:.1f} km vs "
+                    f"{dists[1][0]:.1f} km < 1:2; {dists[0][1]} vs. {dists[1][1]}; {dists[0][2]} vs. {dists[1][2]}; {powiat}"
+                )
+
+            return dists[0][1]
+        
+        SECOND["prokuratura"] = SECOND.apply(choose_okregowa, axis=1)
 
 
+
+
+
+
+        
     EXTRA = pd.DataFrame()
     if inputFileNames[rok][2]:
         EXTRA = pd.read_excel(DATA_DIR / inputFileNames[rok][2])

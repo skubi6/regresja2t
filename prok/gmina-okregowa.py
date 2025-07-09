@@ -270,7 +270,7 @@ def gmina_is_ok(s: str) -> bool:
 
 
 
-def extract_city_from_rejonowa(text: str | None) -> str | None:
+def extract_city_from_rejonowaOLD(text: str | None) -> str | None:
     """
     Very simple heuristic:
         – look for the last ' w '  → take what follows
@@ -285,6 +285,8 @@ def extract_city_from_rejonowa(text: str | None) -> str | None:
 
     if " w " in t:
         city = t.split(" w ")[-1].strip(" ,.;")
+    elif " we " in t:
+        city = t.split(" w ")[-1].strip(" ,.;")
     else:
         city = re.sub(r"(?i)^prokuratura rejonowa", "", t).strip(" ,.;")
 
@@ -297,57 +299,6 @@ invalid_gmina_rows = df.loc[~df["gmina_valid"]]
 # ---------------------------------------------------------------------
 # 3. Build the mapping according to your three rules
 # ---------------------------------------------------------------------
-def evaluate_one_gminaOLD(group: pd.DataFrame) -> pd.Series:
-    """
-    Implements the logic you specified.
-
-    Returns
-    -------
-    pd.Series with:
-        • 'gmina'                 – the group key
-        • 'prokuratura okręgowa'  – the resolved value or None
-        • 'anomaly'               – textual description or None
-    """
-    gmina = group.name
-    rows_empty_opis     = group[group["opis"].isna()]
-    rows_nonempty_opis  = group[~group["opis"].isna()]
-
-    anomalies = []
-    chosen_okregowa = None
-
-    # ---------- Rule 1: at least one row with opis empty ----------
-    if not rows_empty_opis.empty:
-        okreg_set = set(rows_empty_opis["prokuratura okręgowa"])
-        if len(okreg_set) == 1:
-            chosen_okregowa = okreg_set.pop()
-        else:
-            anomalies.append(
-                f"Rule 1 violated – different okręgowa values in empty-opis rows: {sorted(okreg_set)}"
-            )
-        if not rows_nonempty_opis.empty:
-            anomalies.append("Empty and non-empty 'opis' rows mixed")
-
-    # ---------- Rule 2: NO row with opis empty ----------
-    if rows_empty_opis.empty:
-        opis_set   = set(rows_nonempty_opis["opis"])
-        okreg_set  = set(rows_nonempty_opis["prokuratura okręgowa"])
-        if len(opis_set) >= 2 and len(okreg_set) == 1:
-            candidate = next(iter(okreg_set))
-            if chosen_okregowa and chosen_okregowa != candidate:
-                anomalies.append(
-                    "Conflict – Rule 1 and Rule 2 yield different okręgowa values"
-                )
-            chosen_okregowa = chosen_okregowa or candidate
-        else:
-            anomalies.append(
-                "Rule 2 conditions not met (need ≥2 different non-empty 'opis' values and exactly one okręgowa)"
-            )
-
-    return pd.Series({
-        "gmina": gmina,
-        "prokuratura okręgowa": chosen_okregowa,
-        "anomaly": "; ".join(anomalies) if anomalies else None
-    })
 
 def evaluate_one_gmina(group: pd.DataFrame) -> pd.Series:
     gmina = group.name
@@ -444,60 +395,6 @@ for gmina, sub in df.groupby("gmina", dropna=False):
             )
 
 
-#for _, row in good_gminas.iterrows():
-#    gmina = row["gmina"]
-#
-#    # subset with this gmina
-#    sub = df[df["gmina"] == gmina]
-#
-#    # unique okręgowa appearing in the data for this gmina
-#    unique_ok = sorted(set(sub["prokuratura okręgowa"].dropna()))
-#
-#    # -----------------------------------------------------------
-#    # Case A: exactly one okręgowa  → leave rejonowa + siedziba blank
-#    # -----------------------------------------------------------
-#    if len(unique_ok) == 1:
-#        mapping_rows.append(
-#            {
-#                "gmina": gmina,
-#                "prokuratura okręgowa": unique_ok[0],
-#                "prokuratura rejonowa": None,
-#                "siedziba rejonowa": None,
-#            }
-#        )
-#    # -----------------------------------------------------------
-#    # Case B: multiple okręgowa  → replicate rows
-#    # -----------------------------------------------------------
-#    else:
-#        for ok in unique_ok:
-#            sub_ok = sub[sub["prokuratura okręgowa"] == ok]
-#
-#            # We *assume* at most one distinct rejonowa per (gmina, okręgowa)
-#            rejonowa_vals = [
-#                x for x in sub_ok["prokuratura rejonowa"].dropna().unique() if str(x).strip()
-#            ]
-#            rejonowa = rejonowa_vals[0] if rejonowa_vals else None
-#            siedziba = extract_city_from_rejonowa(rejonowa)
-#
-#            mapping_rows.append(
-#                {
-#                    "gmina": gmina,
-#                    "prokuratura okręgowa": ok,
-#                    "prokuratura rejonowa": rejonowa,
-#                    "siedziba rejonowa": siedziba,
-#                }
-#            )
-
-
-#result = (
-#    df.groupby("gmina", dropna=False)
-#      .apply(evaluate_one_gmina)
-#      .reset_index(drop=True)
-#)
-
-#mapping_df   = result[result["anomaly"].isna()].drop(columns="anomaly")
-#anomaly_df   = result[result["anomaly"].notna()]
-
 mapping_df = pd.DataFrame(mapping_rows)
 
 # ---------------------------------------------------------------------
@@ -515,5 +412,3 @@ print(
     f"⚠️  Anomalous gminas:      {len(anomaly):>4}\n"
     f"⚠️  Invalid gmina names:   {len(invalid_gmina_rows):>4}"
 )
-
-

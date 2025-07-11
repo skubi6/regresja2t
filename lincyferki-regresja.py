@@ -22,8 +22,14 @@ from scipy.stats import norm
 from sklearn.pipeline import make_pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import RidgeCV
+#from sklearn.linear_model import RidgeCV
 import re
+from sklearn.linear_model import (
+    RidgeCV,
+    LinearRegression,
+    HuberRegressor,      #  <-- already needed for the robust branch
+    RANSACRegressor,     #  <-- this line cures the NameError
+)
 
 nowStart = datetime.now()
 
@@ -118,34 +124,6 @@ targetTranslate = {
         "Rafał Kazimierz TRZASKOWSKI" : 'TRZASKOWSKI',     # c2
 }
 
-def ci_diffL(N, p, q, x=0.95):
-    """Przedział ufności dla A-B przy pewności x"""
-    mu   = diff_mean(N, p, q)
-    sig  = sqrt(diff_var(N, p, q))
-    z    = norm.ppf((1 + x) / 2)       # kwantyl 1-α/2
-    return mu - z*sig
-
-def ci_diffH(N, p, q, x=0.95):
-    """Przedział ufności dla A-B przy pewności x"""
-    mu   = diff_mean(N, p, q)
-    sig  = sqrt(diff_var(N, p, q))
-    z    = norm.ppf((1 + x) / 2)       # kwantyl 1-α/2
-    return mu + z*sig
-
-def haversine(lat1, lon1, lat2, lon2):
-    R = 6371.0  # Earth radius [km]
-    phi1, phi2 = math.radians(lat1), math.radians(lat2)
-    dphi       = math.radians(lat2 - lat1)
-    dlambda    = math.radians(lon2 - lon1)
-    a = (math.sin(dphi/2)**2 +
-         math.cos(phi1) * math.cos(phi2) * math.sin(dlambda/2)**2)
-    return 2 * R * math.atan2(math.sqrt(a), math.sqrt(1-a))
-
-# = "Liczba wyborców głosujących na podstawie zaświadczenia o prawie do głosowania" # z tabelki drugiej tury
-# = 'Liczba wyborców głosujących na podstawie zaświadczenia o prawie do głosowania'
-EXTRApredictor = 'Liczba wyborców głosujących na podstawie zaświadczenia o\xa0prawie do głosowania'
-
-
 # ------------------------------------------------------------
 # 1.  Helper functions
 # ------------------------------------------------------------
@@ -207,15 +185,10 @@ def assert_no_dupes(df, key_cols, label):
 #Y = SECOND.set_index([KEY1, KEY2])
 
 def buildLinRegression (
-        Xarg, Yarg, filename, rok, *, t2absentee=False
+        Xarg, Yarg, filename, rok, *, t2absentee=False, robust=False
 ):
     nowFunStart = datetime.now()
 
-    print ('Xarg.index')
-    print (Xarg.index)
-    print ('Yarg.index')
-    print (Yarg.index)
-    
     Xarg, Yarg = Xarg.align(Yarg, join="inner", axis=0)
     print("Precincts analysed:", len(Xarg))
 
@@ -230,7 +203,13 @@ def buildLinRegression (
         pipe = make_pipeline(
             SimpleImputer(strategy="median"),    # 1. imputacja braków
             StandardScaler(),                    # 2. pełna standaryzacja
-            RidgeCV(alphas=ALPHAS, cv=5)         # 3. regresja z CV po alfach
+            (RANSACRegressor(
+                estimator=HuberRegressor(epsilon=1.35, alpha=0.0),
+                min_samples=0.5,  # tolerate up to 50 % arbitrary rows
+                residual_threshold=None,  # auto: MAD‑based
+                max_trials=100,
+                random_state=0,
+            ) if robust else RidgeCV(alphas=ALPHAS, cv=5))         # 3. regresja z CV po alfach
         )
 
         if t2absentee:
@@ -239,7 +218,6 @@ def buildLinRegression (
             Xfeat = Xarg[first_cols[rok]]
                 
         try:
-            #pipe.fit(Xarg[first_cols[rok]], Yarg[tgt])
             pipe.fit(Xfeat, Yarg[tgt])
         except Exception:
             writerD = pd.ExcelWriter("debug.xlsx", engine="xlsxwriter")
@@ -248,7 +226,6 @@ def buildLinRegression (
             writerD.close()
             raise
 
-        print("doing", tgt)
         Yarg["fits" + tgt] = pd.Series(
             pipe.predict(Xfeat),
             index=Xfeat.index
@@ -257,15 +234,21 @@ def buildLinRegression (
 
         # -------- współczynniki w ORYGINALNEJ skali cech ------------------------
         scaler = pipe.named_steps["standardscaler"]
-        ridge  = pipe.named_steps["ridgecv"]
 
-        beta_std = ridge.coef_                       # współczynniki po skalowaniu
-        beta_orig = beta_std / scaler.scale_         # „od-standaryzowanie”
+        if robust:
+            final_est = pipe.named_steps.get("ransacregressor", pipe.named_steps.get("ridgecv"))
+            est = final_est.estimator_ if hasattr(final_est, "estimator_") else final_est
+            beta_std = est.coef_
+            beta_orig = beta_std / scaler.scale_  # un‑standardise
+            
+            intercept_orig = est.intercept_ - np.sum(scaler.mean_ * beta_orig)       # korekta interceptu
+        else:
+            ridge  = pipe.named_steps["ridgecv"]
+            beta_std = ridge.coef_                       # współczynniki po skalowaniu
+            beta_orig = beta_std / scaler.scale_         # „od-standaryzowanie”
 
-        intercept_orig = (
-            ridge.intercept_
-            - np.sum(scaler.mean_ * beta_orig)       # korekta interceptu
-        )
+            intercept_orig = ridge.intercept_ - np.sum(scaler.mean_ * beta_orig)       # korekta interceptu
+        
 
         coefs[targetTranslate[tgt]]      = beta_orig
         intercepts[targetTranslate[tgt]] = intercept_orig
@@ -477,39 +460,76 @@ def main():
 
     buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'miasto', 'dzielnica w m.st. Warszawa'})
                                     & Y['Typ obwodu'].isin({"stały"})
-                                    & (Y['Ludnosc'] >250000.0)], f"YmiastoDst250+a{rok}.xlsx", rok,
-                        t2absentee=True)
+                                    & (Y['Ludnosc'] >250000.0)], f"YmiastoDst250+ar{rok}.xlsx", rok,
+                        t2absentee=True, robust=True)
     buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'miasto', 'dzielnica w m.st. Warszawa'})
                                     & Y['Typ obwodu'].isin({"stały"})
-                                    & (Y['Ludnosc'] <=250000.0)& (Y['Ludnosc'] >100000.0)], f"YmiastoDst100-250+a{rok}.xlsx", rok,
-                        t2absentee=True)
+                                    & (Y['Ludnosc'] <=250000.0)& (Y['Ludnosc'] >100000.0)], f"YmiastoDst100-250+ar{rok}.xlsx", rok,
+                        t2absentee=True, robust=True)
     buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'miasto', 'dzielnica w m.st. Warszawa'})
                                     & Y['Typ obwodu'].isin({"stały"})
-                                    & (Y['Ludnosc'] <=100000.0)& (Y['Ludnosc'] >40000.0)], f"YmiastoDst40-100a{rok}.xlsx", rok,
-                        t2absentee=True)
+                                    & (Y['Ludnosc'] <=100000.0)& (Y['Ludnosc'] >40000.0)], f"YmiastoDst40-100ar{rok}.xlsx", rok,
+                        t2absentee=True, robust=True)
     buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'miasto', 'dzielnica w m.st. Warszawa'})
                                     & Y['Typ obwodu'].isin({"stały"})
-                                    & (Y['Ludnosc'] <=40000.0)& (Y['Ludnosc'] >20000.0)], f"YmiastoDst20-40a{rok}.xlsx", rok,
-                        t2absentee=True)
+                                    & (Y['Ludnosc'] <=40000.0)& (Y['Ludnosc'] >20000.0)], f"YmiastoDst20-40ar{rok}.xlsx", rok,
+                        t2absentee=True, robust=True)
     buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'miasto', 'dzielnica w m.st. Warszawa'})
                                     & Y['Typ obwodu'].isin({"stały"})
-                                    & (Y['Ludnosc'] <=20000.0)], f"YmiastoDst20-a{rok}.xlsx", rok,
-                        t2absentee=True)
+                                    & (Y['Ludnosc'] <=20000.0)], f"YmiastoDst20-ar{rok}.xlsx", rok,
+                        t2absentee=True, robust=True)
     buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'wieś', 'miasto i wieś'}) & Y['Typ obwodu'].isin({"stały"})],
-                        f"YwiesDsta{rok}.xlsx", rok,
-                        t2absentee=True)    
+                        f"YwiesDstar{rok}.xlsx", rok,
+                        t2absentee=True, robust=True)    
     buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'miasto', 'dzielnica w m.st. Warszawa'})
                                     & Y['Typ obwodu'].isin({"stały"})
-                                    ], f"YmiastoDsta{rok}.xlsx", rok,
-                        t2absentee=True)
+                                    ], f"YmiastoDstar{rok}.xlsx", rok,
+                        t2absentee=True, robust=True)
     
     buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'miasto', 'dzielnica w m.st. Warszawa'})
                                     & Y['Typ obwodu'].isin({"stały"})
-                                    & (Y['Ludnosc'] <150000.0)], f"YmiastoDst150-a{rok}.xlsx", rok,
-                        t2absentee=True)
-    buildLinRegression (X.copy(), Y[Y['Typ obwodu'].isin({"stały"})], f"YkrajDsta{rok}.xlsx", rok,
-                        t2absentee=True)
+                                    & (Y['Ludnosc'] <150000.0)], f"YmiastoDst150-ar{rok}.xlsx", rok,
+                        t2absentee=True, robust=True)
+    buildLinRegression (X.copy(), Y[Y['Typ obwodu'].isin({"stały"})], f"YkrajDstar{rok}.xlsx", rok,
+                        t2absentee=True, robust=True)
     
+    if False:
+        buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'miasto', 'dzielnica w m.st. Warszawa'})
+                                        & Y['Typ obwodu'].isin({"stały"})
+                                        & (Y['Ludnosc'] >250000.0)], f"YmiastoDst250+a{rok}.xlsx", rok,
+                            t2absentee=True)
+        buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'miasto', 'dzielnica w m.st. Warszawa'})
+                                        & Y['Typ obwodu'].isin({"stały"})
+                                        & (Y['Ludnosc'] <=250000.0)& (Y['Ludnosc'] >100000.0)], f"YmiastoDst100-250+a{rok}.xlsx", rok,
+                            t2absentee=True)
+        buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'miasto', 'dzielnica w m.st. Warszawa'})
+                                        & Y['Typ obwodu'].isin({"stały"})
+                                        & (Y['Ludnosc'] <=100000.0)& (Y['Ludnosc'] >40000.0)], f"YmiastoDst40-100a{rok}.xlsx", rok,
+                            t2absentee=True)
+        buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'miasto', 'dzielnica w m.st. Warszawa'})
+                                        & Y['Typ obwodu'].isin({"stały"})
+                                        & (Y['Ludnosc'] <=40000.0)& (Y['Ludnosc'] >20000.0)], f"YmiastoDst20-40a{rok}.xlsx", rok,
+                            t2absentee=True)
+        buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'miasto', 'dzielnica w m.st. Warszawa'})
+                                        & Y['Typ obwodu'].isin({"stały"})
+                                        & (Y['Ludnosc'] <=20000.0)], f"YmiastoDst20-a{rok}.xlsx", rok,
+                            t2absentee=True)
+        buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'wieś', 'miasto i wieś'}) & Y['Typ obwodu'].isin({"stały"})],
+                            f"YwiesDsta{rok}.xlsx", rok,
+                            t2absentee=True)    
+        buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'miasto', 'dzielnica w m.st. Warszawa'})
+                                        & Y['Typ obwodu'].isin({"stały"})
+                                        ], f"YmiastoDsta{rok}.xlsx", rok,
+                            t2absentee=True)
+
+        buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'miasto', 'dzielnica w m.st. Warszawa'})
+                                        & Y['Typ obwodu'].isin({"stały"})
+                                        & (Y['Ludnosc'] <150000.0)], f"YmiastoDst150-a{rok}.xlsx", rok,
+                            t2absentee=True)
+        buildLinRegression (X.copy(), Y[Y['Typ obwodu'].isin({"stały"})], f"YkrajDsta{rok}.xlsx", rok,
+                            t2absentee=True)
+    
+
     #buildLinRegression (X.copy(), Y[Y['Typ obszaru'].isin({'miasto', 'dzielnica w m.st. Warszawa'})
     #                                & Y['Typ obwodu'].isin({"stały"})
     #                                & (Y['Ludnosc'] >150000.0)], f"YmiastoDst150+{rok}.xlsx", rok)

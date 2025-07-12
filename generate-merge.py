@@ -190,6 +190,8 @@ out["X"] = 0
 out["B"] = 0
 out["N"] = 0
 
+pl_msg   = "ciąg dalszy na następnej stronie"
+
 # Zliczamy globalną liczbę rozmaitych anomalii
 
 probaMax = 2
@@ -202,7 +204,7 @@ for probaMin, label in THRESHOLDS:
             globalVals[label+'g'] += ext.shape[0]
     probaMax = probaMin
             
-        
+ncols = len(colsToKeep)
 
 for i, v in out.iterrows():
     (s / v["dir"]).mkdir (parents=True, exist_ok=True)
@@ -227,9 +229,10 @@ for i, v in out.iterrows():
                         extracts[direction][label] = ext
             if label in extracts[direction]:
                 n = extracts[direction][label].shape[0]
+                #print ('n=', n)
                 out.at[i, label] += n
                 globalVals[label+'incr'] += n
-                renamed = extracts[direction][label].rename(columns=recols)[colsToKeep]
+                renamed = extracts[direction][label].rename(columns=recols)[colsToKeep + ['Siedziba']]
                 formatters = {
                     c: (euro_fmt if pd.api.types.is_float_dtype(
                         renamed[c]) else esc)  for c in colsToKeep}
@@ -239,8 +242,10 @@ for i, v in out.iterrows():
                 formatters ['D'] = euro_fmt1
                 formatters ['diff_std'] = euro_fmt1
                 formatters ['Gmina'] = split_middle
-                escaped_header = [escape_latex(str(c)) for c in renamed.columns]
-                tabelki += renamed.to_latex (
+                formatters ['Powiat'] = split_middle
+                escaped_header = [escape_latex(str(c)) for c in renamed.columns[:-1]]
+                #print ('renamed len', renamed.shape[0])
+                base_text = renamed.to_latex (
                     columns=colsToKeep,
                     index=False,
                     longtable=True,
@@ -253,6 +258,26 @@ for i, v in out.iterrows():
                     multicolumn=False
                     
                 )
+                base_text = base_text.replace("Continued on next page", pl_msg)
+                notes    = renamed['Siedziba'].map(escape_latex).tolist()
+                #print ('len(notes)', len(notes))
+                
+                #print ('adresy',notes)
+                note_it  = iter(notes)
+                new_lines = []
+                for ln in base_text.splitlines():
+                    new_lines.append(ln)
+
+                    # heuristics: data rows end with '\\' **and** contain at least one '&'
+                    if ln.rstrip().endswith(r'\\') and '&' in ln:
+                        if not all (sub in ln for sub in [' Teryt ', ' Gmina ', ' Nr ']):
+                            print ('qualify', ln)
+                            note_text = next(note_it)
+                            note_line = rf"\nopagebreak\multicolumn{{{ncols}}}{{l}}{{\textit{{{note_text}}}}} \\ \midrule"
+                            new_lines.append(note_line)
+                        else:
+                            print ('DISQ', ln)
+                tabelki += '\n'.join (new_lines)
         probaMax = probaMin
     if tabelki:
         with open(s / v['dir'] / 'tables.tex', "w", encoding="utf-8") as f:
@@ -265,10 +290,10 @@ out.to_csv ('merge.csv', sep=';', index=True,
 with open('doniesienie-mono.tex', encoding="utf-8") as f:
     texSrc = f.read()
 
-globalVals['Ppr'] = f"{globalVals['Pg']/globalVals['Gg']*100:1.3f}%".replace(".", ",")
-globalVals['Xpr'] = f"{globalVals['Xg']/globalVals['Gg']*100:1.3f}%".replace(".", ",")
-globalVals['Bpr'] = f"{globalVals['Bg']/globalVals['Gg']*100:1.3f}%".replace(".", ",")
-globalVals['Npr'] = f"{globalVals['Ng']/globalVals['Gg']*100:1.3f}%".replace(".", ",")
+globalVals['Ppr'] = rf"{globalVals['Pg']/globalVals['Gg']*100:1.3f}\%".replace(".", ",")
+globalVals['Xpr'] = rf"{globalVals['Xg']/globalVals['Gg']*100:1.3f}\%".replace(".", ",")
+globalVals['Bpr'] = rf"{globalVals['Bg']/globalVals['Gg']*100:1.3f}\%".replace(".", ",")
+globalVals['Npr'] = rf"{globalVals['Ng']/globalVals['Gg']*100:1.3f}\%".replace(".", ",")
 
 #f"{x:.6f}".replace(".", ",")
 

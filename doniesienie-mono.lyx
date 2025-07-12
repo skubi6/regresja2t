@@ -25,6 +25,8 @@
   \end{landscape}
 }
 \usepackage{makecell}
+\usepackage{icomma}
+\newcommand{\LTcontinuedname}{(ciąg dalszy na następnej stronie)}
 \end_preamble
 \options DIV=14,titlepage=false
 \use_default_options true
@@ -223,8 +225,8 @@ Działając w imieniu Stowarzyszenia Obserwatorium Wyborcze,
  304 § 1 k.p.k.
  zawiadamiam,
  że w dniach 18 i 19 maja oraz 1 i 2 czerwca br.
- mogłodojść do przestępstw przeciwko wyborom dotyczących ustalania wyniku i sporządzania protokołów w obwodowych komisjach głosowania,
- które wymienione są w tabelach poniżej (====nazwa==== jest właściwa terytorialnie dla siedzib tych komisji).
+ prawdopodobnie doszło do przestępstw przeciwko wyborom dotyczących ustalania wyniku i sporządzania protokołów w obwodowych komisjach głosowania,
+ które wymienione są w tabelach poniżej i dla których ====nazwa==== jest właściwa terytorialnie.
  Chodzi w szczególności o przestępstwa z art.
  248 pkt 3 i 4 kodeksu karnego.
 \end_layout
@@ -252,7 +254,7 @@ na korzyść którego kandydata (Karola Nawrockiego czy też Rafała Trzaskowski
 
 \begin_layout Itemize
 na jak duże prawdopodobieństwo nieprawidłowości wskazuje przyjęty tu model statystyczny,
- według następującego rozróżnienia:
+ według rozróżnienia opisanego w następującej tabeli:
 \end_layout
 
 \begin_layout Standard
@@ -352,7 +354,7 @@ ponad 99,999 %
 
 \begin_layout Plain Layout
 ponad 
-\begin_inset Formula $4,42\sigma$
+\begin_inset Formula $4,42\,\sigma$
 \end_inset
 
 
@@ -418,11 +420,11 @@ do 99,999%
 
 \begin_layout Plain Layout
 ponad 
-\begin_inset Formula $3,89\sigma$
+\begin_inset Formula $3,89\,\sigma$
 \end_inset
 
  do 
-\begin_inset Formula $4,42\sigma$
+\begin_inset Formula $4,42\,\sigma$
 \end_inset
 
 
@@ -488,11 +490,11 @@ do 99,99%
 
 \begin_layout Plain Layout
 ponad 
-\begin_inset Formula $3,50\sigma$
+\begin_inset Formula $3,50\,\sigma$
 \end_inset
 
  do 
-\begin_inset Formula $3,89\sigma$
+\begin_inset Formula $3,89\,\sigma$
 \end_inset
 
 
@@ -558,11 +560,11 @@ do 99,9535%
 
 \begin_layout Plain Layout
 ponad 
-\begin_inset Formula $3,00\sigma$
+\begin_inset Formula $3,00\,\sigma$
 \end_inset
 
  do 
-\begin_inset Formula $3,50\sigma$
+\begin_inset Formula $3,50\,\sigma$
 \end_inset
 
 
@@ -605,114 +607,8 @@ ponad
 
 \end_layout
 
-\begin_layout Itemize
-tabele 
-\series bold
-
-\begin_inset Quotes pld
-\end_inset
-
-z wynikiem niemożliwym
-\begin_inset Quotes prd
-\end_inset
-
-
-\series default
- wyliczają obwody,
- w których doszło do nieprawidłowości z prawdopodobieństwem co najmniej 99,999% według przyjętego modelu,
- a wyniki odnotowane w protokole komisji obwodowej oddalają się od wartości oczekiwanej o co najmniej 4,42 odchylenia standardowe – a więc istnienie nieprawidłowości w tych obwodach można uznać za pewne;
- liczba takich obwodów na obszarze właściwości terytorialnej Prokuratury:
- ;
-\end_layout
-
-\begin_deeper
-\begin_layout Itemize
-tabele 
-\series bold
-
-\begin_inset Quotes pld
-\end_inset
-
-z wynikiem ekstremalnie nieprawdopodobnym
-\begin_inset Quotes prd
-\end_inset
-
-
-\series default
-:
- obwody,
- w których doszło do nieprawidłowości z prawdopodobieństwem między 99,99% a 99,999% według przyjętego modelu (wyniki oddalają się od wartości oczekiwanej o 
-\begin_inset Formula $3,89\sigma$
-\end_inset
-
- do 
-\begin_inset Formula $4,42\sigma$
-\end_inset
-
-);
- liczba takich obwodów na obszarze właściwości terytorialnej Prokuratury:
- ;
-\end_layout
-
-\begin_layout Itemize
-tabele 
-\series bold
-
-\begin_inset Quotes pld
-\end_inset
-
-z wynikiem bardzo nieprawdopodobnym
-\begin_inset Quotes prd
-\end_inset
-
-
-\series default
-:
- obwody,
- w których doszło do nieprawidłowości z prawdopodobieństwem między 99,9535% a 99,99% według przyjętego modelu (wyniki oddalają się od wartości oczekiwanej o 
-\begin_inset Formula $3,50\sigma$
-\end_inset
-
- do 
-\begin_inset Formula $3,89\sigma$
-\end_inset
-
-);
- liczba takich obwodów na obszarze właściwości terytorialnej Prokuratury:
- ;
-\end_layout
-
-\begin_layout Itemize
-tabele 
-\series bold
-
-\begin_inset Quotes pld
-\end_inset
-
-z wynikiem nieprawdopodobnym
-\begin_inset Quotes prd
-\end_inset
-
-
-\series default
-:
- obwody,
- w których doszło do nieprawidłowości z prawdopodobieństwem między 99,73% a 99,9535% 
-\end_layout
-
-\end_deeper
 \begin_layout Standard
-xxxs esr rgrs rth wrt hwrt hwrt hwr th wrth rwth wrt hwr thwr th rswth rwth wth wrth wth rwt hwrt hwt hw thw th wrth wth wth wth wt hw thw h wth wth wth w hw hw h rtwh wrth rtwh rwth rtwh rwth wrt hwrt hw rthw rh wth wh rwth rwth wt hw th wth wrt hw thw th ewh rwth wwrt hwrt hwrt hwr th wrth rwth wrt hwr thwr th rswth rwth wth wrth wth rwt hwrt hwt hw thw th wrth wth wth wth wt hw thw h wth wth wth w hw hw h rtwh wrth rtwh rwth rtwh rwth wrt hwrt hw rthw rh wth wh rwth rwth wt hw th wth wrt hw th
-w th ewh rwth wwrt hwrt hwrt hwr th wrth rwth wrt hwr thwr th rswth rwth wth wrth wth rwt hwrt hwt hw thw th wrth wth wth wth wt hw thw h wth wth wth w hw hw h rtwh wrth rtwh rwth rtwh rwth wrt hwrt hw rthw rh wth wh rwth rwth wt hw th wth wrt hw thw th ewh rwth wwrt hwrt hwrt hwr th wrth rwth wrt hwr thwr th rswth rwth wth wrth wth rwt hwrt hwt hw thw th wrth wth wth wth wt hw thw h wth wth wth w hw hw h rtwh wrth rtwh rwth rtwh rwth wrt hwrt hw rthw rh wth wh rwth rwth wt hw th wth wrt hw thw t
-h ewh rwth wwrt hwrt hwrt hwr th wrth rwth wrt hwr thwr th rswth rwth wth wrth wth rwt hwrt hwt hw thw th wrth wth wth wth wt hw thw h wth wth wth w hw hw h rtwh wrth rtwh rwth rtwh rwth wrt hwrt hw rthw rh wth wh rwth rwth wt hw th wth wrt hw thw th ewh rwth w
-\end_layout
 
-\begin_layout Standard
-s
-\end_layout
-
-\begin_layout Standard
-e
 \end_layout
 
 \begin_layout Standard

@@ -24,6 +24,7 @@
     #1
   \end{landscape}
 }
+\usepackage{makecell}
 \end_preamble
 \options DIV=14,
 \use_default_options true
@@ -90,7 +91,7 @@
 \defskip halfline
 \is_math_indent 0
 \math_numbering_side default
-\quotes_style english
+\quotes_style polish
 \dynamic_quotes 0
 \papercolumns 1
 \papersides 2
@@ -184,6 +185,387 @@ Warszawa,
  14.07.2025
 \end_layout
 
+\begin_layout Title
+Zawiadomienie o możliwości popełnienia przestępstwa
+\end_layout
+
+\begin_layout Standard
+Działając w imieniu Stowarzyszenia Obserwatorium Wyborcze,
+ na podstawie art.
+ 304 § 1 k.p.k.
+ zawiadamiam,
+ że analiza statystyczna,
+ krórą wykonałem działając w ramach Stowarzyszenia,
+ bardzo mocno wskazuje na to,
+ że w wyborach Prezydenta Rzeczypospolitej przeprowadzonych w dniach 18 maja i 1 czerwca br.
+ wyniki głosowania zostały ustalone nieprawidłowo w przypadku niektórych obwodów głosowania,
+ dla których ====nazwa==== jest właściwa terytorialnie.
+ Fakt nieprawidłowego ustalenia wyników głosowania uzasadnia podejrzenie,
+ że dopuszczono się przestępstw przeciwko wyborom,
+ w szczególności przestępstw z art.
+ 248 pkt 3 i 4 kodeksu karnego.
+\end_layout
+
+\begin_layout Standard
+Wykaz obwodów głosowania,
+ których dotyczy niniejsze zawiadomienie,
+ znajduje się w tabelach poniżej.
+ Obwody zostały umieszczone w różnych tabelach,
+ w zależności od tego:
+\end_layout
+
+\begin_layout Itemize
+na korzyść którego kandydata (Karola Nawrockiego czy też Rafała Trzaskowskiego) doszło tam do nieprawidłowości według przyjętego modelu statystycznego – o ile przyjmiemy,
+ że nieprawidłowości miały miejsce w drugiej turze;
+\end_layout
+
+\begin_layout Itemize
+na jak duże prawdopodobieństwo nieprawidłowości wskazuje przyjęty tu model statystyczny:
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Tabular
+<lyxtabular version="3" rows="6" columns="4">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+tabele 
+\series bold
+
+\begin_inset Quotes pld
+\end_inset
+
+z wynikiem niemożliwym
+\begin_inset Quotes prd
+\end_inset
+
+
+\series default
+ wyliczają obwody,
+ w których doszło do nieprawidłowości z prawdopodobieństwem co najmniej 99,999% według przyjętego modelu,
+ a wyniki odnotowane w protokole komisji obwodowej oddalają się od wartości oczekiwanej o co najmniej 4,42 odchylenia standardowe (
+\begin_inset Formula $4,42\sigma$
+\end_inset
+
+) – a więc istnienie nieprawidłowości w tych obwodach można uznać za pewne;
+ liczba takich obwodów na obszarze właściwości terytorialnej Prokuratury:
+ ;
+\end_layout
+
+\begin_layout Itemize
+tabele 
+\series bold
+
+\begin_inset Quotes pld
+\end_inset
+
+z wynikiem ekstremalnie nieprawdopodobnym
+\begin_inset Quotes prd
+\end_inset
+
+
+\series default
+:
+ obwody,
+ w których doszło do nieprawidłowości z prawdopodobieństwem między 99,99% a 99,999% według przyjętego modelu (wyniki oddalają się od wartości oczekiwanej o 
+\begin_inset Formula $3,89\sigma$
+\end_inset
+
+ do 
+\begin_inset Formula $4,42\sigma$
+\end_inset
+
+);
+ liczba takich obwodów na obszarze właściwości terytorialnej Prokuratury:
+ ;
+\end_layout
+
+\begin_layout Itemize
+tabele 
+\series bold
+
+\begin_inset Quotes pld
+\end_inset
+
+z wynikiem bardzo nieprawdopodobnym
+\begin_inset Quotes prd
+\end_inset
+
+
+\series default
+:
+ obwody,
+ w których doszło do nieprawidłowości z prawdopodobieństwem między 99,9535% a 99,99% według przyjętego modelu (wyniki oddalają się od wartości oczekiwanej o 
+\begin_inset Formula $3,50\sigma$
+\end_inset
+
+ do 
+\begin_inset Formula $3,89\sigma$
+\end_inset
+
+);
+ liczba takich obwodów na obszarze właściwości terytorialnej Prokuratury:
+ ;
+\end_layout
+
+\begin_layout Itemize
+tabele 
+\series bold
+
+\begin_inset Quotes pld
+\end_inset
+
+z wynikiem nieprawdopodobnym
+\begin_inset Quotes prd
+\end_inset
+
+
+\series default
+:
+ obwody,
+ w których doszło do nieprawidłowości z prawdopodobieństwem między 99,73% a 99,9535% 
+\end_layout
+
+\end_deeper
 \begin_layout Standard
 xxxs esr rgrs rth wrt hwrt hwrt hwr th wrth rwth wrt hwr thwr th rswth rwth wth wrth wth rwt hwrt hwt hw thw th wrth wth wth wth wt hw thw h wth wth wth w hw hw h rtwh wrth rtwh rwth rtwh rwth wrt hwrt hw rthw rh wth wh rwth rwth wt hw th wth wrt hw thw th ewh rwth wwrt hwrt hwrt hwr th wrth rwth wrt hwr thwr th rswth rwth wth wrth wth rwt hwrt hwt hw thw th wrth wth wth wth wt hw thw h wth wth wth w hw hw h rtwh wrth rtwh rwth rtwh rwth wrt hwrt hw rthw rh wth wh rwth rwth wt hw th wth wrt hw th
 w th ewh rwth wwrt hwrt hwrt hwr th wrth rwth wrt hwr thwr th rswth rwth wth wrth wth rwt hwrt hwt hw thw th wrth wth wth wth wt hw thw h wth wth wth w hw hw h rtwh wrth rtwh rwth rtwh rwth wrt hwrt hw rthw rh wth wh rwth rwth wt hw th wth wrt hw thw th ewh rwth wwrt hwrt hwrt hwr th wrth rwth wrt hwr thwr th rswth rwth wth wrth wth rwt hwrt hwt hw thw th wrth wth wth wth wt hw thw h wth wth wth w hw hw h rtwh wrth rtwh rwth rtwh rwth wrt hwrt hw rthw rh wth wh rwth rwth wt hw th wth wrt hw thw t

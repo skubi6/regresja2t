@@ -86,6 +86,12 @@ out['nazwa'] = "Prokuratura Okręgowa " + prokuraturyLista["Prokuratura Okręgow
 out['dir'] = prokuraturyLista["Prokuratura Okręgowa"].str.replace(" ", "-", regex=False).apply(latinize_pl)
 out['adres'] = out['nazwa']+r'\\'+prokuraturyLista["Adres"].str.replace(", ", r"\\", regex=False)
 
+
+globalVals = {'Pg': 0, 'Xg': 0, 'Bg': 0, 'Ng': 0,
+              'Pincr': 0, 'Xincr': 0, 'Bincr': 0, 'Nincr': 0,
+              'Gg': 0}
+    
+
 #FONT_NAME = "LMRoman10"
 #FONT_PATH = Path("/usr/share/texmf/fonts/opentype/public/lm/lmroman10-regular.otf")
 #FONT_PATH = Path("/usr/share/texmf/fonts/truetype/public/lm/lmroman10-regular.ttf")
@@ -113,7 +119,6 @@ def split_middle(val: str) -> str:
     # Candidate split positions (space or dash, but NOT the first one after gm./m.)
     cand = [m.start() for m in re.finditer(r'[ \-]', val)]
     if text_width_pt(val) <= LIMIT_PT:
-        print ('too narrow')
         return escape_latex(val)
     if not cand:
         print ('no cand')        
@@ -138,6 +143,7 @@ for g in fileGroups:
         g['outliersNm'],
         sheet_name=["x_edgePOS", "x_edgeNEG"])
     g['Coefficients'] = pd.read_excel(g['regrNm'], sheet_name='Coefficients')
+    globalVals['Gg'] += pd.read_excel(g['regrNm'], sheet_name='Y').shape[0]
     
 #for l in fileGroups:
 #    print (l)
@@ -149,7 +155,7 @@ EXPLAIN = {'P' : 'niemożliwym',
            'N' : 'nieprawdopodobnym'}
 BENEF = {'POS' : "Karola NAWROCKIEGO", 'NEG' : "Rafała Trzaskowskiego"}
 
-colsToKeepBase = ["Teryt Gminy", "Gmina", "Powiat",
+colsToKeepBase = ["kat", "Teryt Gminy", "Gmina", "Powiat",
                   "Nr komisji", "NAWROCKI Karol Tadeusz",
                   "fitsNAWROCKI Karol Tadeusz",
                   "TRZASKOWSKI Rafał Kazimierz",
@@ -165,7 +171,7 @@ recols = {
     "Teryt Gminy" : "Teryt",
     "Nr komisji" : "Nr",
 }
-    
+
 colsToKeep = [recols[c] if c in recols else c for c in colsToKeepBase]
 
 print ('colsToKeep', colsToKeep)
@@ -178,6 +184,25 @@ def euro_fmt1(x):
 
 def esc(val):
     return escape_latex(str(val))
+
+out["P"] = 0
+out["X"] = 0
+out["B"] = 0
+out["N"] = 0
+
+# Zliczamy globalną liczbę rozmaitych anomalii
+
+probaMax = 2
+for probaMin, label in THRESHOLDS:
+    for direction in ['POS', 'NEG']:
+        for g in fileGroups:
+            ou = g['x_edge'+direction]
+            ext = (ou[(ou['x_edge'] >= probaMin) &(ou['x_edge'] < probaMax)])
+            print(direction, label, globalVals[label+'g'], ext.shape[0])
+            globalVals[label+'g'] += ext.shape[0]
+    probaMax = probaMin
+            
+        
 
 for i, v in out.iterrows():
     (s / v["dir"]).mkdir (parents=True, exist_ok=True)
@@ -201,6 +226,9 @@ for i, v in out.iterrows():
                     else:
                         extracts[direction][label] = ext
             if label in extracts[direction]:
+                n = extracts[direction][label].shape[0]
+                out.at[i, label] += n
+                globalVals[label+'incr'] += n
                 renamed = extracts[direction][label].rename(columns=recols)[colsToKeep]
                 formatters = {
                     c: (euro_fmt if pd.api.types.is_float_dtype(
@@ -221,7 +249,7 @@ for i, v in out.iterrows():
                     label=f"tab:{direction}{label}",
                     formatters=formatters,
                     header=escaped_header,
-                    column_format = "rrllrrrrrrrrr",
+                    column_format = "crrllrrrrrrrrr",
                     multicolumn=False
                     
                 )
@@ -230,55 +258,6 @@ for i, v in out.iterrows():
         with open(s / v['dir'] / 'tables.tex', "w", encoding="utf-8") as f:
             f.write(tabelki)
 
-#if False:
-#    for i, v in out.iterrows():
-#        (s / v["dir"]).mkdir (parents=True, exist_ok=True)
-#        #extracts = {'POS': {l : {} for vv, l in THRESHOLDS},
-#        #            'NEG': {l : {} for vv, l in THRESHOLDS}}
-#        extracts = {'POS': {},'NEG': {}}
-#        tabelki = ''
-#        for direction in ['POS', 'NEG']:
-#            probaMax = 2
-#            for probaMin, label in THRESHOLDS:
-#                for g in fileGroups:
-#                    ou = g['x_edge'+direction]
-#                    ext = (ou[(ou['x_edge'] >= probaMin) &(ou['x_edge'] < probaMax) & (ou['prokuratura']==v['nazwa'])]).copy()
-#                    ext ['kat'] = g['kat']
-#                    if not ext.empty:
-#                        if label in extracts[direction]:
-#                            extracts[direction][label] = pd.concat (
-#                                [extracts[direction][label], ext],
-#                                axis=0,
-#                                ignore_index=True)
-#                        else:
-#                            extracts[direction][label] = ext
-#                probaMax = probaMin
-#                if label in extracts[direction]:
-#                    renamed = extracts[direction][label].rename(columns=recols)[colsToKeep]
-#                    #renamed["Gmina"] = renamed["Gmina"].map(split_middle)
-#                    formatters = {
-#                        c: (euro_fmt if pd.api.types.is_float_dtype(
-#                            renamed[c]) else esc)  for c in colsToKeep}
-#                    formatters ['fitNAW'] = euro_fmt1
-#                    formatters ['fitTRZA'] = euro_fmt1
-#                    formatters ['Gmina'] = split_middle
-#                    tabelki += renamed.to_latex (
-#                        columns=colsToKeep,
-#                        index=False,
-#                        longtable=True,
-#                        escape=False,
-#                        caption=f"Obwody z wynikiem  {EXPLAIN[label]} na korzyść {BENEF[direction]} według modelu" ,
-#                        label=f"tab:{direction}{label}",
-#                        formatters=formatters,
-#                        column_format = "rrllrrrrrrrrr",
-#                        multicolumn=False
-#
-#                    )
-#        if tabelki:
-#            with open(s / v['dir'] / 'tables.tex', "w", encoding="utf-8") as f:
-#                f.write(tabelki)
-
-
 out.to_csv ('merge.csv', sep=';', index=True,
          header=True, encoding="utf-8",
          quoting=1, quotechar='"')
@@ -286,10 +265,19 @@ out.to_csv ('merge.csv', sep=';', index=True,
 with open('doniesienie-mono.tex', encoding="utf-8") as f:
     texSrc = f.read()
 
+globalVals['Ppr'] = f"{globalVals['Pg']/globalVals['Gg']*100:1.3f}%".replace(".", ",")
+globalVals['Xpr'] = f"{globalVals['Xg']/globalVals['Gg']*100:1.3f}%".replace(".", ",")
+globalVals['Bpr'] = f"{globalVals['Bg']/globalVals['Gg']*100:1.3f}%".replace(".", ",")
+globalVals['Npr'] = f"{globalVals['Ng']/globalVals['Gg']*100:1.3f}%".replace(".", ",")
+
+#f"{x:.6f}".replace(".", ",")
+
 for i, v in out.iterrows():
     res = texSrc
     for col in out.columns:
-        res = res.replace (f"===={col}====", v[col])
+        res = res.replace (f"===={col}====", str(v[col]))
+    for k in globalVals:
+        res = res.replace (f"===={k}====", str(globalVals[k]))
     with open (s / v['dir'] / 'doniesienie.tex', "w", encoding="utf-8") as f:
         f.write(res)
     

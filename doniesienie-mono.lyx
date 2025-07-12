@@ -26,7 +26,7 @@
 }
 \usepackage{makecell}
 \end_preamble
-\options DIV=14,
+\options DIV=14,titlepage=false
 \use_default_options true
 \maintain_unincluded_children no
 \language polish
@@ -185,8 +185,36 @@ Warszawa,
  14.07.2025
 \end_layout
 
-\begin_layout Title
+\begin_layout Standard
+\align center
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+{
+\backslash
+Large 
+\end_layout
+
+\end_inset
+
+
+\series bold
 Zawiadomienie o możliwości popełnienia przestępstwa
+\series default
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -194,67 +222,96 @@ Działając w imieniu Stowarzyszenia Obserwatorium Wyborcze,
  na podstawie art.
  304 § 1 k.p.k.
  zawiadamiam,
- że analiza statystyczna,
- krórą wykonałem działając w ramach Stowarzyszenia,
- bardzo mocno wskazuje na to,
- że w wyborach Prezydenta Rzeczypospolitej przeprowadzonych w dniach 18 maja i 1 czerwca br.
- wyniki głosowania zostały ustalone nieprawidłowo w przypadku niektórych obwodów głosowania,
- dla których ====nazwa==== jest właściwa terytorialnie.
- Fakt nieprawidłowego ustalenia wyników głosowania uzasadnia podejrzenie,
- że dopuszczono się przestępstw przeciwko wyborom,
- w szczególności przestępstw z art.
+ że w dniach 18 i 19 maja oraz 1 i 2 czerwca br.
+ mogłodojść do przestępstw przeciwko wyborom dotyczących ustalania wyniku i sporządzania protokołów w obwodowych komisjach głosowania,
+ które wymienione są w tabelach poniżej (====nazwa==== jest właściwa terytorialnie dla siedzib tych komisji).
+ Chodzi w szczególności o przestępstwa z art.
  248 pkt 3 i 4 kodeksu karnego.
 \end_layout
 
 \begin_layout Standard
-Wykaz obwodów głosowania,
+Uzasadnione podejrzenie,
+ że doszło do tych przestępstw,
+ wynika z anomalii w wynikach głosowania w tych komisjach,
+ które ujawniła analiza statystyczna wykonana przeze mnie w ramach działalności Obserwatorium Wyborczego.
+\end_layout
+
+\begin_layout Standard
+Obwody głosowania,
  których dotyczy niniejsze zawiadomienie,
- znajduje się w tabelach poniżej.
- Obwody zostały umieszczone w różnych tabelach,
+ zostały wymienione w różnych tabelach,
  w zależności od tego:
 \end_layout
 
 \begin_layout Itemize
-na korzyść którego kandydata (Karola Nawrockiego czy też Rafała Trzaskowskiego) doszło tam do nieprawidłowości według przyjętego modelu statystycznego – o ile przyjmiemy,
- że nieprawidłowości miały miejsce w drugiej turze;
+na korzyść którego kandydata (Karola Nawrockiego czy też Rafała Trzaskowskiego) według przyjętego modelu statystycznego doszło tam do nieprawidłowości (o ile nieprawidłowości miały miejsce w drugiej turze;
+ hipoteza,
+ zgodnie z którą anomalie wykryte statystycznie byłyby efektem nieprawidłowości w pierwszej turze,
+ jest omówiona oddzielnie w dalszej części niniejszego doniesienia);
 \end_layout
 
 \begin_layout Itemize
-na jak duże prawdopodobieństwo nieprawidłowości wskazuje przyjęty tu model statystyczny:
+na jak duże prawdopodobieństwo nieprawidłowości wskazuje przyjęty tu model statystyczny,
+ według następującego rozróżnienia:
 \end_layout
 
-\begin_layout Itemize
+\begin_layout Standard
 \begin_inset Tabular
-<lyxtabular version="3" rows="6" columns="4">
-<features tabularvalignment="middle">
-<column alignment="center" valignment="top">
-<column alignment="center" valignment="top">
-<column alignment="center" valignment="top">
-<column alignment="center" valignment="top">
+<lyxtabular version="3" rows="5" columns="6">
+<features tabularvalignment="middle" tabularwidth="18cm">
+<column alignment="center" valignment="top" varwidth="true">
+<column alignment="left" valignment="top" varwidth="true">
+<column alignment="left" valignment="top" varwidth="true">
+<column alignment="right" valignment="top" varwidth="true">
+<column alignment="right" valignment="top" varwidth="true">
+<column alignment="right" valignment="top" varwidth="true">
 <row>
 <cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
-
+Określenie słowne
 \end_layout
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
-
+Prawdopodobieństwo,
+ że wynik jest nieprawidłowy (według modelu)
 \end_layout
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
+Odstępstwo od wartości oczekiwanej liczone w odchyleniach standardowych zwanych 
+\begin_inset Formula $\sigma$
+\end_inset
 
+ (według modelu)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="right" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Liczba przypadków na obszarze właściwości terytorialnej Prokuratury
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="right" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Liczba przypadków w całej Polsce
 \end_layout
 
 \end_inset
@@ -263,7 +320,8 @@ na jak duże prawdopodobieństwo nieprawidłowości wskazuje przyjęty tu model 
 \begin_inset Text
 
 \begin_layout Plain Layout
-
+Liczba przypadków w całej Polsce jako procent ogólnej liczby obwodów objętych analizą statystyczną,
+ która wynosi ====Gg====
 \end_layout
 
 \end_inset
@@ -275,24 +333,48 @@ na jak duże prawdopodobieństwo nieprawidłowości wskazuje przyjęty tu model 
 
 \begin_layout Plain Layout
 
+\series bold
+wynik niemożliwy
 \end_layout
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
+ponad 99,999 %
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+ponad 
+\begin_inset Formula $4,42\sigma$
+\end_inset
+
 
 \end_layout
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="right" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
+====P====
+\end_layout
 
+\end_inset
+</cell>
+<cell alignment="right" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+====Pg====
 \end_layout
 
 \end_inset
@@ -301,7 +383,7 @@ na jak duże prawdopodobieństwo nieprawidłowości wskazuje przyjęty tu model 
 \begin_inset Text
 
 \begin_layout Plain Layout
-
+====Ppr====
 \end_layout
 
 \end_inset
@@ -313,24 +395,56 @@ na jak duże prawdopodobieństwo nieprawidłowości wskazuje przyjęty tu model 
 
 \begin_layout Plain Layout
 
+\series bold
+wynik ekstremalnie nieprawdopodobny
 \end_layout
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
+ponad 99,99% 
+\begin_inset Newline newline
+\end_inset
+
+do 99,999%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+ponad 
+\begin_inset Formula $3,89\sigma$
+\end_inset
+
+ do 
+\begin_inset Formula $4,42\sigma$
+\end_inset
+
 
 \end_layout
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="right" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
+====X====
+\end_layout
 
+\end_inset
+</cell>
+<cell alignment="right" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+====Xg====
 \end_layout
 
 \end_inset
@@ -339,7 +453,7 @@ na jak duże prawdopodobieństwo nieprawidłowości wskazuje przyjęty tu model 
 \begin_inset Text
 
 \begin_layout Plain Layout
-
+====Xpr====
 \end_layout
 
 \end_inset
@@ -351,62 +465,56 @@ na jak duże prawdopodobieństwo nieprawidłowości wskazuje przyjęty tu model 
 
 \begin_layout Plain Layout
 
+\series bold
+wynik bardzo nieprawdopodobny
 \end_layout
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
+ponad 99,9535%
+\begin_inset Newline newline
+\end_inset
 
+do 99,99%
 \end_layout
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
-
-\end_layout
-
+ponad 
+\begin_inset Formula $3,50\sigma$
 \end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
 
-\begin_layout Plain Layout
-
-\end_layout
-
+ do 
+\begin_inset Formula $3,89\sigma$
 \end_inset
-</cell>
-</row>
-<row>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
 
-\begin_layout Plain Layout
 
 \end_layout
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="right" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
-
+====B====
 \end_layout
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="right" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
-
+====Bg====
 \end_layout
 
 \end_inset
@@ -415,7 +523,7 @@ na jak duże prawdopodobieństwo nieprawidłowości wskazuje przyjęty tu model 
 \begin_inset Text
 
 \begin_layout Plain Layout
-
+====Bpr====
 \end_layout
 
 \end_inset
@@ -427,24 +535,56 @@ na jak duże prawdopodobieństwo nieprawidłowości wskazuje przyjęty tu model 
 
 \begin_layout Plain Layout
 
+\series bold
+wynik nieprawdopodobny
 \end_layout
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
+ponad 99,73%
+\begin_inset Newline newline
+\end_inset
+
+do 99,9535%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+ponad 
+\begin_inset Formula $3,00\sigma$
+\end_inset
+
+ do 
+\begin_inset Formula $3,50\sigma$
+\end_inset
+
 
 \end_layout
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+<cell alignment="right" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
+====N====
+\end_layout
 
+\end_inset
+</cell>
+<cell alignment="right" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+====Ng====
 \end_layout
 
 \end_inset
@@ -453,7 +593,7 @@ na jak duże prawdopodobieństwo nieprawidłowości wskazuje przyjęty tu model 
 \begin_inset Text
 
 \begin_layout Plain Layout
-
+====Npr====
 \end_layout
 
 \end_inset
@@ -466,7 +606,6 @@ na jak duże prawdopodobieństwo nieprawidłowości wskazuje przyjęty tu model 
 
 \end_layout
 
-\begin_deeper
 \begin_layout Itemize
 tabele 
 \series bold
@@ -482,15 +621,12 @@ z wynikiem niemożliwym
 \series default
  wyliczają obwody,
  w których doszło do nieprawidłowości z prawdopodobieństwem co najmniej 99,999% według przyjętego modelu,
- a wyniki odnotowane w protokole komisji obwodowej oddalają się od wartości oczekiwanej o co najmniej 4,42 odchylenia standardowe (
-\begin_inset Formula $4,42\sigma$
-\end_inset
-
-) – a więc istnienie nieprawidłowości w tych obwodach można uznać za pewne;
+ a wyniki odnotowane w protokole komisji obwodowej oddalają się od wartości oczekiwanej o co najmniej 4,42 odchylenia standardowe – a więc istnienie nieprawidłowości w tych obwodach można uznać za pewne;
  liczba takich obwodów na obszarze właściwości terytorialnej Prokuratury:
  ;
 \end_layout
 
+\begin_deeper
 \begin_layout Itemize
 tabele 
 \series bold

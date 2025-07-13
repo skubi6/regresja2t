@@ -1137,10 +1137,13 @@ wynik niemożliwy
 \begin_inset Formula $\Delta$
 \end_inset
 
- poza przedziałem ufności dla prawdopodobieństwa 99,9999%.
- Jak wskazano w tabeli,
- w skali ogólnopolskiej takich obwodów jest ====Pg====,
- co stanowi ====Ppr====.
+ poza przedziałem ufności dla prawdopodobieństwa 99,999% – a więc z prawdopodobieństwem 99,999% nożna powiedzieć,
+ że taki wynik jest niemożliwy.
+ Zgodnie z przyjętym tu modelem,
+ takich obwodów nie powinno być w cale,
+ tymczasem,
+ jak wskazano w tabeli,
+ w skali ogólnopolskiej takich obwodów jest ====Pg==== (co stanowi ====Ppr==== wszystkich przeanalizowanych obwodów).
 \end_layout
 
 \begin_layout Section

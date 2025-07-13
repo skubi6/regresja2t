@@ -33,31 +33,39 @@ _LATEX_SPECIALS = re.compile(r'([#$%&~_^\\{}])')
 def escape_latex(text) -> str:
     return _LATEX_SPECIALS.sub(r'\\\1', str(text))
 
+def escape_latexNomath(text) -> str:
+    if '$' in text:
+        return text
+    else:
+        return _LATEX_SPECIALS.sub(r'\\\1', str(text))
+
+
+
 fileGroups = [
     {'desc': 'w miastach ponad 250 tys. mieszkańców',
      'regrNm': 'YmiastoDst250+ar2025.xlsx',
      'outliersNm': 'outliers-YmiastoDst250+ar2025.xlsx',
-     'kat':'250+'},
+     'kat':'250+', 'filesuffix': '250P'},
     {'desc': 'w miastach od 100 tys. do 250 tys. mieszkańców',
      'regrNm': 'YmiastoDst100-250+ar2025.xlsx',
      'outliersNm': 'outliers-YmiastoDst100-250+ar2025.xlsx',
-     'kat':'100+'},
+     'kat':'100+', 'filesuffix': '100P'},
     {'desc': 'w miastach od 40 tys. do 100 tys. mieszkańców',
      'regrNm': 'YmiastoDst40-100ar2025.xlsx',
      'outliersNm': 'outliers-YmiastoDst40-100ar2025.xlsx',
-     'kat':'40+'},
+     'kat':'40+', 'filesuffix': '40P'},
     {'desc': 'w miastach od 20 tys. do 40 tys. mieszkańców',
      'regrNm': 'YmiastoDst20-40ar2025.xlsx',
      'outliersNm': 'outliers-YmiastoDst20-40ar2025.xlsx',
-     'kat':'20+'},
+     'kat':'20+', 'filesuffix': '20P'},
     {'desc': 'w miastach poniżej 20 tys. mieszkańców',
      'regrNm': 'YmiastoDst20-ar2025.xlsx',
      'outliersNm': 'outliers-YmiastoDst20-ar2025.xlsx',
-     'kat':'20-'},
+     'kat':'20-', 'filesuffix': '20M'},
     {'desc': 'obwoty wiejskie i miejsco-wiejskie',
      'regrNm': 'YwiesDstar2025.xlsx',
      'outliersNm': 'outliers-YwiesDstar2025.xlsx',
-     'kat':'wieś'},
+     'kat':'wieś', 'filesuffix': 'wies'},
 ]
 
 prokuraturyLista = pd.read_excel('prokuratury-lista.xlsx')
@@ -80,6 +88,24 @@ def latinize_pl(text: str) -> str:
         "acelnoszzACELNOSZZ"
     )
     return text.translate(PL2LAT)
+
+renameRegrAux = {
+    "Intercept" : "wyraz wolny",
+    "uwzględnieniem dodatkowych formularzy" : "Uprawnieni (w tym zaświadczenia 1t)",
+    "obok nazwiska dwóch lub większej liczby kandydatów": "dwa znaki X",
+    "Liczba wyborców głosujących na podstawie zaświadczenia": "Zaświadczenia 1t",
+    "Liczba głosów nieważnych" : "Liczba głosów nieważnych",
+}
+    
+    
+
+def renameRegr (s):
+    for k in renameRegrAux:
+        print ('test', '<'+k+'>', '<'+s+'>')
+        if k in s:
+            print ('TAK')
+            return renameRegrAux[k]
+    return s
 
 out = pd.DataFrame(index=prokuraturyLista.index)
 out['nazwa'] = "Prokuratura Okręgowa " + prokuraturyLista["Prokuratura Okręgowa"]
@@ -137,12 +163,36 @@ def split_middle(val: str) -> str:
         inner = rf"{first}-\\{second}"  # keep '-' then break
     return fr"\makecell[l]{{{inner}}}"
 
+coefFormatters = {
+    'Nawrocki': euro_fmt6,
+    'Trzaskowski': eurp_fmt6,
+    'nieważne': eurp_fmt6,
+    "dwa X": eurp_fmt6,
         
 for g in fileGroups:
     g |= pd.read_excel(
         g['outliersNm'],
         sheet_name=["x_edgePOS", "x_edgeNEG"])
-    g['Coefficients'] = pd.read_excel(g['regrNm'], sheet_name='Coefficients')
+    regr = pd.read_excel(g['regrNm'], sheet_name='Coefficients')
+    g['Coefficients'] = regr
+    regrPrint = regr.copy()
+    regrPrint["Unnamed: 0"] = regrPrint["Unnamed: 0"].map(renameRegr)
+    regrPrint.rename(columns={"Unnamed: 0" : " ",
+                              "NAWROCKI" : "Nawrocki",
+                              "TRZASKOWSKI" : "Trzaskowski"}, inplace=True)
+    regrTxt = regrPrint.to_latex (
+        index=False,
+        longtable=True,
+        escape=True,
+        caption=rf"Tablica współczynników regresji, obwody {{\textbf {{{g['kat']}}}}} ({g['desc']})",
+        label=f"tab:coef{g['filesuffix']}",
+        column_format = "lrrrrrrrrr",
+        multicolumn=False
+    )
+    regrTxt = regrTxt.replace("Continued on next page", pl_msg)
+    with open(s / f"coeff{g['filesuffix']}.tex", "w", encoding="utf-8") as f:
+        f.write(regrTxt)
+    
     globalVals['Gg'] += pd.read_excel(g['regrNm'], sheet_name='Y').shape[0]
     
 #for l in fileGroups:
@@ -153,10 +203,10 @@ EXPLAIN = {'P' : 'niemożliwym',
            'X' : 'ekstremalnie nieprawdopodobnym',
            'B': 'bardzo nieprawdopodobnym',
            'N' : 'nieprawdopodobnym'}
-BENEF = {'POS' : "Karola NAWROCKIEGO", 'NEG' : "Rafała Trzaskowskiego"}
+BENEF = {'POS' : "Karola Nawrockiego", 'NEG' : "Rafała Trzaskowskiego"}
 
 colsToKeepBase = ["kat", "Teryt Gminy", "Gmina", "Powiat",
-                  "Nr komisji", "NAWROCKI Karol Tadeusz",
+                  "Nr komisji", "zaswiadczenia2t", "NAWROCKI Karol Tadeusz",
                   "fitsNAWROCKI Karol Tadeusz",
                   "TRZASKOWSKI Rafał Kazimierz",
                   "fitsTRZASKOWSKI Rafał Kazimierz",
@@ -170,6 +220,9 @@ recols = {
     "fitsTRZASKOWSKI Rafał Kazimierz" : "fitTRZA",
     "Teryt Gminy" : "Teryt",
     "Nr komisji" : "Nr",
+    "obs_diff" : r"$\Delta$",
+    "fit_diff" : r"fit$\Delta$",
+    "zaswiadczenia2t" : "Zaśw.",
 }
 
 colsToKeep = [recols[c] if c in recols else c for c in colsToKeepBase]
@@ -238,12 +291,12 @@ for i, v in out.iterrows():
                         renamed[c]) else esc)  for c in colsToKeep}
                 formatters ['fitNAW'] = euro_fmt1
                 formatters ['fitTRZA'] = euro_fmt1
-                formatters ['fit_diff'] = euro_fmt1
+                formatters ['fit$\Delta$'] = euro_fmt1
                 formatters ['D'] = euro_fmt1
                 formatters ['diff_std'] = euro_fmt1
                 formatters ['Gmina'] = split_middle
                 formatters ['Powiat'] = split_middle
-                escaped_header = [escape_latex(str(c)) for c in renamed.columns[:-1]]
+                escaped_header = [escape_latexNomath(str(c)) for c in renamed.columns[:-1]]
                 #print ('renamed len', renamed.shape[0])
                 base_text = renamed.to_latex (
                     columns=colsToKeep,
@@ -254,7 +307,7 @@ for i, v in out.iterrows():
                     label=f"tab:{direction}{label}",
                     formatters=formatters,
                     header=escaped_header,
-                    column_format = "crrllrrrrrrrrr",
+                    column_format = "crrllrrrrrrrrrr",
                     multicolumn=False
                     
                 )
@@ -271,12 +324,9 @@ for i, v in out.iterrows():
                     # heuristics: data rows end with '\\' **and** contain at least one '&'
                     if ln.rstrip().endswith(r'\\') and '&' in ln:
                         if not all (sub in ln for sub in [' Teryt ', ' Gmina ', ' Nr ']):
-                            print ('qualify', ln)
                             note_text = next(note_it)
                             note_line = rf"\nopagebreak\multicolumn{{{ncols}}}{{l}}{{\textit{{{note_text}}}}} \\ \midrule"
                             new_lines.append(note_line)
-                        else:
-                            print ('DISQ', ln)
                 tabelki += '\n'.join (new_lines)
         probaMax = probaMin
     if tabelki:

@@ -196,7 +196,7 @@ status open
 
 {
 \backslash
-Large 
+LARGE 
 \end_layout
 
 \end_inset
@@ -246,10 +246,11 @@ Obwody głosowania,
 \end_layout
 
 \begin_layout Itemize
-na korzyść którego kandydata (Karola Nawrockiego czy też Rafała Trzaskowskiego) według przyjętego modelu statystycznego doszło tam do nieprawidłowości (o ile nieprawidłowości miały miejsce w drugiej turze;
- hipoteza,
+na korzyść którego kandydata (Karola Nawrockiego czy też Rafała Trzaskowskiego) według przyjętego modelu statystycznego doszło tam prawdopodobnie do nieprawidłowości,
+ o ile nieprawidłowości miały miejsce w drugiej turze (hipoteza,
  zgodnie z którą anomalie wykryte statystycznie byłyby efektem nieprawidłowości w pierwszej turze,
- jest omówiona oddzielnie w dalszej części niniejszego doniesienia);
+ jest omówiona oddzielnie,
+ w dalszej części niniejszego doniesienia);
 \end_layout
 
 \begin_layout Itemize
@@ -607,8 +608,61 @@ ponad
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Section
+Wnioski o przeprowadzenie dowodów
+\end_layout
 
+\begin_layout Standard
+Wnoszę o przesłuchanie mnie,
+ w szczególności po to,
+ abym mógł opisać szczegółowo analizę statystyczną,
+ na której opiera się niniejsze doniesienie,
+ i wyjaśnić,
+ czym ta analiza różni się od analiz wykonanych przez inne osoby (w szczególności przez dr.
+ Krzysztofa Kontka oraz przez biegłych dr.
+ hab.
+ Jacka Hamana i dr.
+ hab.
+ Andrzeja Torója).
+ W szczególności stawię się na wezwanie telefoniczne,
+ nawet przekazane mi z dnia na dzień (numer telefonu w nagłówku).
+\end_layout
+
+\begin_layout Standard
+Z ostrożności wnoszę o powołanie biegłego z dziedziny statystyki matematycznej,
+ który oceni,
+ czy omawiana tu analiza statystyczna została przeprowadzona zgodnie z zasadami sztuki i jakie wnioski z niej wypływają.
+ Ten wniosek formułuję jedynie z ostrożności,
+ gdyż ponowne przeliczenie głosów (oględziny),
+ o które wnioskuję w kolejnym akapicie,
+ rozstrzygnie wszelkie wątpliwości.
+ Uważam,
+ że najwłaściwszym rozwiązaniem byłoby dokonanie oględzin jak najszybciej,
+ bez wcześniejszego powoływania biegłego.
+ Dokonanie oględzin przed przewidzianą datą zaprzysiężenia nowego Prezydenta,
+ czyli przed 6 sierpnia br.,
+ z przyczyn społecznych byłoby bardzo pożądane.
+ 
+\end_layout
+
+\begin_layout Standard
+Wnoszę o ponowne przeliczenie głosów przez prokuratora lub pod jego nadzorem (oględziny) z drugiej tury wyborów we wszystkich obwodach głosowania wymienionych w tabelach poniżej (łącznie ====sum==== obwodów).
+ 
+\end_layout
+
+\begin_layout Standard
+W przypadku obwodów,
+ których protokoły z drugiej tury okażą się prawidłowe lub obarczone bardzo niewielkimi błędami,
+ wnoszę dodatkowo o przeliczenie głosów z pierwszej tury.
+ Ten dodatkowy wniosek dowodowy wynika z tego,
+ że anomalie ujawnione przez omawianą tu analizę statystyczną,
+ to rozbieżności między wynikami pierwszej a drugiej tury w konkretnych obwodach głosowania.
+ Te anomalie mogą wynikać tak samo z nieprawidłowości w drugiej turze,
+ jak i z nieprawidłowości w pierwszej turze.
+ Uwaga opinii publicznej skupiła się wyłącznie na drugiej turze,
+ jednak postępowanie przygotowawcze powinno opierać się na zasadach logiki,
+ a nie jedynie na emocjach opinii publicznej,
+ tak więc w uzasadnionych przypadkach wyniki z obu tur powinny zostać sprawdzone.
 \end_layout
 
 \begin_layout Standard
@@ -621,6 +675,8 @@ status open
 \backslash
 begin{landscape}
 \backslash
+enlargethispage*{1cm}
+\backslash
 input{subst/====dir====/tables.tex}
 \backslash
 end{landscape}
@@ -629,6 +685,509 @@ end{landscape}
 \end_inset
 
 
+\end_layout
+
+\begin_layout Standard
+W przypadku obwodów głosowania,
+ w których oględziny potwierdzą,
+ że doszło do nieprawidłowości,
+ wnoszę o przesłuchanie członków obwodowej komisji wyborczej,
+ mężów zaufania i obserwatorów społecznych na wszelkie okoliczności związane z tymi nieprawidłowościami i z potencjalnymi przestępstwami przeciwko wyborom,
+ do których mogło dojść w danej komisji,
+ w szczególności:
+ w jaki sposób liczono głosy?
+ czy komisja liczyła głosy wspólnie?
+ czy liczenie głosów było obserwowane przez osoby inne niż członkowie komisji?
+ kto wprowadzał do komputera wyniki głosowania?
+ kto sprawdzał,
+ czy wyniki wprowadzono prawidłowo?
+ czy wszyscy członkowie komisji przeczytali treść protokołu przed jego podpisaniem?
+\end_layout
+
+\begin_layout Section
+Zwięzły opis analizy statystycznej
+\end_layout
+
+\begin_layout Subsection
+Analizowane obwody,
+ ich podizał na grupy
+\end_layout
+
+\begin_layout Standard
+Omawiana tu analiza statystyczna ogranicza się do stałych obwodów głosowania w kraju i objęła 29815 obwodów.
+ Pozostałe obwody głosowania (zagraniczne oraz krajowe odrębne,
+ np.
+ w szpitalach i aresztach) mają inną specyfikę,
+ wykonanie ich analizy statystycznej byłoby celowe,
+ ale należy to zrobić oddzielnie.
+\end_layout
+
+\begin_layout Standard
+Przeanalizowałem oddzielnie sześć kategorii obwodów głosowania:
+\end_layout
+
+\begin_layout Itemize
+obwody obejmujące obszary wyłącznie miejskie,
+ w miastach ponad 250 tys.
+ mieszkańców,
+ oznaczone w tabelach 
+\series bold
+kat 250+
+\end_layout
+
+\begin_layout Itemize
+obwody obejmujące obszary wyłącznie miejskie,
+ w miastach ponad 100 tys.
+ i do 250 tys.
+ mieszkańców,
+ oznaczone w tabelach 
+\series bold
+kat 100+
+\end_layout
+
+\begin_layout Itemize
+obwody obejmujące obszary wyłącznie miejskie,
+ w miastach ponad 40 tys.
+ i do 100 tys.
+ mieszkańców,
+ oznaczone w tabelach 
+\series bold
+kat 40+
+\end_layout
+
+\begin_layout Itemize
+obwody obejmujące obszary wyłącznie miejskie,
+ w miastach ponad 20 tys.
+ i do 40 tys.
+ mieszkańców,
+ oznaczone w tabelach 
+\series bold
+kat 20+
+\end_layout
+
+\begin_layout Itemize
+obwody obejmujące obszary wyłącznie miejskie,
+ w miastach do 20 tys.
+ mieszkańców,
+ oznaczone w tabelach 
+\series bold
+kat 20-
+\end_layout
+
+\begin_layout Itemize
+obwody obejmujące obszary wyłącznie wiejskie lub wiejskie i miejskie,
+ oznaczone w tabelach 
+\series bold
+kat wieś
+\end_layout
+
+\begin_layout Standard
+Podział obwodów głosowania na te grupy czyni analizę bardziej precyzyjną,
+ gdyż im bardziej jednorodna jest badana grupa wyborców (wyborcy zachowują się w podobny sposób),
+ tym precyzyjniej można ją zbadać ilościowo.
+ Wyborcy wielkomiejscy zachowują się inaczej,
+ niż wyborcy z niewielkich miast,
+ wyborcy wiejscy zachowują się jeszcze inaczej.
+\end_layout
+
+\begin_layout Standard
+Mamy tu tak naprawdę sześć odrębnych analiz statystycznych.
+ Przeprowadzenie sześciu odrębnych analiz,
+ to sposób działania pośredni pomiędzy tym,
+ co zrobił dr hab.
+ Haman (jedna wspólna analiza dla wszystkich stałych obwodów w kraju) a tym,
+ co zrobił dr Kontek (liczne odrębne analizy,
+ każda dla grupy kilkunastu obwodów).
+ Z kolei dr hab.
+ Torój analizował zachowania wyborców dwukrotnie:
+ z jednej strony wspólną analizą objął wszystkie obwody w kraju (w tym obwody odrębne),
+ a z drugiej – analizował odrębnie niewielkie lokalne grupy obwodów.
+\end_layout
+
+\begin_layout Subsection
+Regresja liniowa
+\end_layout
+
+\begin_layout Standard
+Dla każdej grupy obwodów głosowania wyliczyłem regresję liniową,
+ która pozwala przewidzieć następujące wyniki drugiej tury w poszczególnych obwodach (zmienne objaśniane):
+\end_layout
+
+\begin_layout Itemize
+liczba głosów na każdego z dwóch kandydatów,
+\end_layout
+
+\begin_layout Itemize
+liczba głosów nieważnych,
+\end_layout
+
+\begin_layout Itemize
+liczba głosów zawierających znaki X w kratkach odpowiadających obu kandydatom (takie głosy stanowią podzbiór zbioru głosów nieważnych)
+\end_layout
+
+\begin_layout Standard
+na podstawie następujących predyktorów (zmiennych objaśniających):
+\end_layout
+
+\begin_layout Itemize
+następujące wyniki pierwszej tury z tego samego lokalu:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+liczba głosów na każdego z 13 kandydatów
+\end_layout
+
+\begin_layout Itemize
+liczba uprawnionych (w tym osoby,
+ które głosowały w pierwszej turze na podstawie zaświadczeń o prawie do głosowania)
+\end_layout
+
+\begin_layout Itemize
+liczba osób,
+ które głosowały w pierwszej turze na podstawie zaświadczeń o prawie do głosowania
+\end_layout
+
+\begin_layout Itemize
+liczba głosów nieważnych,
+\end_layout
+
+\begin_layout Itemize
+liczba głosów zawierających znaki X w kratkach odpowiadających co najmniej dwum kandydatom (takie głosy stanowią podzbiór zbioru głosów nieważnych)
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+oraz liczba osób,
+ które głosowały w drugiej turze na podstawie zaświadczeń o prawie do głosowania
+\end_layout
+
+\begin_layout Standard
+W każdym obwodzie głosowania wyliczamy na podstawie tej regresji oczekiwaną wartość zmiennych objaśnianych (w szczególności:
+ liczbę głosów na każdego z dwóch kandydatów w drugiej turze).
+ W tabelach zamieszczonych w niniejszym doniesieniu tak wyliczone liczby głosów są,
+ odpowiednio,
+ w kolumnach fitNAW i fitTRZA.
+ Liczby głosów uzyskane w drugiej turze przez każdego z kandydatów,
+ zapisane w protokole obwodowej komisji wyborczej,
+ są,
+ odpowiednio,
+ w kolumnach NAW i TRZA.
+\end_layout
+
+\begin_layout Standard
+Oczekiwana różnica między liczbą głosów na Nawrockiego a liczbą głosów na Trzaskowskiego w tabelach znajduje się w kolumnie fit
+\begin_inset Formula $\Delta$
+\end_inset
+
+ (mamy bardzo prostą zależność:
+ w każdej linii tabeli fit
+\begin_inset Formula $\Delta$
+\end_inset
+
+=fitNAW
+\begin_inset Formula $-$
+\end_inset
+
+fitTRZA),
+ natomiast różnica wynikająca z tego,
+ co zapisane w protokole,
+ jest w kolumnie 
+\begin_inset Formula $\Delta$
+\end_inset
+
+ (mamy równie prostą zależność:
+ 
+\begin_inset Formula $\Delta$
+\end_inset
+
+=NAW
+\begin_inset Formula $-$
+\end_inset
+
+TRZA).
+\end_layout
+
+\begin_layout Subsection
+Rozkład prawdopodobieństwa
+\end_layout
+
+\begin_layout Standard
+Oczywiście w praktyce wyniki głosowania w danym obwodzie,
+ w szczególności liczby NAW,
+ TRZA i 
+\begin_inset Formula $\Delta$
+\end_inset
+
+,
+ nie są dokładnie równe temu,
+ co wynika z regresji liniowej.
+ Przyjmujemy,
+ że wyniki NAW,
+ TRZA i 
+\begin_inset Formula $\Delta$
+\end_inset
+
+ w danym obwodzie,
+ to zmienne losowe mające rozkład prawdopodobieństwa oparty na założeniu,
+ że liczba potencjalnie głosujących w obwodzie w drugiej turze,
+ którą nazywamy 
+\begin_inset Formula $N$
+\end_inset
+
+,
+ to liczba uprawnionych z pierwszej tury (w tym osoby,
+ które głosowały w pierwszej turze na podstawie zaświadczeń o prawie do głosowania) i że każdy z 
+\begin_inset Formula $N$
+\end_inset
+
+ potencjalnych wyborców
+\end_layout
+
+\begin_layout Itemize
+głosował w drugiej turze w danym lokalu na Karola Nawrockiego z prawdopodobieństwem 
+\begin_inset Formula $p$
+\end_inset
+
+ lub
+\end_layout
+
+\begin_layout Itemize
+głosował w drugiej turze w danym lokalu na Rafał Trzaskowskiego z prawdopodobieństwem 
+\begin_inset Formula $q$
+\end_inset
+
+ lub
+\end_layout
+
+\begin_layout Itemize
+nie głosował na żadnego z kandydatów (oddał głos nieważny,
+ w ogóle nie głosował lub głosował w innym lokalu) z prawdopodobieństwem 
+\begin_inset Formula $1-p-q$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Przyjmujemy,
+ że zachowania potencjalnych wyborców są niezależne.
+\end_layout
+
+\begin_layout Standard
+Parametry tego modelu,
+ czyli 
+\begin_inset Formula $N$
+\end_inset
+
+,
+ 
+\begin_inset Formula $p$
+\end_inset
+
+ i 
+\begin_inset Formula $q$
+\end_inset
+
+,
+ są łatwe do wyliczenia dla każdego obwodu:
+ 
+\begin_inset Formula $N$
+\end_inset
+
+ znajduje się w protokole z pierwszej tury,
+ 
+\begin_inset Formula $p=$
+\end_inset
+
+fitNAW
+\begin_inset Formula $/N$
+\end_inset
+
+,
+ 
+\begin_inset Formula $q=$
+\end_inset
+
+fitTRZA
+\begin_inset Formula $/N$
+\end_inset
+
+.
+ Z tych parametrów wynikają rozkłady prawdopodobieństwa dla zmiennych losowych NAW,
+ TRZA i 
+\begin_inset Formula $\Delta$
+\end_inset
+
+,
+ które pozwalają wyliczyć,
+ z jakim prawdopodobieństwem każda z tych zmiennych może mieć swoją wartość w dowolnie wybranym przedziale.
+\end_layout
+
+\begin_layout Standard
+Te rozkłady prawdopodobieństwa są dwumianowe,
+ jednak w praktyce bardzo dobrym przybliżeniem każdego z nich jest rozkład normalny.
+ Parametry tego rozkładu dla każdego obwodu i dla każdej ze zmiennych NAW,
+ TRZA i 
+\begin_inset Formula $\Delta$
+\end_inset
+
+,
+ a mianowicie wartość oczekiwana,
+ która wynosi,
+ odpowiednio,
+ fitNAW,
+ fitTRZA lub fit
+\begin_inset Formula $\Delta$
+\end_inset
+
+ i odchylenie standardowe zwane 
+\begin_inset Formula $\sigma$
+\end_inset
+
+,
+ wynikają z wartości 
+\begin_inset Formula $N$
+\end_inset
+
+,
+ 
+\begin_inset Formula $p$
+\end_inset
+
+ i 
+\begin_inset Formula $q$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+W przypadku konkretnej zmiennej (NAW,
+ TRZA lub 
+\begin_inset Formula $\Delta$
+\end_inset
+
+) i konkretnego obwodu głosowania,
+ znając rozkład prawdopodobieństwa (w praktyce:
+ znając wartość oczekiwaną i odchylenie standardowe 
+\begin_inset Formula $\sigma)$
+\end_inset
+
+ można,
+ dla dowolnie przyjętego prawdopodobieństwa,
+ np.
+ 
+\begin_inset Formula $R=99,99\%$
+\end_inset
+
+,
+ wyliczyć przedział ufności symetryczny wokół wartości oczekiwanej dla tego prawdopodobieństwa.
+ Ten przedział ufności jest zdefiniowany następującą regułą:
+ prawdopodobieństwo,
+ że wartość zmiennej losowej znajduje się w przedziale,
+ wynosi 
+\begin_inset Formula $R$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Niniejsza analiza opiera się wyłącznie na zmiennej 
+\begin_inset Formula $\Delta$
+\end_inset
+
+ i na o9dpowiadających jej rozkładach prawdopodobieństwa.
+ Zmiennych NAW ani TRZA nie są tu analizowane.
+\end_layout
+
+\begin_layout Standard
+Treść pierwszej tabeli niniejszego zawiadomienia (która objaśnia znaczenie kolejnych tabel) można wyjaśnić,
+ jak następuje:
+ w każdej linii wartość w kolumnie
+\emph on
+ Prawdopodobieństwo,
+ że wynik jest nieprawidłowy (według modelu)
+\emph default
+,
+ wskazuje,
+ poza jakim przedziałem ufności (i,
+ ewentualnie,
+ w jakim innym przedziale ufności) znajdują się wartości zmiennej 
+\begin_inset Formula $\Delta$
+\end_inset
+
+dla odpowiednich obwodów głosowania.
+ Na przykład:
+ znajdujący się w pierwszej linii tej kolumny tekst 
+\emph on
+ponad 99,999%
+\emph default
+ oznacza,
+ że obwody głosowania wyliczone w odpowiadającej mu tabeli,
+ określonej słowami 
+\series bold
+\emph on
+wynik niemożliwy
+\series default
+\emph default
+,
+ mają wartość 
+\begin_inset Formula $\Delta$
+\end_inset
+
+ poza przedziałem ufności dla prawdopodobieństwa 99,9999%.
+ Jak wskazano w tabeli,
+ w skali ogólnopolskiej takich obwodów jest ====Pg====,
+ co stanowi ====Ppr====.
+\end_layout
+
+\begin_layout Section
+Dyskusja dotycząca opisanej tu analizy statystycznej,
+ porównanie z innymi analizami
+\end_layout
+
+\begin_layout Section
+Szczegóły dotyczące analizy statystycznej 
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{subst/coeff250P.tex}
+\backslash
+input{subst/coeff100P.tex}
+\backslash
+input{subst/coeff40P.tex}
+\backslash
+input{subst/coeff20P.tex}
+\backslash
+input{subst/coeff20M.tex}
+\backslash
+input{subst/coeffwies.tex}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section*
+Załączniki
+\end_layout
+
+\begin_layout Enumerate
+Nośnik informatyczny (pendrive) zawierający wyliczenia statystyczne
+\end_layout
+
+\begin_layout Enumerate
+Statut Stowarzyszenia Obserwatorium Wyborcze
 \end_layout
 
 \end_body

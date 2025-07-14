@@ -259,6 +259,8 @@ for probaMin, label in THRESHOLDS:
             
 ncols = len(colsToKeep)
 
+int tabord=0
+
 for i, v in out.iterrows():
     (s / v["dir"]).mkdir (parents=True, exist_ok=True)
     #extracts = {'POS': {l : {} for vv, l in THRESHOLDS},
@@ -303,7 +305,7 @@ for i, v in out.iterrows():
                     index=False,
                     longtable=True,
                     escape=False,
-                    caption=f"Obwody z wynikiem  {EXPLAIN[label]} na korzyść {BENEF[direction]} według modelu" ,
+                    caption=rf"Obwody z wynikiem  {EXPLAIN[label]} na korzyść {BENEF[direction]} według modelu\label{{tabord:{tabord}}}." ,
                     label=f"tab:{direction}{label}",
                     formatters=formatters,
                     header=escaped_header,
@@ -311,6 +313,7 @@ for i, v in out.iterrows():
                     multicolumn=False
                     
                 )
+                tabord += 1
                 base_text = base_text.replace("Continued on next page", pl_msg)
                 notes    = renamed['Siedziba'].map(escape_latex).tolist()
                 #print ('len(notes)', len(notes))

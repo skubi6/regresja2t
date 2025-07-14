@@ -163,12 +163,20 @@ def split_middle(val: str) -> str:
         inner = rf"{first}-\\{second}"  # keep '-' then break
     return fr"\makecell[l]{{{inner}}}"
 
+def euro_fmt(x):
+    return f"{x:.6f}".replace(".", ",")
+
+def euro_fmt1(x):
+    return f"{x:.1f}".replace(".", ",")
+
+pl_msg   = "ciąg dalszy na następnej stronie"
+
 coefFormatters = {
-    'Nawrocki': euro_fmt6,
-    'Trzaskowski': eurp_fmt6,
-    'nieważne': eurp_fmt6,
-    "dwa X": eurp_fmt6,
-        
+    'Nawrocki': euro_fmt,
+    'Trzaskowski': euro_fmt,
+    'nieważne': euro_fmt,
+    "dwa X": euro_fmt,
+}
 for g in fileGroups:
     g |= pd.read_excel(
         g['outliersNm'],
@@ -229,12 +237,6 @@ colsToKeep = [recols[c] if c in recols else c for c in colsToKeepBase]
 
 print ('colsToKeep', colsToKeep)
 
-def euro_fmt(x):
-    return f"{x:.6f}".replace(".", ",")
-
-def euro_fmt1(x):
-    return f"{x:.1f}".replace(".", ",")
-
 def esc(val):
     return escape_latex(str(val))
 
@@ -242,8 +244,6 @@ out["P"] = 0
 out["X"] = 0
 out["B"] = 0
 out["N"] = 0
-
-pl_msg   = "ciąg dalszy na następnej stronie"
 
 # Zliczamy globalną liczbę rozmaitych anomalii
 

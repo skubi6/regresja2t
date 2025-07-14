@@ -27,6 +27,7 @@
 \usepackage{makecell}
 \usepackage{icomma}
 \newcommand{\LTcontinuedname}{(ciąg dalszy na następnej stronie)}
+\frenchspacing
 \end_preamble
 \options DIV=14,titlepage=false
 \use_default_options true
@@ -226,7 +227,7 @@ Działając w imieniu Stowarzyszenia Obserwatorium Wyborcze,
  zawiadamiam,
  że w dniach 18 i 19 maja oraz 1 i 2 czerwca br.
  prawdopodobnie doszło do przestępstw przeciwko wyborom dotyczących ustalania wyniku i sporządzania protokołów w obwodowych komisjach głosowania,
- które wymienione są w tabelach poniżej i dla których ====nazwa==== jest właściwa terytorialnie.
+ które wymienione są w tablicach poniżej i dla których ====nazwa==== jest właściwa terytorialnie.
  Chodzi w szczególności o przestępstwa z art.
  248 pkt 3 i 4 kodeksu karnego.
 \end_layout
@@ -241,7 +242,7 @@ Uzasadnione podejrzenie,
 \begin_layout Standard
 Obwody głosowania,
  których dotyczy niniejsze zawiadomienie,
- zostały wymienione w różnych tabelach,
+ zostały wymienione w różnych tablicach,
  w zależności od tego:
 \end_layout
 
@@ -255,7 +256,7 @@ na korzyść którego kandydata (Karola Nawrockiego czy też Rafała Trzaskowski
 
 \begin_layout Itemize
 na jak duże prawdopodobieństwo nieprawidłowości wskazuje przyjęty tu model statystyczny,
- według rozróżnienia opisanego w następującej tabeli:
+ według rozróżnienia opisanego w następującej tablicy:
 \end_layout
 
 \begin_layout Standard
@@ -646,7 +647,7 @@ Z ostrożności wnoszę o powołanie biegłego z dziedziny statystyki matematycz
 \end_layout
 
 \begin_layout Standard
-Wnoszę o ponowne przeliczenie głosów przez prokuratora lub pod jego nadzorem (oględziny) z drugiej tury wyborów we wszystkich obwodach głosowania wymienionych w tabelach poniżej (łącznie ====sum==== obwodów).
+Wnoszę o ponowne przeliczenie głosów przez prokuratora lub pod jego nadzorem (oględziny) z drugiej tury wyborów we wszystkich obwodach głosowania wymienionych w tablicach poniżej (łącznie ====sum==== obwodów).
  
 \end_layout
 
@@ -730,7 +731,7 @@ Przeanalizowałem oddzielnie sześć kategorii obwodów głosowania:
 obwody obejmujące obszary wyłącznie miejskie,
  w miastach ponad 250 tys.
  mieszkańców,
- oznaczone w tabelach 
+ oznaczone w tablicach 
 \series bold
 kat 250+
 \end_layout
@@ -740,7 +741,7 @@ obwody obejmujące obszary wyłącznie miejskie,
  w miastach ponad 100 tys.
  i do 250 tys.
  mieszkańców,
- oznaczone w tabelach 
+ oznaczone w tablicach 
 \series bold
 kat 100+
 \end_layout
@@ -750,7 +751,7 @@ obwody obejmujące obszary wyłącznie miejskie,
  w miastach ponad 40 tys.
  i do 100 tys.
  mieszkańców,
- oznaczone w tabelach 
+ oznaczone w tablicach 
 \series bold
 kat 40+
 \end_layout
@@ -760,7 +761,7 @@ obwody obejmujące obszary wyłącznie miejskie,
  w miastach ponad 20 tys.
  i do 40 tys.
  mieszkańców,
- oznaczone w tabelach 
+ oznaczone w tablicach 
 \series bold
 kat 20+
 \end_layout
@@ -769,14 +770,14 @@ kat 20+
 obwody obejmujące obszary wyłącznie miejskie,
  w miastach do 20 tys.
  mieszkańców,
- oznaczone w tabelach 
+ oznaczone w tablicach 
 \series bold
 kat 20-
 \end_layout
 
 \begin_layout Itemize
 obwody obejmujące obszary wyłącznie wiejskie lub wiejskie i miejskie,
- oznaczone w tabelach 
+ oznaczone w tablicach 
 \series bold
 kat wieś
 \end_layout
@@ -794,11 +795,11 @@ Podział obwodów głosowania na te grupy czyni analizę bardziej precyzyjną,
 Mamy tu tak naprawdę sześć odrębnych analiz statystycznych.
  Przeprowadzenie sześciu odrębnych analiz,
  to sposób działania pośredni pomiędzy tym,
- co zrobił dr hab.
+ co zrobił prof.
  Haman (jedna wspólna analiza dla wszystkich stałych obwodów w kraju) a tym,
  co zrobił dr Kontek (liczne odrębne analizy,
  każda dla grupy kilkunastu obwodów).
- Z kolei dr hab.
+ Z kolei prof.
  Torój analizował zachowania wyborców dwukrotnie:
  z jednej strony wspólną analizą objął wszystkie obwody w kraju (w tym obwody odrębne),
  a z drugiej – analizował odrębnie niewielkie lokalne grupy obwodów.
@@ -865,7 +866,7 @@ oraz liczba osób,
 \begin_layout Standard
 W każdym obwodzie głosowania wyliczamy na podstawie tej regresji oczekiwaną wartość zmiennych objaśnianych (w szczególności:
  liczbę głosów na każdego z dwóch kandydatów w drugiej turze).
- W tabelach zamieszczonych w niniejszym doniesieniu tak wyliczone liczby głosów są,
+ W tablicach zamieszczonych w niniejszym doniesieniu tak wyliczone liczby głosów są,
  odpowiednio,
  w kolumnach fitNAW i fitTRZA.
  Liczby głosów uzyskane w drugiej turze przez każdego z kandydatów,
@@ -876,12 +877,12 @@ W każdym obwodzie głosowania wyliczamy na podstawie tej regresji oczekiwaną w
 \end_layout
 
 \begin_layout Standard
-Oczekiwana różnica między liczbą głosów na Nawrockiego a liczbą głosów na Trzaskowskiego w tabelach znajduje się w kolumnie fit
+Oczekiwana różnica między liczbą głosów na Nawrockiego a liczbą głosów na Trzaskowskiego w tablicach znajduje się w kolumnie fit
 \begin_inset Formula $\Delta$
 \end_inset
 
  (mamy bardzo prostą zależność:
- w każdej linii tabeli fit
+ w każdej linii tablicy fit
 \begin_inset Formula $\Delta$
 \end_inset
 
@@ -1098,12 +1099,12 @@ Niniejsza analiza opiera się wyłącznie na zmiennej
 \begin_inset Formula $\Delta$
 \end_inset
 
- i na o9dpowiadających jej rozkładach prawdopodobieństwa.
+ i na odpowiadających jej rozkładach prawdopodobieństwa.
  Zmiennych NAW ani TRZA nie są tu analizowane.
 \end_layout
 
 \begin_layout Standard
-Treść pierwszej tabeli niniejszego zawiadomienia (która objaśnia znaczenie kolejnych tabel) można wyjaśnić,
+Treść pierwszej tablicy niniejszego zawiadomienia (która objaśnia znaczenie kolejnych tablic) można wyjaśnić,
  jak następuje:
  w każdej linii wartość w kolumnie
 \emph on
@@ -1125,7 +1126,7 @@ dla odpowiednich obwodów głosowania.
 ponad 99,999%
 \emph default
  oznacza,
- że obwody głosowania wyliczone w odpowiadającej mu tabeli,
+ że obwody głosowania wyliczone w odpowiadającej mu tablicy,
  określonej słowami 
 \series bold
 \emph on
@@ -1140,15 +1141,386 @@ wynik niemożliwy
  poza przedziałem ufności dla prawdopodobieństwa 99,999% – a więc z prawdopodobieństwem 99,999% nożna powiedzieć,
  że taki wynik jest niemożliwy.
  Zgodnie z przyjętym tu modelem,
- takich obwodów nie powinno być w cale,
+ takich obwodów nie powinno być wcale,
  tymczasem,
- jak wskazano w tabeli,
- w skali ogólnopolskiej takich obwodów jest ====Pg==== (co stanowi ====Ppr==== wszystkich przeanalizowanych obwodów).
+ jak wskazano w tablicy,
+ w skali ogólnopolskiej takich obwodów jest ====Pg====,
+ co stanowi ====Ppr==== wszystkich przeanalizowanych obwodów.
 \end_layout
 
 \begin_layout Section
 Dyskusja dotycząca opisanej tu analizy statystycznej,
  porównanie z innymi analizami
+\end_layout
+
+\begin_layout Subsection
+Każdemu obwodowi głosowania odpowiada inny rozkład prawdopodobieństwa – to jest nieunikniona trudność analizy statystycznej
+\end_layout
+
+\begin_layout Standard
+W każdym obwodzie rozkład prawdopodobieństwa każdej ze zmiennych NAW,
+ TRZA i 
+\begin_inset Formula $\Delta$
+\end_inset
+
+ jest inny.
+ Prof.
+ Haman przyjął,
+ że jeśli liczymy głosy w drugiej turze w procentach ogółu głosów ważnych – a nie w liczbach bezwzględnych – to można przyjąć,
+ że odchylenie standardowe jest zawsze takie samo i wynosi 2,37 punkty procentowe.
+ Obliczenia oparte na takim założeniu są głęboko błędne.
+ W rzeczywistości zarówno odchylenie standardowe,
+ jak i przedział ufności dla dowolnego konkretnego prawdopodobieństwa,
+ rosną wraz z pierwiastkiem kwadratowym liczby wyborców.
+ W obwodzie,
+ w którym jest 2000 uprawnionych,
+ każda z tych wartości będzie ok.
+ 
+\begin_inset Formula $\sqrt{10}=$
+\end_inset
+
+3,16 razy większa niż w obwodzie,
+ w którym jest 200 uprawnionych,
+ licząc w liczbach bezwzględnych.
+ Jeśli natomiast liczymy w procentach,
+ to w obwodzie z 2000 uprawnionymi odchylenie standardowe i poszczególne przedziały ufności będą ok.
+ 
+\begin_inset Formula $\sqrt{10}=$
+\end_inset
+
+3,16 razy mniejsze niż w obwodzie z 200 uprawnionymi.
+\end_layout
+
+\begin_layout Standard
+Prof.
+ Haman prawdopodobnie zdał sobie sprawę z tego,
+ że opiera się na źle wyliczonych rozkładach prawdopodobieństwa,
+ gdyż w sposób arbitralny zdecydował,
+ że gdy odstępstwo między wartością wyliczoną na podstawie regresji liniowej a wartością zapisaną w protokole obwodowej komisji wyborczej jest mniejsze niż dziesięć głosów,
+ to nie uznaje się,
+ że mamy do czynienia z anomalią (nieprawidłowością wymagającą zbadania).
+ Tak więc profesor wprowadził arbitralną zasadę 
+\begin_inset Quotes pld
+\end_inset
+
+rozbieżność poniżej 10 głosów się nie liczy
+\begin_inset Quotes prd
+\end_inset
+
+ zamiast prawidłowo obliczyć,
+ jak duże rozbieżności należy traktować jako anomalie.
+ W rzeczywistości wygląda to tak (przykład):
+ weźmy mały obwód głosowania,
+ w którym uprawnionych jest 200 osób,
+ a faktycznie głosowało 100.
+ Przyjmijmy,
+ że regresja liniowa wskazuje,
+ iż 50 głosów powinno paść na Nawrockiego i również 50 na Trzaskowskiego.
+ Wówczas przedział ufności dla prawdopodobieństwa 95%,
+ to 
+\begin_inset Formula $[40..60]$
+\end_inset
+
+ - a więc odchylenia przekraczające 10 głosów (mniej niż 40 lub więcej niż 60 na Nawrockiego) można uznać za anomalie.
+ To się zgadza z zasadą 
+\begin_inset Quotes pld
+\end_inset
+
+rozbieżność poniżej 10 głosów się nie liczy
+\begin_inset Quotes prd
+\end_inset
+
+,
+ ale ta zgodność zachodzi tylko dlatego,
+ że przyjęto konkretną liczbę głosujących i konkretne prawdopodobieństwo.
+\end_layout
+
+\begin_layout Standard
+To,
+ że mamy do czynienia z odrębnymi rozkładami prawdopodobieństwa dla poszczególnych lokali,
+ jest jedynie pozorną trudnością.
+ Wystarczy oceniać każde zdarzenie (każdą wartość jednej ze zmiennych NAW,
+ TRZA i 
+\begin_inset Formula $\Delta$
+\end_inset
+
+) w kontekście odpowiedniego rozkładu prawdopodobieństwa.
+ 
+\end_layout
+
+\begin_layout Subsection
+Na podstawie modelu probabilistycznego nie można ocenić rozmiaru nieprawidłowości w skali całego kraju
+\end_layout
+
+\begin_layout Standard
+Nie dysponujemy dokładnym modelem probabilistycznym zachowań wyborców.
+ Wszelkie analizy oparte są więc na modelach przybliżonych.
+ Na przykład przyjmuje się,
+ że zachowania wyborców są niezależne,
+ mimo że to nie jest w pełni prawda (chociażby dlatego,
+ że wyborcy rozmawiają ze sobą i wpływają na siebie wzajemnie).
+ W tej sytuacji niemożliwe jest wykrycie niewielkich oszustw w drodze analizy statystycznej:
+ jeśli konkretny kandydat otrzymał w konkretnym obwodzie 530 głosów,
+ a według analizy statystycznej powinien był otrzymać 500,
+ to nie mamy narzędzi,
+ żeby ocenić,
+ czy te dodatkowe 30 głosów wynika z nieprawidłowości przy liczeniu głosów,
+ czy z niedoskonałości modelu.
+\end_layout
+
+\begin_layout Standard
+Modele statystyczne pozwalają jedynie na wykrywanie bardzo dużych nieprawidłowości – takich,
+ których rozmiar przekracza oczekiwany rozmiar błędów modelu (przy czym nie bardzo wiadomo,
+ jaki jest oczekiwany rozmiar modelu:
+ model jest niedokładny,
+ ale nie wiemy,
+ jak bardzo).
+ Nawet wtedy odpowiedź jest niepewna i pozwala jedynie na prowadzenie dlaczego postępowania dowodowego,
+ a nigdy nie pozwala na definitywne stwierdzenie nieprawidłowości na podstawie samych tylko wyliczeń statystycznych.
+\end_layout
+
+\begin_layout Standard
+W tej sytuacji pytanie,
+ które Zastępca Prokuratora Generalnego zadał w postanowieniu z dnia 24.06 br.
+ o powołaniu biegłych i które brzmi:
+ 
+\emph on
+jakiej łącznej liczby głosów oddanych we wszystkich obwodowych komisjach wyborczych mogą dotyczyć [stwierdzone anomalie]
+\emph default
+ – musi pozostać bez odpowiedzi,
+ chyba że dojdzie do ponownego przeliczenia głosów na dużą skalę.
+\end_layout
+
+\begin_layout Subsection
+Na podstawie regresji między pierwszą a drugą turą nie można ocenić,
+ któremu kandydatowi sprzyjały nieprawidłowości w skali ogólnopolskiej
+\end_layout
+
+\begin_layout Standard
+Regresja liniowa,
+ na której opiera się omawiana tu analiza statystyczna,
+ została wyliczona na podstawie protokołów obwodowych komisji wyborczych,
+ które zawierają nieprawidłowości (niektóre nieprawidłowości zostały już bezspornie stwierdzone,
+ nie wiemy,
+ ile jest nieprawidłowości niestwierdzonych).
+ To nie jest to samo,
+ co (hipotetyczne) protokoły ukazujące prawdziwe wyniki obu tur.
+\end_layout
+
+\begin_layout Standard
+To,
+ że analiza statystyczna opiera się na nieprawidłowych protokołach,
+ zmienia jej wynik i powoduje,
+ że wynik fałszywie wykazuje nieprawidłowości w przybliżeniu symetryczne (po części na korzyść jednego kandydata,
+ a po części – na korzyść drugiego) mimo że – być może – nieprawidłowości ja rzecz jednego z nich w rzeczywistości dominowały.
+\end_layout
+
+\begin_layout Paragraph
+Przykład (hipotetyczny)
+\end_layout
+
+\begin_layout Standard
+Aby wyjaśnić tę kwestię,
+ rozważmy następujący przykład.
+ Przyjmijmy,
+ że w rzeczywistości dominują nieprawidłowości w drugiej turze na korzyść Karola Nawrockiego,
+ który dzięki nim uzyskał wynik 50,9%,
+ podczas gdy jego rzeczywisty wynik wyniósł 50,0%.
+ Przyjmijmy – nadal w ramach przykładu – że w konkretnym obwodzie było 1000 uprawnionych,
+ wszyscy oddali głosy ważne (a więc oddano 1000 głosów),
+ przy czym
+\end_layout
+
+\begin_layout Itemize
+regresja liniowa wyliczona na podstawie nieprawidłowych wyników wyborów wskazuje,
+ że w tym obwodzie Nawrocki powinien otrzymać 50,9% głosów (tyle,
+ co średnia ogólnopolska) czyli 509 głosów
+\end_layout
+
+\begin_layout Itemize
+hipotetyczna regresja liniowa wyliczona na podstawie prawidłowych wyników wyborów wskazywałaby,
+ że w tym obwodzie Nawrocki powinien otrzymać 50,0% głosów (tyle,
+ co średnia ogólnopolska bez nieprawidłowości) czyli 500 głosów
+\end_layout
+
+\begin_layout Standard
+Przyjmijmy – ciągle w ramach hipotetycznego przykładu – że zapisany w protokole wynik głosowania w tym obwodzie,
+ to Trzaskowski 547,
+ Nawrocki 453.
+ Zgodnie z hipotetyczną prawidłową regresją liniową,
+ ten wynik pozostaje w granicach przedziału ufności dla prawdopodobieństwa 99,73% (chociaż na samej granicy tego przedziału):
+ ten przedział,
+ to dla głosów na Nawrockiego 
+\begin_inset Formula $[453..547]$
+\end_inset
+
+.
+ Według klasyfikacji zawartej w pierwszej tablicy niniejszego doniesienia taki wynik nie klasyfikuje się więc jako jako 
+\series bold
+nieprawdopodobny
+\series default
+.
+\end_layout
+
+\begin_layout Standard
+Jednak regresja liniowa wyliczona na podstawie nieprawidłowych wyników daje inny rezultat:
+ tu przedział ufności dla głosów oddanych na Nawrockiego,
+ to,
+ dla prawdopodobieństwa 99,73% i 99.9535%,
+ odpowiednio 
+\begin_inset Formula $[462..556]$
+\end_inset
+
+ i 
+\begin_inset Formula $[454,564]$
+\end_inset
+
+.
+ Liczba głosów oddanych na Nawrockiego w naszym przykładzie wynosi 453 i znajduje się poza obydwoma przedziałami.
+ Według klasyfikacji zawartej w pierwszej tablicy niniejszego doniesienia taki wynik nie klasyfikuje się więc jako jako
+\series bold
+ bardzo nieprawdopodobny
+\series default
+.
+ 
+\end_layout
+
+\begin_layout Standard
+Podsumowując:
+ ten sam wynik w konkretnym obwodzie głosowania może przy hipotetycznej regresji opartej na prawidłowych wynikach z całej Polski być uznany za niebudzący wątpliwości (nie jest 
+\series bold
+nieprawdopodobny
+\series default
+),
+ natomiast przy regresji opartej na wynikach obarczonych nieprawidłowościami jawić się jako
+\series bold
+ bardzo nieprawdopodobny
+\series default
+.
+\end_layout
+
+\begin_layout Standard
+To jest tylko przykład,
+ a nie dowód matematyczny.
+ Ten przykład nie pozwala na wyliczenie,
+ jak bardzo zniekształcony jest obraz anomalii,
+ który wynika z regresji liniowej opartej na nieprawidłowych wynikach.
+ Pewne jest jednak,
+ że obraz anomalii jest zniekształcony.
+\end_layout
+
+\begin_layout Subsection
+Na podstawie regresji między pierwszą a drugą turą nie można ocenić,
+ której tury dotyczą nieprawidłowości
+\end_layout
+
+\begin_layout Standard
+Anomalie wykryte przez omawianą tu analizę statystyczną dotyczą rozbieżności między pierwszą a drugą turą w tym samym obwodzie głosowania.
+ Analiza statystyczna nie pozwala na ocenę,
+ czy anomalie wynikają z nieprawidłowości w pierwszej czy w drugiej turze.
+\end_layout
+
+\begin_layout Standard
+Stwierdzono już nieprawidłowości w pewnej liczbie lokali w drugiej turze,
+ ponadto dyskusje o nieprawidłowościach w drugiej turze są bardzo żywe w opinii publicznej.
+ W sumie powstaje wrażenie,
+ ze w drugiej turze były nieprawidłowości,
+ a w pierwszej – nie.
+ Nie ma jednak pewności,
+ czy to wrażenie jest słuszne.
+ Każda z anomalii wykrytych przez omawianą tu analizę statystyczną powinna być traktowana jako wskazówka,
+ że w danym obwodzie głosowania doszło do nieprawidłowości w pierwszej lub drugiej turze,
+ przy czym nieprawidłowości w pierwszej turze na korzyść Rafała Trzaskowskiego wyglądają,
+ w wynikach tej analizy,
+ tak samo,
+ ja nieprawidłowości na korzyść Karola Nawrockiego w drugiej turze (i odwrotnie).
+\end_layout
+
+\begin_layout Subsection
+Model probabilistyczny niedokładnie przewiduje zachowania wyborców głosujących poza miejscem zamieszkania
+\end_layout
+
+\begin_layout Standard
+Regresja liniowa omówiona w niniejszym doniesieniu w jednym ważnym aspekcie różni się regresji użytych przez prof.
+ Hamana i Torója:
+ w omawianej tu regresji liczba zaświadczeń użytych w danym obwodzie w drugiej turze jest jednym z predyktorów (zmiennych objaśniających),
+ a opiniach profesorów tak nie jest.
+ Innymi słowy:
+ ja próbuję przewidzieć zachowanie wyborców w funkcji,
+ między innymi,
+ tej liczby zaświadczeń,
+ podczas gdy obaj profesorowie nie biorą tego czynnika pod uwagę.
+\end_layout
+
+\begin_layout Standard
+Mojemu podejściu można poczynić zarzut,
+ że polega na przewidywaniu wyników drugiej tury (NAW,
+ TRZA,
+ 
+\begin_inset Formula $\Delta$
+\end_inset
+
+) na podstawie,
+ między innymi,
+ predyktora,
+ który też jest wynikiem drugiej tury (liczba użytych zaświadczeń znajduje się w protokole komisji obwodowej z drugiej tury).
+ Taki sposób działania może wydawać się nielogiczny,
+ ale w rzeczywistości nie jest w niczym gorszy od przwidywania wyników drugiej tury na podstawie wyników pierwszej tury:
+ liczba użytych zaświadczeń zapisana w protokole drugiej tury może być nieprawidłowa tak samo,
+ jak wszelkie liczby zapisane w protokole pierwszej tury.
+\end_layout
+
+\begin_layout Standard
+Wydano łącznie 571
+\begin_inset space ~
+\end_inset
+
+999 zaświadczeń,
+ które mogły być użyte w drugiej turze (dane Krajowego Biura Wyborczego),
+ a w drugiej turze użyto łącznie 531
+\begin_inset space ~
+\end_inset
+
+417 zaświadczeń (tak wynika z protokołów wszystkich komisji obwodowych).
+ Te dwie liczby oznaczają,
+ że wyborcy użyli 92,9% wydanych zaświadczeń.
+ Te liczby nie budzą wątpliwości i zdają się wskazywać,
+ że protokoły z drugiej tury nie zawierają dużych nieprawidłowości w tym zakresie.
+\end_layout
+
+\begin_layout Standard
+Regresja liniowa oparta na liczbie zaświadczeń daje mało precyzyjne wyniki,
+ gdyż wyborcy głosujący na podstawie zaświadczeń w różnych obwodach pochodzą z różnych miejsc,
+ np.
+ w jednym obwodzie mogą dominować przybysze z Warszawy,
+ a w innym – z Podkarpacia.
+ To oznacza,
+ że w napływ wyborców,
+ którzy używają zaświadczeń w drugiej turze,
+ najprawdopodobniej wpływa na wynik głosowania w obwodach w różny sposób.
+ Model statystyczny tego nie ujmuje.
+\end_layout
+
+\begin_layout Standard
+Model statystyczny pokazuje jedynie,
+ jaki jest wpływ zwiększonej liczby zaświadczeń w zależności od kategorii,
+ do której należy dany obwód.
+ I tak,
+ w miastach ponad 250 tys.
+ mieszkańców mamy współczynnik regresji 18% dla głosów na Nawrockiego i 0,62 dla głosów na Trzaskowskiego.
+ W dużych miastach obecność znacznej liczby wyborców z zaświadczeniami jest więc silnym predyktorem podwyższonego wyniku Trzaskowskiego.
+ W obwodach wiejskich i miejsko-wiejskich te współczynniki,
+ to,
+ odpowiednio,
+ 46% i 64%.
+ Tu także znaczna liczba wyborców z zaświadczeniami jest więc predyktorem podwyższonego wyniku Trzaskowskiego,
+ ale w dużo mniejszym stopniu niż w dużych miastach.
+\end_layout
+
+\begin_layout Standard
+Podsumowując:
+ przyjęte tu podejście,zgodnie z którym liczba zaświadczeń użytych w drugiej turze jest predyktorem wyniku głosowania w danym obwodzie nie jest wolne od wad,
+ ale jest niewątpliwie lepsze od podejścia polegającego na całkowitym braku uwzględnienia tego predyktora.
 \end_layout
 
 \begin_layout Section

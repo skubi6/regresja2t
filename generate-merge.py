@@ -229,6 +229,7 @@ recols = {
     "Teryt Gminy" : "Teryt",
     "Nr komisji" : "Nr",
     "obs_diff" : r"$\Delta$",
+    "diff_std" : r"$\sigma$",
     "fit_diff" : r"fit$\Delta$",
     "zaswiadczenia2t" : "Zaśw.",
 }
@@ -244,6 +245,7 @@ out["P"] = 0
 out["X"] = 0
 out["B"] = 0
 out["N"] = 0
+out["sum"] = 0
 
 # Zliczamy globalną liczbę rozmaitych anomalii
 
@@ -259,9 +261,9 @@ for probaMin, label in THRESHOLDS:
             
 ncols = len(colsToKeep)
 
-int tabord=0
 
 for i, v in out.iterrows():
+    tabord=0
     (s / v["dir"]).mkdir (parents=True, exist_ok=True)
     #extracts = {'POS': {l : {} for vv, l in THRESHOLDS},
     #            'NEG': {l : {} for vv, l in THRESHOLDS}}
@@ -286,6 +288,7 @@ for i, v in out.iterrows():
                 n = extracts[direction][label].shape[0]
                 #print ('n=', n)
                 out.at[i, label] += n
+                out.at[i, 'sum'] += n
                 globalVals[label+'incr'] += n
                 renamed = extracts[direction][label].rename(columns=recols)[colsToKeep + ['Siedziba']]
                 formatters = {
@@ -294,6 +297,7 @@ for i, v in out.iterrows():
                 formatters ['fitNAW'] = euro_fmt1
                 formatters ['fitTRZA'] = euro_fmt1
                 formatters ['fit$\Delta$'] = euro_fmt1
+                formatters ['$\sigma$'] = euro_fmt1
                 formatters ['D'] = euro_fmt1
                 formatters ['diff_std'] = euro_fmt1
                 formatters ['Gmina'] = split_middle

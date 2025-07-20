@@ -185,7 +185,7 @@ end{adjustwidth}
 \begin_layout Standard
 \align right
 Warszawa,
- 14.07.2025
+ 15.07.2025
 \end_layout
 
 \begin_layout Standard
@@ -242,16 +242,56 @@ Uzasadnione podejrzenie,
 \begin_layout Standard
 Obwody głosowania,
  których dotyczy niniejsze zawiadomienie,
- zostały wymienione w różnych tablicach,
- w zależności od tego:
+ zostały wymienione w tablicach,
+ str.
+ 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+pageref{tabord:0}
+\end_layout
+
+\end_inset
+
+ poniżej.
+ Obwody te pogrupowane są według następujących kryteriów:
 \end_layout
 
 \begin_layout Itemize
-na korzyść którego kandydata (Karola Nawrockiego czy też Rafała Trzaskowskiego) według przyjętego modelu statystycznego doszło tam prawdopodobnie do nieprawidłowości,
+na korzyść którego kandydata (Karola Nawrockiego czy też Rafała Trzaskowskiego) doszło tam prawdopodobnie do nieprawidłowości,
  o ile nieprawidłowości miały miejsce w drugiej turze (hipoteza,
  zgodnie z którą anomalie wykryte statystycznie byłyby efektem nieprawidłowości w pierwszej turze,
  jest omówiona oddzielnie,
- w dalszej części niniejszego doniesienia);
+ rozdz.
+ 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "subsec:ktoratura"
+plural "false"
+caps "false"
+noprefix "false"
+nolink "false"
+
+\end_inset
+
+,
+ str.
+ 
+\begin_inset CommandInset ref
+LatexCommand pageref
+reference "subsec:ktoratura"
+plural "false"
+caps "false"
+noprefix "false"
+nolink "false"
+
+\end_inset
+
+ poniżej);
 \end_layout
 
 \begin_layout Itemize
@@ -657,13 +697,17 @@ W przypadku obwodów,
  wnoszę dodatkowo o przeliczenie głosów z pierwszej tury.
  Ten dodatkowy wniosek dowodowy wynika z tego,
  że anomalie ujawnione przez omawianą tu analizę statystyczną,
- to rozbieżności między wynikami pierwszej a drugiej tury w konkretnych obwodach głosowania.
+ to rozbieżności między wynikami pierwszej a drugiej tury.
  Te anomalie mogą wynikać tak samo z nieprawidłowości w drugiej turze,
  jak i z nieprawidłowości w pierwszej turze.
  Uwaga opinii publicznej skupiła się wyłącznie na drugiej turze,
  jednak postępowanie przygotowawcze powinno opierać się na zasadach logiki,
  a nie jedynie na emocjach opinii publicznej,
- tak więc w uzasadnionych przypadkach wyniki z obu tur powinny zostać sprawdzone.
+ tak więc w uzasadnionych przypadkach —
+ a konkretnie w przypadkach,
+ w których analiza statystyczna ujawnia anomalię,
+ a jednocześnie stwierdzono brak nieprawidłowości w drugiej turze —
+ wyniki pierwszej tury powinny zostać sprawdzone.
 \end_layout
 
 \begin_layout Standard
@@ -694,8 +738,8 @@ W przypadku obwodów głosowania,
  że doszło do nieprawidłowości,
  wnoszę o przesłuchanie członków obwodowej komisji wyborczej,
  mężów zaufania i obserwatorów społecznych na wszelkie okoliczności związane z tymi nieprawidłowościami i z potencjalnymi przestępstwami przeciwko wyborom,
- do których mogło dojść w danej komisji,
- w szczególności:
+ do których mogło dojść w danej komisji.
+ W szczególności:
  w jaki sposób liczono głosy?
  czy komisja liczyła głosy wspólnie?
  czy liczenie głosów było obserwowane przez osoby inne niż członkowie komisji?
@@ -711,7 +755,22 @@ Zwięzły opis analizy statystycznej
 
 \begin_layout Subsection
 Analizowane obwody,
- ich podizał na grupy
+ ich podział na kategorie
+\begin_inset CommandInset label
+LatexCommand label
+name "subsec:grupy"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Jestem informatykiem z dużym doświadczeniem zawodowym,
+ w szczególności w obliczeniach finansowych,
+ a także z doświadczeniem w pracy naukowej (doktorat z informatyki uzyskany we Francji w r.
+ 1993).
+ Osobiście wykonałem opisaną tu analizę statystyczną.
 \end_layout
 
 \begin_layout Standard
@@ -802,11 +861,18 @@ Mamy tu tak naprawdę sześć odrębnych analiz statystycznych.
  Z kolei prof.
  Torój analizował zachowania wyborców dwukrotnie:
  z jednej strony wspólną analizą objął wszystkie obwody w kraju (w tym obwody odrębne),
- a z drugiej – analizował odrębnie niewielkie lokalne grupy obwodów.
+ a z drugiej – analizował oddzielnie niewielkie lokalne grupy obwodów.
 \end_layout
 
 \begin_layout Subsection
 Regresja liniowa
+\begin_inset CommandInset label
+LatexCommand label
+name "subsec:Regresja-liniowa"
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -866,7 +932,7 @@ oraz liczba osób,
 \begin_layout Standard
 W każdym obwodzie głosowania wyliczamy na podstawie tej regresji oczekiwaną wartość zmiennych objaśnianych (w szczególności:
  liczbę głosów na każdego z dwóch kandydatów w drugiej turze).
- W tablicach zamieszczonych w niniejszym doniesieniu tak wyliczone liczby głosów są,
+ W tablicach zamieszczonych w niniejszym doniesieniu tak wyliczone liczby głosów znajdują się,
  odpowiednio,
  w kolumnach fitNAW i fitTRZA.
  Liczby głosów uzyskane w drugiej turze przez każdego z kandydatów,
@@ -882,7 +948,11 @@ Oczekiwana różnica między liczbą głosów na Nawrockiego a liczbą głosów 
 \end_inset
 
  (mamy bardzo prostą zależność:
- w każdej linii tablicy fit
+ w każdej linii tablicy
+\begin_inset Newline newline
+\end_inset
+
+fit
 \begin_inset Formula $\Delta$
 \end_inset
 
@@ -909,8 +979,75 @@ fitTRZA),
 TRZA).
 \end_layout
 
+\begin_layout Standard
+Współczynniki regresji liniowej,
+ wyliczone odrębnie dla każdej z sześciu kategorii obwodów głosowania,
+ znajdują się poniżej,
+ w tablicach 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ref{tab:coef250P}
+\end_layout
+
+\end_inset
+
+-
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ref{tab:coefwies}
+\end_layout
+
+\end_inset
+
+ (str.
+ 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+pageref{tab:coef250P}
+\end_layout
+
+\end_inset
+
+-
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+pageref{tab:coefwies}
+\end_layout
+
+\end_inset
+
+).
+\end_layout
+
 \begin_layout Subsection
 Rozkład prawdopodobieństwa
+\begin_inset CommandInset label
+LatexCommand label
+name "subsec:Rozkład-prawdopodobieństwa"
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1042,11 +1179,11 @@ Te rozkłady prawdopodobieństwa są dwumianowe,
 \begin_inset Formula $\Delta$
 \end_inset
 
- i odchylenie standardowe zwane 
+ i odchylenie standardowe (zazwyczaj zwane 
 \begin_inset Formula $\sigma$
 \end_inset
 
-,
+),
  wynikają z wartości 
 \begin_inset Formula $N$
 \end_inset
@@ -1083,8 +1220,8 @@ W przypadku konkretnej zmiennej (NAW,
 \end_inset
 
 ,
- wyliczyć przedział ufności symetryczny wokół wartości oczekiwanej dla tego prawdopodobieństwa.
- Ten przedział ufności jest zdefiniowany następującą regułą:
+ wyliczyć przedział ufności dla tego prawdopodobieństwa symetryczny wokół wartości oczekiwanej.
+ Ten przedział ufności jest zdefiniowany następującą prostą regułą:
  prawdopodobieństwo,
  że wartość zmiennej losowej znajduje się w przedziale,
  wynosi 
@@ -1100,11 +1237,20 @@ Niniejsza analiza opiera się wyłącznie na zmiennej
 \end_inset
 
  i na odpowiadających jej rozkładach prawdopodobieństwa.
- Zmiennych NAW ani TRZA nie są tu analizowane.
+ Zmienne NAW i TRZA i ich rozkłady prawdopodobieństwa nie są tu analizowane,
+ ale są wyliczone (w szczególności,
+ na podstawie danych i programów zawartych w załączonym nośniku danych można stosunkowo łatwo przeprowadzić analizy statystyczne oparte na tych wartościach).
+\end_layout
+
+\begin_layout Section
+Objaśnienie tablic
 \end_layout
 
 \begin_layout Standard
-Treść pierwszej tablicy niniejszego zawiadomienia (która objaśnia znaczenie kolejnych tablic) można wyjaśnić,
+Treść pierwszej tablicy (str.
+ 2 niniejszego zawiadomienia),
+ która objaśnia znaczenie kolejnych tablic,
+ można wyjaśnić,
  jak następuje:
  w każdej linii wartość w kolumnie
 \emph on
@@ -1119,27 +1265,29 @@ Treść pierwszej tablicy niniejszego zawiadomienia (która objaśnia znaczenie 
 \begin_inset Formula $\Delta$
 \end_inset
 
-dla odpowiednich obwodów głosowania.
+ dla odpowiednich obwodów głosowania.
  Na przykład:
  znajdujący się w pierwszej linii tej kolumny tekst 
 \emph on
 ponad 99,999%
 \emph default
- oznacza,
- że obwody głosowania wyliczone w odpowiadającej mu tablicy,
- określonej słowami 
+,
+ odpowiadający określeniu słownemu 
 \series bold
 \emph on
 wynik niemożliwy
 \series default
 \emph default
 ,
- mają wartość 
+ oznacza,
+ że obwody głosowania przypisane do tego określenia mają wartość 
 \begin_inset Formula $\Delta$
 \end_inset
 
- poza przedziałem ufności dla prawdopodobieństwa 99,999% – a więc z prawdopodobieństwem 99,999% nożna powiedzieć,
- że taki wynik jest niemożliwy.
+ poza przedziałem ufności dla prawdopodobieństwa 99,999% – a więc z prawdopodobieństwem 99,999% można powiedzieć o każdym z tych obwodów,
+ że wyniki głosowania,
+ które się tam pojawiły,
+ są niemożliwe.
  Zgodnie z przyjętym tu modelem,
  takich obwodów nie powinno być wcale,
  tymczasem,
@@ -1148,12 +1296,257 @@ wynik niemożliwy
  co stanowi ====Ppr==== wszystkich przeanalizowanych obwodów.
 \end_layout
 
-\begin_layout Section
-Objaśnienie tablic
+\begin_layout Standard
+Każda z tablic,
+ które wyliczają obwody głosowania objęte niniejszym zawiadomieniem (str.
+ 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+pageref{tabord:0}
 \end_layout
 
-\begin_layout Standard
-xxx
+\end_inset
+
+ powyżej) zawiera następujące kolumny:
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+kat
+\series default
+ —
+ kategoria,
+ do której należy dany obwód (jedna z sześciu kategorii opisanych w rozdz.
+ 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "subsec:grupy"
+plural "false"
+caps "false"
+noprefix "false"
+nolink "false"
+
+\end_inset
+
+ powyżej:
+ 250+,
+ 100+,
+ 40+,
+ 20+,
+ 20-,
+ wieś)
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+Teryt
+\series default
+ —
+ kod Teryt gminy,
+ w której znajduje się obwód głosowania
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+Gmina
+\series default
+,
+ 
+\series bold
+Powiat
+\series default
+ —
+ znaczenie tych kolumn jest oczywiste
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+Nr
+\series default
+ —
+ numer obwodu (obwody numerowane są odrębnie w każdej gminie;
+ kolumny 
+\series bold
+Teryt
+\series default
+ i 
+\series bold
+Nr
+\series default
+,
+ traktowawne łącznie,
+ jednoznacznie określają,
+ o który obwód głosowania chodzi)
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+Zaśw
+\series default
+.
+ —
+ liczba zaświadczeń o prawie do głosowania użytych w drugiej turze
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+NAW
+\series default
+ —
+ liczba głosów na Karola Nawrockiego,
+ zapisana w protokole obwodowej komisji wyborczej
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+fitNAW
+\series default
+ —
+ oczekiwana liczba głosów na Karola Nawrockiego,
+ wyliczona na podstawie regresji liniowej
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+TRZA
+\series default
+,
+ 
+\series bold
+fitTRZA
+\series default
+ —
+ analogiczne kolumny dotyczące Rafała Trzaskowskiego
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\Delta$
+\end_inset
+
+—
+ różnica 
+\series bold
+NAW
+\begin_inset Formula $-$
+\end_inset
+
+TRZA
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+fit
+\series default
+
+\begin_inset Formula $\Delta$
+\end_inset
+
+—
+ różnica między liczbą głosów na Nawrockiego a liczbą głosów na Trzaskowskiego,
+ wyliczona na podstawie regresji liniowej (jest równa różnicy 
+\series bold
+fitNAW
+\begin_inset Formula $-$
+\end_inset
+
+fitTRZA
+\series default
+)
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+D
+\series default
+ —
+ różnica 
+\begin_inset Formula $\Delta-$
+\end_inset
+
+fit
+\begin_inset Formula $\Delta$
+\end_inset
+
+ (liczba,
+ o którą różnica między wynikami obu kandydatów odbiega od tego,
+ co wynika z regresji liniowej)
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\sigma$
+\end_inset
+
+—
+ odchylenie standardowe rozkładu prawdopodobieństwa zmiennej losowej 
+\begin_inset Formula $\Delta$
+\end_inset
+
+;
+ aby w prosty,
+ zdroworozsądkowy sposób przekonać się,
+ czy wynik głosowania w danym obwodzie stanowi anomalię,
+ należy porównać 
+\begin_inset Formula $\sigma$
+\end_inset
+
+ z liczbą 
+\series bold
+D
+\series default
+,
+ czyli z różnicą między 
+\begin_inset Formula $\Delta$
+\end_inset
+
+ a wartością oczekiwaną 
+\begin_inset Formula $\Delta$
+\end_inset
+
+.
+ Jeśli wartość bezwzględna 
+\series bold
+D
+\series default
+ jest kilkakrotnie większa od 
+\begin_inset Formula $\sigma$
+\end_inset
+
+,
+ to wynik głosowania w obwodzie stanowi anomalię.
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+x_edge
+\series default
+ —
+ prawdopodobieństwo odpowiadające przedziałowi ufności,
+ na brzegu którego znajduje się 
+\begin_inset Formula $\Delta$
+\end_inset
+
+.
+ Jest to,
+ według używanego tu modelu,
+ prawdopodobieństwo,
+ z jakim wyniki głosowania w tym obwodzie są nieprawidłowe.
+ 
 \end_layout
 
 \begin_layout Section
@@ -1162,7 +1555,7 @@ Dyskusja dotycząca opisanej tu analizy statystycznej,
 \end_layout
 
 \begin_layout Subsection
-Każdemu obwodowi głosowania odpowiada inny rozkład prawdopodobieństwa – to jest nieunikniona trudność analizy statystycznej
+Każdemu obwodowi głosowania odpowiada inny rozkład prawdopodobieństwa
 \end_layout
 
 \begin_layout Standard
@@ -1172,10 +1565,15 @@ W każdym obwodzie rozkład prawdopodobieństwa każdej ze zmiennych NAW,
 \end_inset
 
  jest inny.
- Prof.
+\end_layout
+
+\begin_layout Standard
+Prof.
  Haman przyjął,
  że jeśli liczymy głosy w drugiej turze w procentach ogółu głosów ważnych – a nie w liczbach bezwzględnych – to można przyjąć,
- że odchylenie standardowe jest zawsze takie samo i wynosi 2,37 punkty procentowe.
+ że odchylenie standardowe jest zawsze takie samo i wynosi 2,37 punkty procentowe —
+ a więc mamy wspólny rozkład prawdopodobieństwa,
+ taki sam dla wszystkich obwodów głosowania.
  Obliczenia oparte na takim założeniu są głęboko błędne.
  W rzeczywistości zarówno odchylenie standardowe,
  jak i przedział ufności dla dowolnego konkretnego prawdopodobieństwa,
@@ -1206,7 +1604,7 @@ Prof.
  gdyż w sposób arbitralny zdecydował,
  że gdy odstępstwo między wartością wyliczoną na podstawie regresji liniowej a wartością zapisaną w protokole obwodowej komisji wyborczej jest mniejsze niż dziesięć głosów,
  to nie uznaje się,
- że mamy do czynienia z anomalią (nieprawidłowością wymagającą zbadania).
+ że mamy do czynienia z anomalią.
  Tak więc profesor wprowadził arbitralną zasadę 
 \begin_inset Quotes pld
 \end_inset
@@ -1239,15 +1637,15 @@ rozbieżność poniżej 10 głosów się nie liczy
 \end_inset
 
 ,
- ale ta zgodność zachodzi tylko dlatego,
+ ale ta zgodność jest przypadkowa i zachodzi tylko dlatego,
  że przyjęto konkretną liczbę głosujących i konkretne prawdopodobieństwo.
 \end_layout
 
 \begin_layout Standard
 To,
  że mamy do czynienia z odrębnymi rozkładami prawdopodobieństwa dla poszczególnych lokali,
- jest jedynie pozorną trudnością.
- Wystarczy oceniać każde zdarzenie (każdą wartość jednej ze zmiennych NAW,
+ oznacza,
+ że należy oceniać każde zdarzenie (każdą wartość jednej ze zmiennych NAW,
  TRZA i 
 \begin_inset Formula $\Delta$
 \end_inset
@@ -1320,7 +1718,7 @@ To,
  że analiza statystyczna opiera się na nieprawidłowych protokołach,
  zmienia jej wynik i powoduje,
  że wynik fałszywie wykazuje nieprawidłowości w przybliżeniu symetryczne (po części na korzyść jednego kandydata,
- a po części – na korzyść drugiego) mimo że – być może – nieprawidłowości ja rzecz jednego z nich w rzeczywistości dominowały.
+ a po części – na korzyść drugiego) mimo że – być może – nieprawidłowości na rzecz jednego z nich w rzeczywistości dominowały.
 \end_layout
 
 \begin_layout Paragraph
@@ -1357,22 +1755,23 @@ Przyjmijmy – ciągle w ramach hipotetycznego przykładu – że zapisany w pro
  Nawrocki 453.
  Zgodnie z hipotetyczną prawidłową regresją liniową,
  ten wynik pozostaje w granicach przedziału ufności dla prawdopodobieństwa 99,73% (chociaż na samej granicy tego przedziału):
- ten przedział,
- to dla głosów na Nawrockiego 
+ ten przedział to,
+ dla głosów na Nawrockiego,
+ 
 \begin_inset Formula $[453..547]$
 \end_inset
 
 .
- Według klasyfikacji zawartej w pierwszej tablicy niniejszego doniesienia taki wynik nie klasyfikuje się więc jako jako 
+ Według klasyfikacji zawartej w pierwszej tablicy niniejszego doniesienia 
 \series bold
-nieprawdopodobny
+taki wynik nie klasyfikuje się więc jako jako nieprawdopodobny
 \series default
 .
 \end_layout
 
 \begin_layout Standard
 Jednak regresja liniowa wyliczona na podstawie nieprawidłowych wyników daje inny rezultat:
- tu przedział ufności dla głosów oddanych na Nawrockiego,
+ tu przedziały ufności dla głosów oddanych na Nawrockiego,
  to,
  dla prawdopodobieństwa 99,73% i 99.9535%,
  odpowiednio 
@@ -1380,14 +1779,14 @@ Jednak regresja liniowa wyliczona na podstawie nieprawidłowych wyników daje in
 \end_inset
 
  i 
-\begin_inset Formula $[454,564]$
+\begin_inset Formula $[454..564]$
 \end_inset
 
 .
  Liczba głosów oddanych na Nawrockiego w naszym przykładzie wynosi 453 i znajduje się poza obydwoma przedziałami.
- Według klasyfikacji zawartej w pierwszej tablicy niniejszego doniesienia taki wynik nie klasyfikuje się więc jako jako
+ Według klasyfikacji zawartej w pierwszej tablicy niniejszego doniesienia 
 \series bold
- bardzo nieprawdopodobny
+taki wynik klasyfikuje się więc jako bardzo nieprawdopodobny
 \series default
 .
  
@@ -1420,6 +1819,13 @@ To jest tylko przykład,
 \begin_layout Subsection
 Na podstawie regresji między pierwszą a drugą turą nie można ocenić,
  której tury dotyczą nieprawidłowości
+\begin_inset CommandInset label
+LatexCommand label
+name "subsec:ktoratura"
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1431,8 +1837,8 @@ Anomalie wykryte przez omawianą tu analizę statystyczną dotyczą rozbieżnoś
 \begin_layout Standard
 Stwierdzono już nieprawidłowości w pewnej liczbie lokali w drugiej turze,
  ponadto dyskusje o nieprawidłowościach w drugiej turze są bardzo żywe w opinii publicznej.
- W sumie powstaje wrażenie,
- ze w drugiej turze były nieprawidłowości,
+ W sumie w opinii publicznej powstaje wrażenie,
+ że w drugiej turze były nieprawidłowości,
  a w pierwszej – nie.
  Nie ma jednak pewności,
  czy to wrażenie jest słuszne.
@@ -1452,7 +1858,7 @@ Model probabilistyczny niedokładnie przewiduje zachowania wyborców głosujący
 Regresja liniowa omówiona w niniejszym doniesieniu w jednym ważnym aspekcie różni się regresji użytych przez prof.
  Hamana i Torója:
  w omawianej tu regresji liczba zaświadczeń użytych w danym obwodzie w drugiej turze jest jednym z predyktorów (zmiennych objaśniających),
- a opiniach profesorów tak nie jest.
+ a w opiniach profesorów tak nie jest.
  Innymi słowy:
  ja próbuję przewidzieć zachowanie wyborców w funkcji,
  między innymi,
@@ -1505,19 +1911,19 @@ Regresja liniowa oparta na liczbie zaświadczeń daje mało precyzyjne wyniki,
  To oznacza,
  że w napływ wyborców,
  którzy używają zaświadczeń w drugiej turze,
- najprawdopodobniej wpływa na wynik głosowania w obwodach w różny sposób.
+ najprawdopodobniej wpływa na wynik głosowania w różnych obwodach w różny sposób.
  Model statystyczny tego nie ujmuje.
 \end_layout
 
 \begin_layout Standard
-Model statystyczny pokazuje jedynie,
+Omawiany tu model statystyczny pokazuje jedynie,
  jaki jest wpływ zwiększonej liczby zaświadczeń w zależności od kategorii,
  do której należy dany obwód.
  I tak,
  w miastach ponad 250 tys.
- mieszkańców mamy współczynnik regresji 18% dla głosów na Nawrockiego i 0,62 dla głosów na Trzaskowskiego.
+ mieszkańców mamy współczynnik regresji 18% dla głosów na Nawrockiego i 62% dla głosów na Trzaskowskiego.
  W dużych miastach obecność znacznej liczby wyborców z zaświadczeniami jest więc silnym predyktorem podwyższonego wyniku Trzaskowskiego.
- W obwodach wiejskich i miejsko-wiejskich te współczynniki,
+ W obwodach wiejskich i miejsko-wiejskich te dwa współczynniki,
  to,
  odpowiednio,
  46% i 64%.
@@ -1527,12 +1933,1189 @@ Model statystyczny pokazuje jedynie,
 
 \begin_layout Standard
 Podsumowując:
- przyjęte tu podejście,zgodnie z którym liczba zaświadczeń użytych w drugiej turze jest predyktorem wyniku głosowania w danym obwodzie nie jest wolne od wad,
+ przyjęte tu podejście,
+ zgodnie z którym liczba zaświadczeń użytych w drugiej turze jest predyktorem wyniku głosowania w danym obwodzie,
+ nie jest wolne od wad,
  ale jest niewątpliwie lepsze od podejścia polegającego na całkowitym braku uwzględnienia tego predyktora.
 \end_layout
 
 \begin_layout Section
-Szczegóły dotyczące analizy statystycznej 
+Szczegóły dotyczące analizy statystycznej
+\end_layout
+
+\begin_layout Subsection
+Pliki
+\end_layout
+
+\begin_layout Standard
+Oto szczegóły dotyczące sposobu,
+ w jaki przeprowadzona została opisana tu analiza statystyczna.
+ Te szczegóły powinny umożliwić – gdyby zaszła taka potrzeba – powtórzenia obliczeń i dokonanie oceny,
+ czy analiza statystyczna została przeprowadzona prawidłowo.
+\end_layout
+
+\begin_layout Standard
+Analiza została przeprowadzona przy pomocy programów w języku Python 3.13.3,
+ przy użyciu systemu operacyjnego Ubuntu 25.04.
+\end_layout
+
+\begin_layout Standard
+Katalog 
+\series bold
+obliczenia
+\series default
+ na załączonym pendrive’ie zawiera,
+ co następuje.
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+requirements.txt
+\series default
+ – lista używanych modułów Pythona i ich wersji,
+ uzyskana poleceniem „
+\series bold
+pip freeze
+\series default
+”;
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+protokoly_po_obwodach_utf8-fixed.xlsx
+\series default
+ – źródło danych:
+ wyniki pierwszej tury ze wszystkich obwodowych komisji wyborczych;
+ ten plik różni się od pliku opublikowanego przez Krajowe Biuro Wyborcze tylko tym,
+ że usunięto z niego trzy wiersze,
+ które są nieprawidłowe,
+ a mianowicie wskazują obwody głosowania,
+ ale nie zawierają wyników.
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+protokoly_2t_wzbogacone_2025.xlsx
+\series default
+ – żródło danych:
+ wyniki drugiej tury ze wszystkich obwodowych komisji wyborczych w kraju.
+ Plik ten oparty jest na zestawieniu danych pochodzącym od Krajowego Biura Wyborczego,
+ ale z następującymi zmianami
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+nie uwzględniono obwodów poza krajem
+\end_layout
+
+\begin_layout Itemize
+kolumna zawierająca liczbę zaświadczeń o prawie do głosowania użytych w każdym z obwodów w drugiej turze nosi nazwę 
+\series bold
+zaswiadczenia2t
+\series default
+ (nazwa została zmieniona,
+ żeby odróżnić tę kolumnę od podobnej kolumny w pliku 
+\series bold
+protokoly_po_obwodach_utf8-fixed.xlsx
+\series default
+,
+ który dotyczy pierwszej tury)
+\end_layout
+
+\begin_layout Itemize
+Dodano kolumnę 
+\series bold
+Ludnosc
+\series default
+,
+ która zawiera ludność gminy,
+ w której znajduje się dany obwód głosowania
+\end_layout
+
+\begin_layout Itemize
+Dodano kolumny 
+\series bold
+lat
+\series default
+ i 
+\series bold
+lng
+\series default
+,
+ które zawierają współrzędne geograficzne siedzib obwodów głosowania (nie są używane w omawianej tu analizie statystycznej)
+\end_layout
+
+\begin_layout Itemize
+Dodano kolumnę 
+\series bold
+prokuratura
+\series default
+,
+ która zawiera nazwę prokuratury okręgowej terytorialnie właściwej dla danego obwodu głosowania
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+
+\series bold
+lincyferki-regresja.py 
+\series default
+– program,
+ który wylicza regresje liniowe i cały szereg wartości,
+ m.in.
+ przedziały ufności omówione powyżej.
+ Program czyni to oddzielnie dla poszczególnych kategorii obwodów głosowania,
+ o których mowa w rozdz.
+ 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "subsec:grupy"
+plural "false"
+caps "false"
+noprefix "false"
+nolink "false"
+
+\end_inset
+
+ powyżej.
+ Program należy uruchomić poleceniem
+\end_layout
+
+\begin_layout Quotation
+
+\series bold
+python lincyferki-regresja.py
+\end_layout
+
+\begin_layout Itemize
+Pliki wygenerowane przez program wspomniany wyżej,
+ a mianowicie:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+
+\series bold
+YmiastoDst250+ar2025.xlsx 
+\series default
+—
+ miasta powyżej 250 tys.
+ mieszkańców
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+YmiastoDst100-250ar2025.xlsx 
+\series default
+—
+ miasta od 100 tys.
+ do 250 tys.
+ mieszkańców
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+YmiastoDst40-100ar2025.xlsx 
+\series default
+—
+ miasta od 40 tys.
+ 100 tys.
+ mieszkańców
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+YmiastoDst20-40ar2025.xlsx 
+\series default
+—
+ miasta od 20 tys.
+ 40 tys.
+ mieszkańców
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+YmiastoDst20-ar2025.xlsx 
+\series default
+—
+ miasta poniżej 20 tys.
+ mieszkańców
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+YwiesDstar2025.xlsx 
+\series default
+—
+ obwody wiejskie i miejsko-wiejskie
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+YmiastoDstar2025.xlsx
+\series default
+ —
+ wszystkie obwody miejskie
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+YkrajDstar2025.xlsx
+\series default
+ —
+ wszstkie obwody w kraju
+\end_layout
+
+\begin_layout Standard
+Spośród tych ośmiu plików,
+ sześć pierwszych stanowi podstawę opisanej tu analizy statystycznej,
+ każdy plik dotyczy innej kategorii obwodów;
+ pozostałe dwa pliki odpowiadają kategoriom szerszym niż te używane w omawianej tu analizie.
+\end_layout
+
+\begin_layout Standard
+Każdy z tych ośmiu plików zawiera dwie tabele:
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+Coefficients
+\series default
+ —
+ obliczone współczynniki regresji dla danej kategorii obwodów głosowania (nie wyjaśniam tu poszczególnych kolumn ani wierszy tej tabeli,
+ gdyż są one łatwo zrozumiałe w świetle opisu regresji zawartego w rozdz.
+ 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "subsec:Regresja-liniowa"
+plural "false"
+caps "false"
+noprefix "false"
+nolink "false"
+
+\end_inset
+
+ powyżej)
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+Y
+\series default
+ —
+ informacje o obwodach głosowania i wyniki drugiej tury pochodzące z pliku 
+\series bold
+protokoly_2t_wzbogacone_2025.xlsx
+\series default
+,
+ ograniczone do obwodów głosowania należących do danej kategorii;
+ informacje te są wzbogacone o następujące dane,
+ wyliczone na podstawie regresji liniowej i rozkładów prawdopodobieństwa:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+
+\series bold
+fitsLiczba głosów nieważnych (z kart ważnych)
+\series default
+ —
+ liczba głosów nieważnych obliczona na podstawie regresji liniowej
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+residsLiczba głosów nieważnych (z kart ważnych)
+\series default
+ —
+ różnica między liczbą głosów nieważnych według protokołu,
+ a 
+\series bold
+fitsLiczba głosów nieważnych (z kart ważnych)
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+fitsw tym z powodu postawienia znaku „X” obok nazwisk obu kandydatów
+\series default
+ oraz 
+\series bold
+residsw tym z powodu postawienia znaku „X” obok nazwisk obu kandydatów
+\series default
+ —
+ podobnie,
+ ale w odniesieniu jedynie do głosów nieważnych z powodu postawienia dwóch znaków X
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+fitsNAWROCKI Karol Tadeusz
+\series default
+ oraz 
+\series bold
+residsNAWROCKI Karol Tadeusz
+\series default
+ —
+ podobnie,
+ ale w odniesieniu do głosów oddanych na Karola Nawrockiego (w niniejszym dokumencie papierowym pierwsza z tych kolumn nosi nazwę 
+\series bold
+fitNAW
+\series default
+)
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+fitsTRZASKOWSKI Rafał Kazimierz
+\series default
+ oraz 
+\series bold
+residsTRZASKOWSKI Rafał Kazimierz
+\series default
+ —
+ podobnie,
+ ale w odniesieniu do Rafała Trzaskowskiego (w niniejszym dokumencie papierowym pierwsza z tych kolumn nosi nazwę 
+\series bold
+fitTRZA
+\series default
+)
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+obs_diff
+\series default
+ oraz 
+\series bold
+fit_diff 
+\series default
+—
+ różnica między liczbą głosów na Nawrockiego a liczbą głosów na Trzaskowskiego,
+ odpowiednio wynikająca z protokołu i wyliczona na podstawie regresji liniowej (w niniejszym dokumencie papierowym te kolumny noszą nazwy 
+\begin_inset Formula $\Delta$
+\end_inset
+
+ oraz fit
+\begin_inset Formula $\Delta)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+D
+\series default
+ – różnica między 
+\series bold
+obs_diff
+\series default
+ a 
+\series bold
+fit_diff
+\series default
+ (w niniejszym dokumencie papierowym ta kolumna występuje pod tą samą nazwą)
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+Drev,
+ Dnav,
+ Dtrza
+\series default
+ —
+ (zbędne)
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+p
+\series default
+ oraz 
+\series bold
+q
+\series default
+ —
+ prawdopodobieństwa,
+ o których mowa w rozdz.
+ 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "subsec:Rozkład-prawdopodobieństwa"
+plural "false"
+caps "false"
+noprefix "false"
+nolink "false"
+
+\end_inset
+
+ powyżej
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+diff_mu
+\series default
+,
+ 
+\series bold
+diff_var
+\series default
+,
+ 
+\series bold
+diff_std
+\series default
+,
+ 
+\series bold
+naw_mu
+\series default
+,
+ 
+\series bold
+naw_var
+\series default
+,
+ 
+\series bold
+naw_std
+\series default
+,
+ 
+\series bold
+trza_mu
+\series default
+,
+ 
+\series bold
+trza_var
+\series default
+,
+ 
+\series bold
+trza_std
+\series default
+ —
+ parametry rozkładów prawdopodobieństwa dla trzech zmiennych losowych zdefiniowanych powyżej:
+ 
+\begin_inset Formula $\Delta$
+\end_inset
+
+(w pliku nazywana 
+\series bold
+diff
+\series default
+),
+ NAW (w pliku:
+ 
+\series bold
+naw
+\series default
+) i TRZA (w pliku:
+ 
+\series bold
+trza
+\series default
+).
+ Te parametry,
+ to wartość oczekiwana 
+\series bold
+mu
+\series default
+,
+ wariancja 
+\begin_inset Formula $\sigma^{2}$
+\end_inset
+
+ zwana tu 
+\series bold
+var
+\series default
+ oraz odchylenie standardowe 
+\begin_inset Formula $\sigma$
+\end_inset
+
+ zwane tu 
+\series bold
+std
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+naw_ci95_low
+\series default
+,
+ 
+\series bold
+naw_ci95_high
+\series default
+,
+ 
+\series bold
+trza_ci95_low
+\series default
+,
+ 
+\series bold
+trza_ci95_high
+\series default
+,
+ 
+\series bold
+diff_ci95_low
+\series default
+,
+ 
+\series bold
+diff_ci95_high
+\series default
+,
+ 
+\series bold
+naw_ci995_low
+\series default
+,
+ 
+\series bold
+naw_ci995_high
+\series default
+,
+ 
+\series bold
+trza_ci995_low
+\series default
+,
+\series bold
+
+\begin_inset Newline newline
+\end_inset
+
+trza_ci995_high
+\series default
+,
+ 
+\series bold
+diff_ci995_low
+\series default
+,
+ 
+\series bold
+diff_ci995_high
+\series default
+,
+ 
+\series bold
+naw_ci9995_low
+\series default
+,
+\series bold
+
+\begin_inset Newline newline
+\end_inset
+
+naw_ci9995_high
+\series default
+,
+ 
+\series bold
+trza_ci9995_low
+\series default
+,
+ 
+\series bold
+trza_ci9995_high
+\series default
+,
+ 
+\series bold
+diff_ci9995_low
+\series default
+,
+\series bold
+
+\begin_inset Newline newline
+\end_inset
+
+diff_ci9995_high
+\series default
+ —
+ granice przedziałów ufności (dolna 
+\series bold
+low
+\series default
+ i górna 
+\series bold
+high
+\series default
+) dla trzech zmiennych losowych:
+ 
+\begin_inset Formula $\Delta$
+\end_inset
+
+ (zwana tu 
+\series bold
+diff
+\series default
+),
+ NAW i TRZA oraz dla trzech prawdopodobieńtw:
+ 95%,
+ 99,5% i 99,95%
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+(te kolumny nie są używane w omawianej tu analizie statystycznej)
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+
+\series bold
+x_edge
+\series default
+ —
+ prawdopodobieństwo,
+ dla którego wartość zmiennej 
+\begin_inset Formula $\Delta$
+\end_inset
+
+ (wynikająca z protokołu komisji obwodowej) znajduje się na brzegu przedziału ufności dla tej zmiennej (w niniejszym dokumencie papierowym ta kolumna występuje pod tą samą nazwą)
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+naw_edge
+\series default
+,
+ 
+\series bold
+trza_edge
+\series default
+ —
+ jak wyżej,
+ ale,
+ odpowiednio,
+ dla zmiennych NAW i TRZA
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+Dnorm
+\series default
+,
+ 
+\series bold
+Dnaw_norm
+\series default
+,
+ 
+\series bold
+Dtrza_norm
+\series default
+ —
+ (zbędne)
+\end_layout
+
+\end_deeper
+\end_deeper
+\begin_layout Itemize
+
+\series bold
+lincyferki-display.py
+\series default
+ – program,
+ który sporządza zestawienia najbardziej nieprawdopodobnych wyników głosowania.
+ Co do ogólnej zasady,
+ program ten należy wywoływać tak:
+\end_layout
+
+\begin_deeper
+\begin_layout Quotation
+
+\series bold
+python
+\series default
+ 
+\series bold
+lincyferki-display.py -o 
+\series default
+\emph on
+źródło-danych
+\end_layout
+
+\begin_layout Standard
+przy czym 
+\emph on
+źródło-danych
+\emph default
+,
+ to nazwa pliku wygenerowanego przez 
+\series bold
+lincyferki-regresja.py
+\series default
+,
+ który,
+ dla określonej kategorii obwodów głosowania,
+ zawiera tabele 
+\series bold
+Cofficients
+\series default
+ (współczynniki regresji liniowej) oraz 
+\series bold
+Y 
+\series default
+(informacje o obwodach,
+ wyniki drugiej tury,
+ obliczenia wynikające z regresji liniowej i z modelu probabilistycznego)
+\end_layout
+
+\begin_layout Standard
+W kontekście omawianej tu analizy statystycznej,
+ aby uzyskać zestawienia najbardziej nieprawdopodobnych wyników głosowania dla poszczególnych kategorii obwodów głosowania,
+ najprościej jest program ten wywołać,
+ jak następuje:
+\end_layout
+
+\begin_layout Quote
+
+\series bold
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+noindent 
+\end_layout
+
+\end_inset
+
+for i in YmiastoDst250+ar2025.xlsx 
+\backslash
+
+\begin_inset Newline newline
+\end_inset
+
+YmiastoDst100-250ar2025.xlsx 
+\backslash
+
+\begin_inset Newline newline
+\end_inset
+
+YmiastoDst40-100ar2025.xlsx 
+\backslash
+
+\begin_inset Newline newline
+\end_inset
+
+YmiastoDst20-40ar2025.xlsx 
+\backslash
+
+\begin_inset Newline newline
+\end_inset
+
+YmiastoDst20-ar2025.xlsx 
+\backslash
+
+\begin_inset Newline newline
+\end_inset
+
+YwiesDstar2025.xlsx 
+\backslash
+
+\begin_inset Newline newline
+\end_inset
+
+YmiastoDstar2025.xlsx 
+\backslash
+
+\begin_inset Newline newline
+\end_inset
+
+YkrajDstar2025.xlsx;
+ do 
+\backslash
+
+\begin_inset Newline newline
+\end_inset
+
+echo $i;
+ python lincyferki-display.py -o $i;
+ done
+\end_layout
+
+\begin_layout Standard
+Wykonanie powyższego polecenia generuje następujące pliki (które znajdują się na załączonym nośniku danych):
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+outliers-YmiastoDst250+ar2025.xlsx
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+outliers-YmiastoDst100-250ar2025.xlsx
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+outliers-YmiastoDst40-100ar2025.xlsx
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+outliers-YmiastoDst20-40ar2025.xlsx
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+outliers-YmiastoDst20-ar2025.xlsx
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+outliers-YwiesDstar2025.xlsx
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+outliers-YmiastoDstar2025.xlsx
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+outliers-YkrajDstar2025.xlsx
+\end_layout
+
+\begin_layout Standard
+Każdy z tych plików odpowiada jednemu z plików wygenerowanych przez 
+\series bold
+lincyferki-regresja.py
+\series default
+,
+ a więc odpowiada jednej z kategorii obwodów głosowania.
+\end_layout
+
+\begin_layout Standard
+Każdy plik zawiera 18 tabel.
+ Każda tabela zawiera 400 nieprawdopodobnych wyników głosowania,
+ wyselekcjonowanych według takiego czy innego kryterium.
+ Spośród tych tabel,
+ sześć jest istotnych dla omawianej tu analizy statystycznej.
+ Są to następujące tabele:
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+x_edgePOS
+\series default
+ —
+ spośród wyników,
+ dla których 
+\begin_inset Formula $\Delta$
+\end_inset
+
+ jest większe niż fit
+\begin_inset Formula $\Delta$
+\end_inset
+
+ (wynik korzystniejszy dla Karola Nawrockiego,
+ niż wynikałoby to z regresji liniowej),
+ te,
+ które mają najwyższy 
+\series bold
+x_edge
+\series default
+ – czyli mają
+\begin_inset space ~
+\end_inset
+
+najbardziej nieprawdopodobne wartości zmiennej losowej 
+\begin_inset Formula $\Delta$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+x_edgeNEG
+\series default
+ —
+ spośród wyników,
+ dla których 
+\begin_inset Formula $\Delta$
+\end_inset
+
+ jest mniejsze niż fit
+\begin_inset Formula $\Delta$
+\end_inset
+
+ (wynik korzystniejszy dla Rafała Trzaskowskiego,
+ niż wynikałaby to z regresji liniowej),
+ te,
+ które mają najwyższy 
+\series bold
+x_edge
+\series default
+ – czyli mają
+\begin_inset space ~
+\end_inset
+
+najbardziej nieprawdopodobne wartości zmiennej losowej 
+\begin_inset Formula $\Delta$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+naw_edgePOS 
+\series default
+oraz 
+\series bold
+naw_edgeNEG
+\series default
+ —
+ spośród wyników,
+ dla których NAW jest,
+ odpowiednio,
+ większe niż fitNAW lub mniejsze niż fitNAW,
+ te,
+ które mają najwyższy 
+\series bold
+naw_edge
+\series default
+ – czyli mają najbardziej nieprawdopodobne wartości zmiennej losowej NAW
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+trza_edgePOS 
+\series default
+oraz 
+\series bold
+trza_edgeNEG
+\series default
+ —
+ jak wyżej,
+ ale dla zmiennej losowej TRZA
+\end_layout
+
+\begin_layout Standard
+Spośród tych szaściu tabel,
+ jedynie dwie,
+ a mianowicie 
+\series bold
+x_edgePOS 
+\series default
+oraz
+\series bold
+ x_edgeNEG
+\series default
+,
+ są faktycznie używane w opisywanej tu analizie statystycznej.
+\end_layout
+
+\end_deeper
+\begin_layout Subsection
+Sposób wyliczania regresji liniowej
+\end_layout
+
+\begin_layout Standard
+Wszystkie obliczenia i całe przetwarzanie danych opisane w niniejszym dokumencie robione jest przez programy 
+\series bold
+lincyferki-regresja.py
+\series default
+ oraz 
+\series bold
+lincyferki-display.py
+\series default
+.
+ Programy te można czytać i analizować,
+ można je też bez większej trudności modyfikować aby uzyskać nieco inną analizę statystyczną (na przykład analizę opartą na tym,
+ jak bardzo nieprawdopodobne wartości przyjmuje zmienna losowa NAW lub TRZA,
+ podczas gdy niniejsza analiza oparta jest na zmiennej 
+\begin_inset Formula $\Delta$
+\end_inset
+
+).
+\end_layout
+
+\begin_layout Standard
+Wśród obliczeń wykonywanych przez te programy,
+ wyliczenie współczynników regresji liniowej może wywoływać najwięcej dyskusji,
+ gdyż takie wyliczenie może być robione na różne sposoby.
+ Wyliczenie to zaczyna się na linii 200 pliku 
+\series bold
+lincyferki-regresja.py
+\series default
+.
+ W programie zapisane są dwa sposoby wyliczenia współczynników,
+ w zależnośdi od boolowskiego parametru 
+\series bold
+robust
+\series default
+.
+ We wszystkich obliczeniach na potrzeby omawianej tu analizy statystycznej,
+ 
+\series bold
+robust
+\series default
+ ma wartość 
+\series bold
+True
+\series default
+ i wyliczenia odwybają się zgodnie z następującym programem (
+\series bold
+Xfeat
+\series default
+,
+ to DataFrame złożony z predyktorów,
+ 
+\series bold
+tgt
+\series default
+,
+ to nazwa zmiennej objaśnianej):
+\end_layout
+
+\begin_layout Verbatim
+
+\end_layout
+
+\begin_layout Verbatim
+from sklearn.linear_model import LinearRegression
+\end_layout
+
+\begin_layout Verbatim
+from sklearn.preprocessing import StandardScaler
+\end_layout
+
+\begin_layout Verbatim
+from sklearn.pipeline import make_pipeline
+\end_layout
+
+\begin_layout Verbatim
+
+\end_layout
+
+\begin_layout Verbatim
+[...]
+\end_layout
+
+\begin_layout Verbatim
+
+\end_layout
+
+\begin_layout Verbatim
+        pipe = make_pipeline(
+\end_layout
+
+\begin_layout Verbatim
+            SimpleImputer(strategy="median"),
+\end_layout
+
+\begin_layout Verbatim
+            StandardScaler(),
+\end_layout
+
+\begin_layout Verbatim
+            (RANSACRegressor(
+\end_layout
+
+\begin_layout Verbatim
+                estimator=HuberRegressor(epsilon=1.35,
+ alpha=0.0),
+\end_layout
+
+\begin_layout Verbatim
+                min_samples=0.5,
+  # tolerate up to 50 % arbitrary rows
+\end_layout
+
+\begin_layout Verbatim
+                residual_threshold=None,
+  # auto:
+ MAD\SpecialChar nobreakdash
+based
+\end_layout
+
+\begin_layout Verbatim
+                max_trials=100,
+\end_layout
+
+\begin_layout Verbatim
+                random_state=0,
+\end_layout
+
+\begin_layout Verbatim
+            ))
+\end_layout
+
+\begin_layout Verbatim
+        )
+\end_layout
+
+\begin_layout Verbatim
+        pipe.fit(Xfeat,
+ Yarg[tgt])
+\end_layout
+
+\begin_layout Verbatim
+        Yarg["fits" + tgt] = pd.Series(
+\end_layout
+
+\begin_layout Verbatim
+            pipe.predict(Xfeat),
+\end_layout
+
+\begin_layout Verbatim
+            index=Xfeat.index
+\end_layout
+
+\begin_layout Verbatim
+        )
 \end_layout
 
 \begin_layout Standard
@@ -1571,6 +3154,11 @@ Nośnik informatyczny (pendrive) zawierający wyliczenia statystyczne
 
 \begin_layout Enumerate
 Statut Stowarzyszenia Obserwatorium Wyborcze
+\end_layout
+
+\begin_layout Standard
+\align right
+Marcin Skubiszewski
 \end_layout
 
 \end_body

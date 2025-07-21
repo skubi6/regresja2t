@@ -101,9 +101,9 @@ renameRegrAux = {
 
 def renameRegr (s):
     for k in renameRegrAux:
-        print ('test', '<'+k+'>', '<'+s+'>')
+        #print ('test', '<'+k+'>', '<'+s+'>')
         if k in s:
-            print ('TAK')
+            #print ('TAK')
             return renameRegrAux[k]
     return s
 
@@ -113,8 +113,10 @@ out['dir'] = prokuraturyLista["Prokuratura Okręgowa"].str.replace(" ", "-", reg
 out['adres'] = out['nazwa']+r'\\'+prokuraturyLista["Adres"].str.replace(", ", r"\\", regex=False)
 
 
-globalVals = {'Pg': 0, 'Xg': 0, 'Bg': 0, 'Ng': 0,
-              'Pincr': 0, 'Xincr': 0, 'Bincr': 0, 'Nincr': 0,
+globalVals = {'PgAlt':0, 'Pg': 0, 'XgAlt':0, 'Xg': 0, 'BgAlt':0, 'Bg': 0,
+              'NgAlt':0, 'Ng': 0, 'sumg' : 0, 'sumgAlt': 0,
+              'Pincr': 0, 'PincrAlt': 0, 'Xincr': 0,'XincrAlt': 0,
+              'Bincr': 0, 'BincrAlt': 0, 'Nincr': 0, 'NincrAlt': 0,
               'Gg': 0}
     
 
@@ -236,7 +238,7 @@ recols = {
 
 colsToKeep = [recols[c] if c in recols else c for c in colsToKeepBase]
 
-print ('colsToKeep', colsToKeep)
+#print ('colsToKeep', colsToKeep)
 
 def esc(val):
     return escape_latex(str(val))
@@ -255,26 +257,25 @@ for probaMin, label in THRESHOLDS:
         for g in fileGroups:
             ou = g['x_edge'+direction]
             ext = (ou[(ou['x_edge'] >= probaMin) &(ou['x_edge'] < probaMax)])
-            print(direction, label, globalVals[label+'g'], ext.shape[0])
+            #print(direction, label, globalVals[label+'g'], ext.shape[0])
             globalVals[label+'g'] += ext.shape[0]
     probaMax = probaMin
             
 ncols = len(colsToKeep)
 
-
-for i, v in out.iterrows():
-    tabord=0
-    (s / v["dir"]).mkdir (parents=True, exist_ok=True)
-    #extracts = {'POS': {l : {} for vv, l in THRESHOLDS},
-    #            'NEG': {l : {} for vv, l in THRESHOLDS}}
+def genTables(i, v, prok):
     extracts = {'POS': {},'NEG': {}}
+    tabord=0
     tabelki = ''
     probaMax = 2
     for probaMin, label in THRESHOLDS:
         for direction in ['POS', 'NEG']:
             for g in fileGroups:
                 ou = g['x_edge'+direction]
-                ext = (ou[(ou['x_edge'] >= probaMin) &(ou['x_edge'] < probaMax) & (ou['prokuratura']==v['nazwa'])]).copy()
+                iii = (ou['x_edge'] >= probaMin) &(ou['x_edge'] < probaMax)
+                if prok:
+                    iii &= ou['prokuratura']==prok
+                ext = (ou[iii]).copy()
                 ext ['kat'] = g['kat']
                 if not ext.empty:
                     if label in extracts[direction]:
@@ -287,17 +288,24 @@ for i, v in out.iterrows():
             if label in extracts[direction]:
                 n = extracts[direction][label].shape[0]
                 #print ('n=', n)
-                out.at[i, label] += n
-                out.at[i, 'sum'] += n
-                globalVals[label+'incr'] += n
+                if prok:
+                    out.at[i, label] += n
+                    out.at[i, 'sum'] += n
+                    globalVals[label+'incr'] += n
+                else:
+                    globalVals[label+'gAlt'] += n
+                    globalVals['sumgAlt'] += n
+                    globalVals[label+'incrAlt'] += n
+                
                 renamed = extracts[direction][label].rename(columns=recols)[colsToKeep + ['Siedziba']]
+                renamed = renamed.sort_values(by="x_edge", ascending=False)
                 formatters = {
                     c: (euro_fmt if pd.api.types.is_float_dtype(
                         renamed[c]) else esc)  for c in colsToKeep}
                 formatters ['fitNAW'] = euro_fmt1
                 formatters ['fitTRZA'] = euro_fmt1
-                formatters ['fit$\Delta$'] = euro_fmt1
-                formatters ['$\sigma$'] = euro_fmt1
+                formatters [r'fit$\Delta$'] = euro_fmt1
+                formatters [r'$\sigma$'] = euro_fmt1
                 formatters ['D'] = euro_fmt1
                 formatters ['diff_std'] = euro_fmt1
                 formatters ['Gmina'] = split_middle
@@ -336,9 +344,99 @@ for i, v in out.iterrows():
                             new_lines.append(note_line)
                 tabelki += '\n'.join (new_lines)
         probaMax = probaMin
+    return tabelki
+
+gtabelki = genTables(None, None, None)
+    
+if gtabelki:
+    with open(s / 'tables.tex', "w", encoding="utf-8") as f:
+        f.write(gtabelki)
+
+
+for i, v in out.iterrows():
+    (s / v["dir"]).mkdir (parents=True, exist_ok=True)
+    tabelki = genTables (i, v, v['nazwa'])
+    
     if tabelki:
         with open(s / v['dir'] / 'tables.tex', "w", encoding="utf-8") as f:
             f.write(tabelki)
+
+
+if False:
+
+    tabord=0
+    extracts = {'POS': {},'NEG': {}}
+    tabelki = ''
+    probaMax = 2
+    for probaMin, label in THRESHOLDS:
+        for direction in ['POS', 'NEG']:
+            for g in fileGroups:
+                ou = g['x_edge'+direction]
+                ext = (ou[(ou['x_edge'] >= probaMin) &(ou['x_edge'] < probaMax) & (ou['prokuratura']==v['nazwa'])]).copy()
+                ext ['kat'] = g['kat']
+                if not ext.empty:
+                    if label in extracts[direction]:
+                        extracts[direction][label] = pd.concat (
+                            [extracts[direction][label], ext],
+                            axis=0,
+                            ignore_index=True)
+                    else:
+                        extracts[direction][label] = ext
+            if label in extracts[direction]:
+                n = extracts[direction][label].shape[0]
+                #print ('n=', n)
+                out.at[i, label] += n
+                out.at[i, 'sum'] += n
+                globalVals[label+'incr'] += n
+                renamed = extracts[direction][label].rename(columns=recols)[colsToKeep + ['Siedziba']]
+                formatters = {
+                    c: (euro_fmt if pd.api.types.is_float_dtype(
+                        renamed[c]) else esc)  for c in colsToKeep}
+                formatters ['fitNAW'] = euro_fmt1
+                formatters ['fitTRZA'] = euro_fmt1
+                formatters [r'fit$\Delta$'] = euro_fmt1
+                formatters [r'$\sigma$'] = euro_fmt1
+                formatters ['D'] = euro_fmt1
+                formatters ['diff_std'] = euro_fmt1
+                formatters ['Gmina'] = split_middle
+                formatters ['Powiat'] = split_middle
+                escaped_header = [escape_latexNomath(str(c)) for c in renamed.columns[:-1]]
+                #print ('renamed len', renamed.shape[0])
+                base_text = renamed.to_latex (
+                    columns=colsToKeep,
+                    index=False,
+                    longtable=True,
+                    escape=False,
+                    caption=rf"Obwody z wynikiem  {EXPLAIN[label]} na korzyść {BENEF[direction]} według modelu\label{{tabord:{tabord}}}." ,
+                    label=f"tab:{direction}{label}",
+                    formatters=formatters,
+                    header=escaped_header,
+                    column_format = "crrllrrrrrrrrrr",
+                    multicolumn=False
+                    
+                )
+                tabord += 1
+                base_text = base_text.replace("Continued on next page", pl_msg)
+                notes    = renamed['Siedziba'].map(escape_latex).tolist()
+                #print ('len(notes)', len(notes))
+                
+                #print ('adresy',notes)
+                note_it  = iter(notes)
+                new_lines = []
+                for ln in base_text.splitlines():
+                    new_lines.append(ln)
+
+                    # heuristics: data rows end with '\\' **and** contain at least one '&'
+                    if ln.rstrip().endswith(r'\\') and '&' in ln:
+                        if not all (sub in ln for sub in [' Teryt ', ' Gmina ', ' Nr ']):
+                            note_text = next(note_it)
+                            note_line = rf"\nopagebreak\multicolumn{{{ncols}}}{{l}}{{\textit{{{note_text}}}}} \\ \midrule"
+                            new_lines.append(note_line)
+                tabelki += '\n'.join (new_lines)
+        probaMax = probaMin
+    #if tabelki:
+    #    with open(s / v['dir'] / 'tables.tex', "w", encoding="utf-8") as f:
+    #        f.write(tabelki)
 
 out.to_csv ('merge.csv', sep=';', index=True,
          header=True, encoding="utf-8",
@@ -362,7 +460,18 @@ for i, v in out.iterrows():
         res = res.replace (f"===={k}====", str(globalVals[k]))
     with open (s / v['dir'] / 'doniesienie.tex', "w", encoding="utf-8") as f:
         f.write(res)
-    
+
+
+with open('doniesienie-multi.tex', encoding="utf-8") as f:
+    texMultiSrc = f.read()
+res = texMultiSrc
+for k in globalVals:
+    res = res.replace (f"===={k}====", str(globalVals[k]))
+with open (s / 'doniesienie-multi-processed.tex', "w", encoding="utf-8") as f:
+    f.write(res)
+
+
+        
 # Teryt Gminy; Gmina; Powiat; Nr komisji; Siedziba; Uprawnienie / Liczba wyborców uprawnionych do głosowania (umieszczonych w spisie, z uwzględnieniem dodatkowych formularzy) w chwili zakończenia głosowania;
 # zaswiadczenia2t; w tym z powodu postawienia znaku „X” obok nazwisk obu kandydatów;
 # NAWROCKI Karol Tadeusz; TRZASKOWSKI Rafał Kazimierz;

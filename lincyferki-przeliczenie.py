@@ -16,7 +16,7 @@ import argparse
 import threading
 import time
 from matplotlib.ticker import PercentFormatter
-
+from matplotlib.ticker import MaxNLocator
 palette = plt.cm.tab10.colors
 
 pis = {
@@ -420,7 +420,8 @@ def drawDrecountLowres (Drecount):
     plt.show(block=False)
     plt.pause(0.1)
 
-def drawDratio (Dratio, ttl="Rozbieżność stwierdzona po przeliczeniu jako procent rozbieżności według naszego modelu",
+def drawDratio (Dratio,
+                ttl="Rozbieżność stwierdzona po przeliczeniu jako procent rozbieżności według naszego modelu",
                 color="red"):
 
     fig, ax1 = plt.subplots(
@@ -437,18 +438,36 @@ def drawDratio (Dratio, ttl="Rozbieżność stwierdzona po przeliczeniu jako pro
     ax1.axvline(x=0, color='black', linewidth=1)
     plt.show(block=False)
     plt.pause(0.1)
-    
-def drawTests (good, almostGood, bad, reverse, *, hiRes=True):
-    if hiRes:
-        binCount =800
-    else:
-        binCount = 250
-    columns = [good, almostGood, bad, reverse]
+
+def drawTests (good, almostGood, bad, reverse, *, x_edgeMap, hiRes=True):
+ 
+    dfs = [good, almostGood, bad, reverse]
+    columns = [good['lp-proba'], almostGood['lp-proba'], bad['lp-proba'], reverse['lp-proba']]
     labels = ['OK', 'prawie OK', 'błąd', 'błąd odwrotny']
     colors = ['#00dd88', '#99ff00', '#ff6644', '#dd00ff']
     full_min = min(np.min(col) for col in columns)
     full_max = max(np.max(col) for col in columns)
 
+    if hiRes:
+        if full_max < 901:
+            binCount = full_max
+        else:
+            binCount =800
+        tickCount = 25
+    else:
+        if full_max < 281:
+            binCount = full_max
+        else:
+            binCount = 250
+        tickCount = 14
+    def pct_fmt(val: float) -> str:
+        if full_max < 901 and hiRes:
+            return f"{val * 100:,.3f}%".replace(".", ",")  # 0.11111 → 11,111 %
+        elif full_max < 901 or hiRes:
+            return f"{val * 100:,.2f}%".replace(".", ",")
+        else:
+            return f"{val * 100:,.1f}%".replace(".", ",")
+    
     binWidth = math.ceil((full_max - full_min + 1) / (binCount-2))
     binLimits = []
     e = full_min-binWidth
@@ -465,12 +484,37 @@ def drawTests (good, almostGood, bad, reverse, *, hiRes=True):
     for hist, color, label in zip(histograms, colors, labels):
         ax1.bar(binLimits[:-1], hist, width=binWidth, bottom=bottom, color=color, label=label, align='edge')
         bottom += hist
-    ax1.set_xlim(full_min-binWidth, full_max+binWidth)
-    ax1.set_xlabel("Liczba przeliczoncyh obwodów, od najbardziej do najmniej nieprawdopodobnych według naszego modelu")
-    ax1.set_ylabel("Count")
-    ax1.set_title("Stacked Histogram of Ordinals by Category")
+    ax1.set_xlim(full_min-binWidth, full_max+binWidth+1)
+    ax1.set_xlabel("Obwody ponownie przeliczone, od najbardziej do najmniej prawdopodobnych nieprawidłowości (według naszego modelu)")
+    ax1.set_ylabel("Częstość")
+    ax1.yaxis.set_major_locator(MaxNLocator(integer=True))
+    ax1.set_title("Przeliczenia")
     ax1.legend()
     ax1.grid(True, linestyle="--", linewidth=0.3)
+
+    ax_edge = ax1.twiny()
+    ax_edge.xaxis.set_ticks_position("bottom")
+    ax_edge.xaxis.set_label_position("bottom")
+    ax_edge.spines["bottom"].set_position(("outward", 40))  # 25 pt lower
+    ax_edge.set_xlim(ax1.get_xlim())
+
+    mapping = (
+        x_edgeMap[["lp-proba", "x_edge"]]
+        .set_index("lp-proba")
+        .sort_index()
+    )
+
+    tick_idx   = np.linspace(0, len(binLimits) - 1, tickCount, dtype=int)
+    lp_ticks   = [int(round(binLimits[i])) for i in tick_idx]
+    edge_labels = [
+        pct_fmt(mapping.loc[lp, "x_edge"]) if lp in mapping.index else (pct_fmt(1.0) if lp < 20 else "")
+        for lp in lp_ticks
+    ]
+
+    ax_edge.set_xticks(lp_ticks)
+    ax_edge.set_xticklabels(edge_labels)
+    ax_edge.set_xlabel("Prawdopodobieństwo nieprawidłowości")
+    
     plt.tight_layout()
     plt.show(block=False)
     plt.pause(0.1)
@@ -493,20 +537,28 @@ def displaySomething ():
     recounted["DrecountPlus"] = recounted["Drecount"].apply (lambda x : x if x >= 0 else 0)
     recounted["DrecountMinus"] = recounted["Drecount"].apply (lambda x : x if 0 >= x else 0)
     Dratio = recounted["Dratio"] = recounted["Drecount"] / recounted["D"]
-    good = recounted[recounted["NIE"]==1]["lp-proba"]
+    cols = ["x_edge", "lp-proba"]
+    good = recounted[recounted["NIE"]==1][cols]
     almostGood = recounted[(recounted["TAK"]==1)
                            & ((recounted["Karol NawrockiD"]-recounted["Rafał TrzaskowskiD"])
-                              .apply (lambda n: -2 <= n and n <= 2))]["lp-proba"]
+                              .apply (lambda n: -2 <= n and n <= 2))][cols]
     bad = recounted[(recounted["TAK"]==1)
                     & ((recounted["Karol NawrockiD"]-recounted["Rafał TrzaskowskiD"])
                        .apply (lambda n: n < -2  or 2 < n))
-                    & (recounted["Dratio"] > 0)]["lp-proba"]
+                    & (recounted["Dratio"] > 0)][cols]
     reverse =  recounted[(recounted["TAK"]==1)
                     & ((recounted["Karol NawrockiD"]-recounted["Rafał TrzaskowskiD"])
                        .apply (lambda n: n < -2  or 2 < n))
-                    & (recounted["Dratio"] < 0)]["lp-proba"]
-    drawTests (good, almostGood, bad, reverse, hiRes=False)
-    drawTests (good, almostGood, bad, reverse, hiRes=True)
+                    & (recounted["Dratio"] < 0)][cols]
+    zoom = 240
+    goodX = good[good['lp-proba'] < zoom]
+    almostGoodX = almostGood[almostGood['lp-proba'] < zoom]
+    badX = bad[bad['lp-proba'] < zoom]
+    reverseX = reverse[reverse['lp-proba'] < zoom]
+    drawTests (good, almostGood, bad, reverse, x_edgeMap=Y[cols], hiRes=False)
+    drawTests (good, almostGood, bad, reverse, x_edgeMap=Y[cols], hiRes=True)
+    drawTests (goodX, almostGoodX, badX, reverseX, x_edgeMap=Y[cols], hiRes=False)
+    drawTests (goodX, almostGoodX, badX, reverseX, x_edgeMap=Y[cols], hiRes=True)
     frauds = recounted[recounted["TAK"]==1]
     #drawDrecount(Drecount)
     #drawDrecountLowres(Drecount)

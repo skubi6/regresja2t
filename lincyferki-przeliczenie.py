@@ -13,6 +13,10 @@ import math
 import statistics
 from datetime import datetime
 import argparse
+import threading
+import time
+from matplotlib.ticker import PercentFormatter
+
 palette = plt.cm.tab10.colors
 
 pis = {
@@ -381,23 +385,143 @@ def plot_histogram_pair(title,
     fig.tight_layout()
     return fig            # return so caller can .savefig() if desired
 
+
+def drawDrecount (Drecount):
+
+    fig, ax1 = plt.subplots(
+        nrows=1, ncols=1, figsize=(34, 20), constrained_layout=True
+    )
+    minVal = round(Drecount.min())
+    maxVal = round(Drecount.max())
+    print ('minVal', minVal, "maxVal", maxVal)
+    ax1.set_xlim(minVal - 8, maxVal + 8)
+    ax1.hist(
+        Drecount,
+        alpha=0.8, color="blue", bins=range(minVal-5, maxVal + 6))
+    ax1.set_title("Różnica między kandydatami: rozbieżności między protokołami komisji a wynikami przeliczeń (dodatnie: błąd w protolole na korzyść Nawrockiego)")
+    ax1.axvline(x=0, color='black', linewidth=1)
+    plt.show(block=False)
+    plt.pause(0.1)
+
+def drawDrecountLowres (Drecount):
+
+    fig, ax1 = plt.subplots(
+        nrows=1, ncols=1, figsize=(17, 10), constrained_layout=True
+    )
+    minVal = round(Drecount.min())
+    maxVal = round(Drecount.max())
+    r = [v for v in range (minVal-5, maxVal+6) if v%4==0]
+    ax1.set_xlim(minVal - 8, maxVal + 8)
+    ax1.hist(
+        Drecount,
+        alpha=0.8, color="blue", bins=r)
+    ax1.set_title("Różnica między kandydatami: rozbieżności między protokołami komisji a wynikami przeliczeń (dodatnie: błąd w protolole na korzyść Nawrockiego)")
+    ax1.axvline(x=0, color='black', linewidth=1)
+    plt.show(block=False)
+    plt.pause(0.1)
+
+def drawDratio (Dratio, ttl="Rozbieżność stwierdzona po przeliczeniu jako procent rozbieżności według naszego modelu",
+                color="red"):
+
+    fig, ax1 = plt.subplots(
+        nrows=1, ncols=1, figsize=(17, 10), constrained_layout=True
+    )
+    minVal = (Dratio.min())
+    maxVal = (Dratio.max())
+    ax1.set_xlim(minVal - .03, maxVal + .03)
+    ax1.hist(
+        Dratio,
+        alpha=0.8, color=color, range=(minVal, maxVal), bins=600)
+    ax1.xaxis.set_major_formatter(PercentFormatter(xmax=1))
+    ax1.set_title(ttl)
+    ax1.axvline(x=0, color='black', linewidth=1)
+    plt.show(block=False)
+    plt.pause(0.1)
+    
+def drawTests (good, almostGood, bad, reverse, *, hiRes=True):
+    if hiRes:
+        binCount =800
+    else:
+        binCount = 250
+    columns = [good, almostGood, bad, reverse]
+    labels = ['OK', 'prawie OK', 'błąd', 'błąd odwrotny']
+    colors = ['#00dd88', '#99ff00', '#ff6644', '#dd00ff']
+    full_min = min(np.min(col) for col in columns)
+    full_max = max(np.max(col) for col in columns)
+
+    binWidth = math.ceil((full_max - full_min + 1) / (binCount-2))
+    binLimits = []
+    e = full_min-binWidth
+    while e < full_max+1+binWidth:
+        binLimits.append(e)
+        e += binWidth
+    histograms = [np.histogram(col, bins=binLimits)[0] for col in columns]
+    counts_stacked = np.vstack(histograms)
+
+    fig, ax1 = plt.subplots(
+        nrows=1, ncols=1, figsize=(34 if hiRes else 17, 20 if hiRes else 10), constrained_layout=True
+    )
+    bottom = np.zeros_like(histograms[0])
+    for hist, color, label in zip(histograms, colors, labels):
+        ax1.bar(binLimits[:-1], hist, width=binWidth, bottom=bottom, color=color, label=label, align='edge')
+        bottom += hist
+    ax1.set_xlim(full_min-binWidth, full_max+binWidth)
+    ax1.set_xlabel("Liczba przeliczoncyh obwodów, od najbardziej do najmniej nieprawdopodobnych według naszego modelu")
+    ax1.set_ylabel("Count")
+    ax1.set_title("Stacked Histogram of Ordinals by Category")
+    ax1.legend()
+    ax1.grid(True, linestyle="--", linewidth=0.3)
+    plt.tight_layout()
+    plt.show(block=False)
+    plt.pause(0.1)
+
 def displaySomething ():
     #Y = pd.read_excel(DATA_DIR / f"Y{l}C{rok}{mergedInfix}.xlsx")
     Y = pd.read_excel(DATA_DIR / "subst" / "nieprawdopodobne2.xlsx")
     Y["lp-proba"] = Y.reset_index().index+1
     przeliczenia = pd.read_excel(DATA_DIR / "Tabela_250_okw.xlsx")
 
-    joined = Y.merge(
+    recounted = Y.merge(
         przeliczenia,
-        how="left",
+        how="inner",
         left_on=["Siedziba", "Nr komisji"],
         right_on=["Siedziba komisji", "Numer komisji"],
         indicator=True,
         suffixes=("", "_prokurator")
     )
-    recounted = Y.merge(
+    Drecount = recounted["Drecount"] = recounted["Rafał TrzaskowskiD"] - recounted["Karol NawrockiD"]
+    recounted["DrecountPlus"] = recounted["Drecount"].apply (lambda x : x if x >= 0 else 0)
+    recounted["DrecountMinus"] = recounted["Drecount"].apply (lambda x : x if 0 >= x else 0)
+    Dratio = recounted["Dratio"] = recounted["Drecount"] / recounted["D"]
+    good = recounted[recounted["NIE"]==1]["lp-proba"]
+    almostGood = recounted[(recounted["TAK"]==1)
+                           & ((recounted["Karol NawrockiD"]-recounted["Rafał TrzaskowskiD"])
+                              .apply (lambda n: -2 <= n and n <= 2))]["lp-proba"]
+    bad = recounted[(recounted["TAK"]==1)
+                    & ((recounted["Karol NawrockiD"]-recounted["Rafał TrzaskowskiD"])
+                       .apply (lambda n: n < -2  or 2 < n))
+                    & (recounted["Dratio"] > 0)]["lp-proba"]
+    reverse =  recounted[(recounted["TAK"]==1)
+                    & ((recounted["Karol NawrockiD"]-recounted["Rafał TrzaskowskiD"])
+                       .apply (lambda n: n < -2  or 2 < n))
+                    & (recounted["Dratio"] < 0)]["lp-proba"]
+    drawTests (good, almostGood, bad, reverse, hiRes=False)
+    drawTests (good, almostGood, bad, reverse, hiRes=True)
+    frauds = recounted[recounted["TAK"]==1]
+    #drawDrecount(Drecount)
+    #drawDrecountLowres(Drecount)
+    #drawDratio(Dratio)
+
+    fraudsImpossible = frauds [frauds['x_edge'] >= 0.99999]
+    print ('frauds', frauds.shape[1], 'fraudsImpossible', fraudsImpossible.shape[1])
+    #drawDratio(fraudsImpossible['Dratio'],
+    #           "Rozbieżność stwierdzona po przeliczeniu dla wynikó°w niemożliwych jako procent rozbieżności według naszego modelu",
+    #           "#aa8800")
+    
+    
+    joined = Y.merge(
         przeliczenia,
-        how="inner",
+        how="left",
         left_on=["Siedziba", "Nr komisji"],
         right_on=["Siedziba komisji", "Numer komisji"],
         indicator=True,
@@ -417,14 +541,13 @@ def displaySomething ():
     outExcel = pd.ExcelWriter('nieprawdopodobne2przel.xlsx', engine="xlsxwriter")
     
     joined.to_excel (outExcel, sheet_name='Y', index=True)
-    recounted["Drecount"] = recounted["Rafał TrzaskowskiD"] - recounted["Karol NawrockiD"]
-    recounted["DrecountPlus"] = recounted["Drecount"].apply (lambda x : x if x >= 0 else 0)
-    recounted["DrecountMinus"] = recounted["Drecount"].apply (lambda x : x if 0 >= x else 0)
-    recounted["Dratio"] = recounted["Drecount"] / recounted["D"]
     
     recounted.to_excel (outExcel, sheet_name='recounted', index=True)
+
+    frauds.to_excel (outExcel, sheet_name='frauds', index=True)
+    fraudsImpossible.to_excel (outExcel, sheet_name='fraudsImpossible', index=True)
     outExcel.close()
-    
+
     return
 
     
@@ -907,7 +1030,8 @@ def main():
         rok = 2025
     KEY1, KEY2 = terytGminy[rok], nrKomisji[rok]
     displaySomething()
-    
+    input ("introduises votre sexe dans la machine")
+        
 if __name__ == "__main__":
     main()
 

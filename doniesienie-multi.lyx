@@ -156,7 +156,7 @@ LARGE
 
 
 \series bold
-O zawiadomieniach,
+Zawiadomienia,
  jakie złożyliśmy do wszystkich czterdziestu sześciu prokuratur okręgowych
 \series default
 
@@ -177,7 +177,7 @@ status open
 
 \emph on
 W dniu 15 lipca wysłaliśmy do wszystkich 46 prokuratur okręgowych zawiadomienia o możliwości popełnienia przestępstwa.
- Zawiadomienia obejmują podejrzenie fałszerstw w ====sumg==== obwodach głosowania łącznie (każda prokuratura dostała wykaz obwodów,
+ Zawiadomienia obejmują podejrzenie fałszerstw w ====sumgAlt==== obwodach głosowania łącznie (każda prokuratura dostała wykaz obwodów,
  które leżą w jej obszarze właściwości terytorialnej).
  Oto treść wspólna dla tych zawiadomień,
  wraz z tabelą komisji,
@@ -198,7 +198,11 @@ Działając w imieniu Stowarzyszenia Obserwatorium Wyborcze,
  zawiadamiam,
  że w dniach 18 i 19 maja oraz 1 i 2 czerwca br.
  prawdopodobnie doszło do przestępstw przeciwko wyborom dotyczących ustalania wyniku i sporządzania protokołów w obwodowych komisjach głosowania,
- które wymienione są w tablicach poniżej i dla których Prokuratura Okręgowa (różne) jest właściwa terytorialnie.
+ które wymienione są w tablicach poniżej i dla których Prokuratura Okręgowa 
+\emph on
+[...]
+\emph default
+ jest właściwa terytorialnie.
  Chodzi w szczególności o przestępstwa z art.
  248 pkt 3 i 4 kodeksu karnego.
 \end_layout
@@ -228,7 +232,14 @@ pageref{tabord:0}
 
 \end_inset
 
- poniżej.
+ poniżej 
+\emph on
+[tablice załączone do niniejszego dokumentu obejmują wszystkie obwody w Polsce,
+ których dotyczą zawiadomienia;
+ w każdym z 46 pism do prokuratury zawarliśmy tablice,
+ które wymieniały jedynie obwody należące do właściwosci terytorialnej danej prokuratury]
+\emph default
+.
  Obwody te pogrupowane są według następujących kryteriów:
 \end_layout
 
@@ -668,7 +679,7 @@ Z ostrożności wnoszę o powołanie biegłego z dziedziny statystyki matematycz
 \begin_layout Standard
 Wnoszę o ponowne przeliczenie głosów przez prokuratora lub pod jego nadzorem (oględziny) z drugiej tury wyborów we wszystkich obwodach głosowania wymienionych w tablicach poniżej (łącznie 
 \emph on
-(różne liczby)
+[...]
 \emph default
  obwodów).
  
@@ -1200,7 +1211,21 @@ Niniejsza analiza opiera się wyłącznie na zmiennej
  i na odpowiadających jej rozkładach prawdopodobieństwa.
  Zmienne NAW i TRZA i ich rozkłady prawdopodobieństwa nie są tu analizowane,
  ale są wyliczone (w szczególności,
- na podstawie danych i programów zawartych w załączonym nośniku danych można stosunkowo łatwo przeprowadzić analizy statystyczne oparte na tych wartościach).
+ na podstawie danych i programów zawartych w załączonym nośniku danych
+\emph on
+ [treść dostępna tu:
+ 
+\begin_inset CommandInset href
+LatexCommand href
+name "https://bigger.smoki.eu.org/ow/obliczenia.zip"
+target "https://bigger.smoki.eu.org/ow/obliczenia.zip"
+literal "false"
+
+\end_inset
+
+]
+\emph default
+ można stosunkowo łatwo przeprowadzić analizy statystyczne oparte na tych wartościach).
 \end_layout
 
 \begin_layout Section
@@ -1925,7 +1950,21 @@ Katalog
 \series bold
 obliczenia
 \series default
- na załączonym pendrive’ie zawiera,
+ na załączonym pendrive’ie
+\emph on
+ [treść dostępna tu:
+ 
+\begin_inset CommandInset href
+LatexCommand href
+name "https://bigger.smoki.eu.org/ow/obliczenia.zip"
+target "https://bigger.smoki.eu.org/ow/obliczenia.zip"
+literal "false"
+
+\end_inset
+
+]
+\emph default
+ zawiera,
  co następuje.
 \end_layout
 

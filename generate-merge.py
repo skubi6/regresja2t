@@ -179,6 +179,8 @@ coefFormatters = {
     'nieważne': euro_fmt,
     "dwa X": euro_fmt,
 }
+
+allY = pd.DataFrame()
 for g in fileGroups:
     g |= pd.read_excel(
         g['outliersNm'],
@@ -202,9 +204,21 @@ for g in fileGroups:
     regrTxt = regrTxt.replace("Continued on next page", pl_msg)
     with open(s / f"coeff{g['filesuffix']}.tex", "w", encoding="utf-8") as f:
         f.write(regrTxt)
+    Y = pd.read_excel(g['regrNm'], sheet_name='Y')
+    globalVals['Gg'] += Y.shape[0]
+    Y['kat'] = g['kat']
+    allY = pd.concat (
+        [allY, Y],
+        axis=0,
+        ignore_index=True)
     
-    globalVals['Gg'] += pd.read_excel(g['regrNm'], sheet_name='Y').shape[0]
-    
+allY = allY.sort_values(by="x_edge", ascending=False)
+
+writerY = pd.ExcelWriter(s / 'nieprawdopodobne.xlsx', engine="xlsxwriter")
+allY.to_excel(writerY, sheet_name="Y", index=False)
+writerY.close()
+
+
 #for l in fileGroups:
 #    print (l)
 
@@ -360,83 +374,6 @@ for i, v in out.iterrows():
     if tabelki:
         with open(s / v['dir'] / 'tables.tex', "w", encoding="utf-8") as f:
             f.write(tabelki)
-
-
-if False:
-
-    tabord=0
-    extracts = {'POS': {},'NEG': {}}
-    tabelki = ''
-    probaMax = 2
-    for probaMin, label in THRESHOLDS:
-        for direction in ['POS', 'NEG']:
-            for g in fileGroups:
-                ou = g['x_edge'+direction]
-                ext = (ou[(ou['x_edge'] >= probaMin) &(ou['x_edge'] < probaMax) & (ou['prokuratura']==v['nazwa'])]).copy()
-                ext ['kat'] = g['kat']
-                if not ext.empty:
-                    if label in extracts[direction]:
-                        extracts[direction][label] = pd.concat (
-                            [extracts[direction][label], ext],
-                            axis=0,
-                            ignore_index=True)
-                    else:
-                        extracts[direction][label] = ext
-            if label in extracts[direction]:
-                n = extracts[direction][label].shape[0]
-                #print ('n=', n)
-                out.at[i, label] += n
-                out.at[i, 'sum'] += n
-                globalVals[label+'incr'] += n
-                renamed = extracts[direction][label].rename(columns=recols)[colsToKeep + ['Siedziba']]
-                formatters = {
-                    c: (euro_fmt if pd.api.types.is_float_dtype(
-                        renamed[c]) else esc)  for c in colsToKeep}
-                formatters ['fitNAW'] = euro_fmt1
-                formatters ['fitTRZA'] = euro_fmt1
-                formatters [r'fit$\Delta$'] = euro_fmt1
-                formatters [r'$\sigma$'] = euro_fmt1
-                formatters ['D'] = euro_fmt1
-                formatters ['diff_std'] = euro_fmt1
-                formatters ['Gmina'] = split_middle
-                formatters ['Powiat'] = split_middle
-                escaped_header = [escape_latexNomath(str(c)) for c in renamed.columns[:-1]]
-                #print ('renamed len', renamed.shape[0])
-                base_text = renamed.to_latex (
-                    columns=colsToKeep,
-                    index=False,
-                    longtable=True,
-                    escape=False,
-                    caption=rf"Obwody z wynikiem  {EXPLAIN[label]} na korzyść {BENEF[direction]} według modelu\label{{tabord:{tabord}}}." ,
-                    label=f"tab:{direction}{label}",
-                    formatters=formatters,
-                    header=escaped_header,
-                    column_format = "crrllrrrrrrrrrr",
-                    multicolumn=False
-                    
-                )
-                tabord += 1
-                base_text = base_text.replace("Continued on next page", pl_msg)
-                notes    = renamed['Siedziba'].map(escape_latex).tolist()
-                #print ('len(notes)', len(notes))
-                
-                #print ('adresy',notes)
-                note_it  = iter(notes)
-                new_lines = []
-                for ln in base_text.splitlines():
-                    new_lines.append(ln)
-
-                    # heuristics: data rows end with '\\' **and** contain at least one '&'
-                    if ln.rstrip().endswith(r'\\') and '&' in ln:
-                        if not all (sub in ln for sub in [' Teryt ', ' Gmina ', ' Nr ']):
-                            note_text = next(note_it)
-                            note_line = rf"\nopagebreak\multicolumn{{{ncols}}}{{l}}{{\textit{{{note_text}}}}} \\ \midrule"
-                            new_lines.append(note_line)
-                tabelki += '\n'.join (new_lines)
-        probaMax = probaMin
-    #if tabelki:
-    #    with open(s / v['dir'] / 'tables.tex', "w", encoding="utf-8") as f:
-    #        f.write(tabelki)
 
 out.to_csv ('merge.csv', sep=';', index=True,
          header=True, encoding="utf-8",

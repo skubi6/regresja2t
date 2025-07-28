@@ -449,24 +449,26 @@ def drawTests (good, almostGood, bad, reverse, *, x_edgeMap, hiRes=True):
     full_max = max(np.max(col) for col in columns)
 
     if hiRes:
+        font_size = 12
+        tickCount = 25
         if full_max < 901:
-            binCount = full_max
+            binCount = full_max+3
         else:
             binCount =800
-        tickCount = 25
     else:
+        font_size = 15
+        tickCount = 12
         if full_max < 281:
-            binCount = full_max
+            binCount = full_max+3
         else:
             binCount = 250
-        tickCount = 14
     def pct_fmt(val: float) -> str:
         if full_max < 901 and hiRes:
             return f"{val * 100:,.3f}%".replace(".", ",")  # 0.11111 → 11,111 %
         elif full_max < 901 or hiRes:
-            return f"{val * 100:,.2f}%".replace(".", ",")
+            return f"{val * 100:,.3f}%".replace(".", ",")
         else:
-            return f"{val * 100:,.1f}%".replace(".", ",")
+            return f"{val * 100:,.2f}%".replace(".", ",")
     
     binWidth = math.ceil((full_max - full_min + 1) / (binCount-2))
     binLimits = []
@@ -477,6 +479,8 @@ def drawTests (good, almostGood, bad, reverse, *, x_edgeMap, hiRes=True):
     histograms = [np.histogram(col, bins=binLimits)[0] for col in columns]
     counts_stacked = np.vstack(histograms)
 
+    plt.rcParams.update({"font.size": font_size})
+    
     fig, ax1 = plt.subplots(
         nrows=1, ncols=1, figsize=(34 if hiRes else 17, 20 if hiRes else 10), constrained_layout=True
     )
@@ -550,15 +554,22 @@ def displaySomething ():
                     & ((recounted["Karol NawrockiD"]-recounted["Rafał TrzaskowskiD"])
                        .apply (lambda n: n < -2  or 2 < n))
                     & (recounted["Dratio"] < 0)][cols]
-    zoom = 240
+    drawTests (good, almostGood, bad, reverse, x_edgeMap=Y[cols], hiRes=False)
+    drawTests (good, almostGood, bad, reverse, x_edgeMap=Y[cols], hiRes=True)
+    zoom = 3300
     goodX = good[good['lp-proba'] < zoom]
     almostGoodX = almostGood[almostGood['lp-proba'] < zoom]
     badX = bad[bad['lp-proba'] < zoom]
     reverseX = reverse[reverse['lp-proba'] < zoom]
-    drawTests (good, almostGood, bad, reverse, x_edgeMap=Y[cols], hiRes=False)
-    drawTests (good, almostGood, bad, reverse, x_edgeMap=Y[cols], hiRes=True)
     drawTests (goodX, almostGoodX, badX, reverseX, x_edgeMap=Y[cols], hiRes=False)
     drawTests (goodX, almostGoodX, badX, reverseX, x_edgeMap=Y[cols], hiRes=True)
+    zoom = 240
+    goodX2 = good[good['lp-proba'] < zoom]
+    almostGoodX2 = almostGood[almostGood['lp-proba'] < zoom]
+    badX2 = bad[bad['lp-proba'] < zoom]
+    reverseX2 = reverse[reverse['lp-proba'] < zoom]
+    drawTests (goodX2, almostGoodX2, badX2, reverseX2, x_edgeMap=Y[cols], hiRes=False)
+    drawTests (goodX2, almostGoodX2, badX2, reverseX2, x_edgeMap=Y[cols], hiRes=True)
     frauds = recounted[recounted["TAK"]==1]
     #drawDrecount(Drecount)
     #drawDrecountLowres(Drecount)

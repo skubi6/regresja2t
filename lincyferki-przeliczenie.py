@@ -471,6 +471,7 @@ def drawTests (good, almostGood, bad, reverse, *, x_edgeMap, hiRes=True):
             return f"{val * 100:,.2f}%".replace(".", ",")
     
     binWidth = math.ceil((full_max - full_min + 1) / (binCount-2))
+    print ('dla próbek do', full_max, 'hiRes', hiRes, 'binWidth', binWidth, 'binCount', binCount)
     binLimits = []
     e = full_min-binWidth
     while e < full_max+1+binWidth:

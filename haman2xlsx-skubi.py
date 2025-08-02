@@ -9,12 +9,14 @@ patternNrKom = re.compile(r'\d{1,3}$')
 def isLp(s: str) -> bool:
     return bool(patternLp.fullmatch(s))
 
+#with open ("haman-fixed.txt", "r", encoding="utf-8") as f:
+#    t = f.read()
+
 t = []
 with pdfplumber.open('haman-OCR.pdf') as pdf:
     for i in range(35):
         page = pdf.pages[i]
         t.append(page.extract_text())
-        tables = page.extract_table()
 
 ogon = []
 lastNum = 0
@@ -37,7 +39,7 @@ for p in t:
             or ' a s o g w' in l
             or 'ł' == l
             or '[' == l):
-            
+
             ogon = []
             continue
         words = l.split(' ')
@@ -56,8 +58,10 @@ for p in t:
                 words = words[:-1]
             elif 'tak' == words[-1][-3:]:
                 odwrocenie = True
-                words = words[:-1]
+                words[-1] = words[-1][:-3]
             row['odwr'] = odwrocenie
+            print (l)
+            print (words)
             row['blad'] = int(words[-1])
             row['blad/sigma'] = float(words[-2].replace(",", "."))
             row['blad%'] = float (words[-3].replace("%", "").replace(",", ".")) / 100
@@ -65,14 +69,14 @@ for p in t:
             row['fitNaw%'] = float (words[-5].replace("%", "").replace(",", ".")) / 100
             row['Trza%'] = float (words[-6].replace("%", "").replace(",", ".")) / 100
             row['Naw%'] = float (words[-7].replace("%", "").replace(",", ".")) / 100
-            
+
             row['Trza'] = int (words[-8])
             row['Naw'] = int (words[-9])
             row['wazne'] = int (words[-10])
             row['karty wazne'] = int (words[-11])
-            
-            
-            
+
+
+
             nrKomIndex = 0
             for i in range (2,6):
                 if patternNrKom.fullmatch(words[i]):
@@ -88,19 +92,21 @@ for p in t:
                     addr += e
                 else:
                     addr += ' ' + e
-            
+
             row['adr'] = addr
-            if not ((row['lp-haman'] == 1 and 10 < lastNum) or lp == lastNum+1):
+            if not ((row['lp-haman'] == 1 and 10 < lastNum) or row['lp-haman'] == lastNum+1):
                 print ('WRONG ORDER')
             if row['lp-haman'] == 1:
                 tablNum += 1
             row['tabl#'] = tablNum
-            hamanT.concat ([hamanT, row], ignore_index=True)
-            
-            print (f'lp {row['lp']} *{gwiazdka} gmina<{gmina}> nrInd {nrKomIndex} addr <{addr}>'
-                   f'nr {nrKom} odwr {odwrocenie} RESZTA {words [1:]}')
+            hamanT = pd.concat ([hamanT, pd.DataFrame([row])], ignore_index=True)
+
+            print (f'lp {row['lp-haman']} *{gwiazdka} gmina<{row['gmina']}> nrInd {nrKomIndex} addr <{addr}>'
+                   f'nr {row['nr']} odwr {odwrocenie} RESZTA {words [1:]}')
             print (ogon)
             ogon = []
-            lastNum = lp
+            lastNum = row['lp-haman']
         else:
             ogon.append (l)
+
+hamanT.to_excel("haman-converted.xlsx", index=False)

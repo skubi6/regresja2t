@@ -530,59 +530,6 @@ def displaySomething ():
     Y["lp-proba"] = Y.reset_index().index+1
     przeliczenia = pd.read_excel(DATA_DIR / "Tabela_250_okw.xlsx")
 
-    recounted = Y.merge(
-        przeliczenia,
-        how="inner",
-        left_on=["Siedziba", "Nr komisji"],
-        right_on=["Siedziba komisji", "Numer komisji"],
-        indicator=True,
-        suffixes=("", "_prokurator")
-    )
-    Drecount = recounted["Drecount"] = recounted["Rafał TrzaskowskiD"] - recounted["Karol NawrockiD"]
-    recounted["DrecountPlus"] = recounted["Drecount"].apply (lambda x : x if x >= 0 else 0)
-    recounted["DrecountMinus"] = recounted["Drecount"].apply (lambda x : x if 0 >= x else 0)
-    Dratio = recounted["Dratio"] = recounted["Drecount"] / recounted["D"]
-    cols = ["x_edge", "lp-proba"]
-    good = recounted[recounted["NIE"]==1][cols]
-    almostGood = recounted[(recounted["TAK"]==1)
-                           & ((recounted["Karol NawrockiD"]-recounted["Rafał TrzaskowskiD"])
-                              .apply (lambda n: -2 <= n and n <= 2))][cols]
-    bad = recounted[(recounted["TAK"]==1)
-                    & ((recounted["Karol NawrockiD"]-recounted["Rafał TrzaskowskiD"])
-                       .apply (lambda n: n < -2  or 2 < n))
-                    & (recounted["Dratio"] > 0)][cols]
-    reverse =  recounted[(recounted["TAK"]==1)
-                    & ((recounted["Karol NawrockiD"]-recounted["Rafał TrzaskowskiD"])
-                       .apply (lambda n: n < -2  or 2 < n))
-                    & (recounted["Dratio"] < 0)][cols]
-    drawTests (good, almostGood, bad, reverse, x_edgeMap=Y[cols], hiRes=False)
-    drawTests (good, almostGood, bad, reverse, x_edgeMap=Y[cols], hiRes=True)
-    zoom = 3300
-    goodX = good[good['lp-proba'] < zoom]
-    almostGoodX = almostGood[almostGood['lp-proba'] < zoom]
-    badX = bad[bad['lp-proba'] < zoom]
-    reverseX = reverse[reverse['lp-proba'] < zoom]
-    drawTests (goodX, almostGoodX, badX, reverseX, x_edgeMap=Y[cols], hiRes=False)
-    drawTests (goodX, almostGoodX, badX, reverseX, x_edgeMap=Y[cols], hiRes=True)
-    zoom = 240
-    goodX2 = good[good['lp-proba'] < zoom]
-    almostGoodX2 = almostGood[almostGood['lp-proba'] < zoom]
-    badX2 = bad[bad['lp-proba'] < zoom]
-    reverseX2 = reverse[reverse['lp-proba'] < zoom]
-    drawTests (goodX2, almostGoodX2, badX2, reverseX2, x_edgeMap=Y[cols], hiRes=False)
-    drawTests (goodX2, almostGoodX2, badX2, reverseX2, x_edgeMap=Y[cols], hiRes=True)
-    frauds = recounted[recounted["TAK"]==1]
-    #drawDrecount(Drecount)
-    #drawDrecountLowres(Drecount)
-    #drawDratio(Dratio)
-
-    fraudsImpossible = frauds [frauds['x_edge'] >= 0.99999]
-    print ('frauds', frauds.shape[1], 'fraudsImpossible', fraudsImpossible.shape[1])
-    #drawDratio(fraudsImpossible['Dratio'],
-    #           "Rozbieżność stwierdzona po przeliczeniu dla wynikó°w niemożliwych jako procent rozbieżności według naszego modelu",
-    #           "#aa8800")
-    
-    
     joined = Y.merge(
         przeliczenia,
         how="left",
@@ -602,13 +549,13 @@ def displaySomething ():
     print("Warning: The following rows in `przeliczenia` matched 0 or more than 1 row in `Y`:")
     print(warn_rows)
 
-    outExcel = pd.ExcelWriter('nieprawdopodobne2przel.xlsx', engine="xlsxwriter")
-        
-    recounted.to_excel (outExcel, sheet_name='recounted', index=True)
+    recounted = joined[joined["_merge" == "both"]]
 
-    frauds.to_excel (outExcel, sheet_name='frauds', index=True)
-    fraudsImpossible.to_excel (outExcel, sheet_name='fraudsImpossible', index=True)
-
+    Drecount = recounted["Drecount"] = recounted["Rafał TrzaskowskiD"] - recounted["Karol NawrockiD"]
+    recounted["DrecountPlus"] = recounted["Drecount"].apply (lambda x : x if x >= 0 else 0)
+    recounted["DrecountMinus"] = recounted["Drecount"].apply (lambda x : x if 0 >= x else 0)
+    Dratio = recounted["Dratio"] = recounted["Drecount"] / recounted["D"]
+    
     # Haman
 
     hamanLeftCols  = ["Gmina",
@@ -654,6 +601,58 @@ def displaySomething ():
         .query('_mergeH2 == "left_only"')
     )
 
+    cols = ["x_edge", "lp-proba"]
+    good = recounted[recounted["NIE"]==1][cols]
+    almostGood = recounted[(recounted["TAK"]==1)
+                           & ((recounted["Karol NawrockiD"]-recounted["Rafał TrzaskowskiD"])
+                              .apply (lambda n: -2 <= n and n <= 2))][cols]
+    bad = recounted[(recounted["TAK"]==1)
+                    & ((recounted["Karol NawrockiD"]-recounted["Rafał TrzaskowskiD"])
+                       .apply (lambda n: n < -2  or 2 < n))
+                    & (recounted["Dratio"] > 0)][cols]
+    reverse =  recounted[(recounted["TAK"]==1)
+                    & ((recounted["Karol NawrockiD"]-recounted["Rafał TrzaskowskiD"])
+                       .apply (lambda n: n < -2  or 2 < n))
+                    & (recounted["Dratio"] < 0)][cols]
+    drawTests (good, almostGood, bad, reverse, x_edgeMap=Y[cols], hiRes=False)
+    drawTests (good, almostGood, bad, reverse, x_edgeMap=Y[cols], hiRes=True)
+    zoom = 3300
+    goodX = good[good['lp-proba'] < zoom]
+    almostGoodX = almostGood[almostGood['lp-proba'] < zoom]
+    badX = bad[bad['lp-proba'] < zoom]
+    reverseX = reverse[reverse['lp-proba'] < zoom]
+    drawTests (goodX, almostGoodX, badX, reverseX, x_edgeMap=Y[cols], hiRes=False)
+    drawTests (goodX, almostGoodX, badX, reverseX, x_edgeMap=Y[cols], hiRes=True)
+    zoom = 240
+    goodX2 = good[good['lp-proba'] < zoom]
+    almostGoodX2 = almostGood[almostGood['lp-proba'] < zoom]
+    badX2 = bad[bad['lp-proba'] < zoom]
+    reverseX2 = reverse[reverse['lp-proba'] < zoom]
+    drawTests (goodX2, almostGoodX2, badX2, reverseX2, x_edgeMap=Y[cols], hiRes=False)
+    drawTests (goodX2, almostGoodX2, badX2, reverseX2, x_edgeMap=Y[cols], hiRes=True)
+    frauds = recounted[recounted["TAK"]==1]
+    #drawDrecount(Drecount)
+    #drawDrecountLowres(Drecount)
+    #drawDratio(Dratio)
+
+    fraudsImpossible = frauds [frauds['x_edge'] >= 0.99999]
+    print ('frauds', frauds.shape[1], 'fraudsImpossible', fraudsImpossible.shape[1])
+    #drawDratio(fraudsImpossible['Dratio'],
+    #           "Rozbieżność stwierdzona po przeliczeniu dla wynikó°w niemożliwych jako procent rozbieżności według naszego modelu",
+    #           "#aa8800")
+    
+
+
+    
+    outExcel = pd.ExcelWriter('nieprawdopodobne2przel.xlsx', engine="xlsxwriter")
+        
+    recounted.to_excel (outExcel, sheet_name='recounted', index=True)
+
+    frauds.to_excel (outExcel, sheet_name='frauds', index=True)
+    fraudsImpossible.to_excel (outExcel, sheet_name='fraudsImpossible', index=True)
+
+
+    
     joined.to_excel (outExcel, sheet_name='Y', index=True)
     rejects.to_excel (outExcel, sheet_name='hamanRejects', index=True)
 

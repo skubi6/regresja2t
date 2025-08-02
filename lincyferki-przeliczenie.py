@@ -603,15 +603,67 @@ def displaySomething ():
     print(warn_rows)
 
     outExcel = pd.ExcelWriter('nieprawdopodobne2przel.xlsx', engine="xlsxwriter")
-    
-    joined.to_excel (outExcel, sheet_name='Y', index=True)
-    
+        
     recounted.to_excel (outExcel, sheet_name='recounted', index=True)
 
     frauds.to_excel (outExcel, sheet_name='frauds', index=True)
     fraudsImpossible.to_excel (outExcel, sheet_name='fraudsImpossible', index=True)
-    outExcel.close()
 
+    # Haman
+
+    hamanLeftCols  = ["Gmina",
+                      "Nr komisji",
+                      "Liczba kart ważnych",
+                      "NAWROCKI Karol Tadeusz",
+                      "TRZASKOWSKI Rafał Kazimierz"]
+    
+    hamanRightCols = ["gmina",
+                      "nr",
+                      "karty wazne",
+                      "Naw",
+                      "Trza"]
+    
+    
+    haman = pd.read_excel(DATA_DIR / "haman-converte-fixed.xlsx")
+    renameDict = {c: f"haman-{c}" for c in haman.columns if not 'haman' in c}
+    haman = haman.rename(columns=renameDict)
+    hamanRightColsRenamed = [renameDict.get(c, c) for c in hamanRightCols]
+
+    joined = (
+        joined.merge(
+            haman,
+            how="left",
+            left_on=hamanLeftCols,
+            right_on=hamanRightColsRenamed,
+            validate="one_to_one",          # ensures no duplicates on either side
+            indicator="_mergeH"
+         )
+    )
+
+    # --------------------------------------------------------------------------
+    # 3.  rows of *haman* that never matched  →  rejects
+    # --------------------------------------------------------------------------
+    rejects = (
+        haman.merge(
+            joined[hamanLeftCols],
+            how="left",
+            left_on=hamanRightColsRenamed,
+            right_on=hamanLeftCols,
+            indicator="_mergeH2"
+        )
+        .query('_mergeH2 == "left_only"')
+    )
+
+    joined.to_excel (outExcel, sheet_name='Y', index=True)
+    rejects.to_excel (outExcel, sheet_name='hamanRejects', index=True)
+
+    joinedHaman = joined.sort_values(by=["haman-tabl#", "lp-haman"],
+                                     na_position="last",
+                                     kind="mergesort")
+    
+    joinedHaman.to_excel (outExcel, sheet_name='Yhaman', index=True)
+    outExcel.close()
+    
     return
 
     

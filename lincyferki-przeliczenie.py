@@ -17,6 +17,8 @@ import threading
 import time
 from matplotlib.ticker import PercentFormatter
 from matplotlib.ticker import MaxNLocator
+from matplotlib.ticker import MultipleLocator
+
 palette = plt.cm.tab10.colors
 
 pis = {
@@ -439,15 +441,33 @@ def drawDratio (Dratio,
     plt.show(block=False)
     plt.pause(0.1)
 
-def drawTests (good, almostGood, bad, reverse, *, x_edgeMap, hiRes=True):
+def drawTests (good, almostGood, bad, reverse, *, x_edgeMap=None, hiRes=True, haman=False,
+               bar_frame=True, bw=False):
  
     dfs = [good, almostGood, bad, reverse]
-    columns = [good['lp-proba'], almostGood['lp-proba'], bad['lp-proba'], reverse['lp-proba']]
+    columnName = 'lp-haman total' if haman else 'lp-proba'
+    try:
+        columns = [good[columnName], almostGood[columnName], bad[columnName], reverse[columnName]]
+    except:
+        print ("GOOD COLUMNS", good.columns.to_list())
+        raise
     labels = ['OK', 'prawie OK', 'błąd', 'błąd odwrotny']
     colors = ['#00dd88', '#99ff00', '#ff6644', '#dd00ff']
-    full_min = min(np.min(col) for col in columns)
-    full_max = max(np.max(col) for col in columns)
+    #full_min = min(np.min(col) for col in columns)
+    #full_max = max(np.max(col) for col in columns)
 
+    full_min = min(
+        np.nanmin( col.replace([np.inf, -np.inf], np.nan) )   # per-column min, NaNs skipped
+        for col in columns
+    )
+
+    full_max = max(
+        np.nanmax( col.replace([np.inf, -np.inf], np.nan) )   # per-column max, NaNs skipped
+        for col in columns
+    )
+
+
+    
     if hiRes:
         font_size = 12
         tickCount = 25
@@ -477,51 +497,82 @@ def drawTests (good, almostGood, bad, reverse, *, x_edgeMap, hiRes=True):
     while e < full_max+1+binWidth:
         binLimits.append(e)
         e += binWidth
-    histograms = [np.histogram(col, bins=binLimits)[0] for col in columns]
+        #histograms = [np.histogram(col, bins=binLimits)[0] for col in columns]
+
+    histograms = [
+        np.histogram(col[np.isfinite(col)], bins=binLimits)[0]
+        for col in columns
+    ]
     counts_stacked = np.vstack(histograms)
 
     plt.rcParams.update({"font.size": font_size})
-    
+
+    figsizeY = (18 if hiRes else 10) if 5 < binWidth else (9 if hiRes else 5)
     fig, ax1 = plt.subplots(
-        nrows=1, ncols=1, figsize=(34 if hiRes else 17, 20 if hiRes else 10), constrained_layout=True
+        nrows=1, ncols=1, figsize=(31 if hiRes else 17, figsizeY), constrained_layout=True
     )
     bottom = np.zeros_like(histograms[0])
-    for hist, color, label in zip(histograms, colors, labels):
-        ax1.bar(binLimits[:-1], hist, width=binWidth, bottom=bottom, color=color, label=label, align='edge')
+    if bw:
+        # light-to-dark grey so the filled areas differ even on screen
+        face_cols = ['0.7', '0.6', '0.4', '0.2']
+        hatches   = ['', '//', 'xx', 'oo']
+    else:
+        face_cols = ['#00dd88', '#99ff00', '#ff4433', '#dd00ff']
+        hatches   = [''] * 4
+        
+    for hist, color, hatch, label in zip(histograms, face_cols, hatches, labels):
+        ax1.bar(
+            binLimits[:-1],
+            hist,
+            width=binWidth,
+            bottom=bottom,
+            align='edge',
+            color=color,
+            hatch=hatch,
+            edgecolor  = 'black' if bar_frame else face,
+            linewidth  = 0.25 if bar_frame else 0.0,
+            label=label)
         bottom += hist
-    ax1.set_xlim(full_min-binWidth, full_max+binWidth+1)
-    ax1.set_xlabel("Obwody ponownie przeliczone, od najbardziej do najmniej prawdopodobnych nieprawidłowości (według naszego modelu)")
-    ax1.set_ylabel("Częstość")
+    #ax1.set_xlim(full_min-binWidth, full_max+binWidth+1)
+    ax1.set_xlim(full_min, full_max+1)
+    ax1.xaxis.set_major_locator(MaxNLocator (nbins=13, integer=True))
+    wedlug = "według J. Hamana" if haman else "(według naszego modelu)"
+    ax1.set_xlabel("Obwody ponownie przeliczone, od najbardziej do najmniej prawdopodobnych nieprawidłowości " + wedlug)
+    if 1 < binWidth:
+        ax1.set_ylabel("Częstość")
     ax1.yaxis.set_major_locator(MaxNLocator(integer=True))
     ax1.set_title("Przeliczenia")
     ax1.legend()
-    ax1.grid(True, linestyle="--", linewidth=0.3)
+    #ax1.grid(True, linestyle="--", linewidth=0.3)
 
-    ax_edge = ax1.twiny()
-    ax_edge.xaxis.set_ticks_position("bottom")
-    ax_edge.xaxis.set_label_position("bottom")
-    ax_edge.spines["bottom"].set_position(("outward", 40))  # 25 pt lower
-    ax_edge.set_xlim(ax1.get_xlim())
+    if not haman:
+        ax_edge = ax1.twiny()
+        ax_edge.xaxis.set_ticks_position("bottom")
+        ax_edge.xaxis.set_label_position("bottom")
+        ax_edge.spines["bottom"].set_position(("outward", 40))  # 25 pt lower
+        ax_edge.set_xlim(ax1.get_xlim())
 
-    mapping = (
-        x_edgeMap[["lp-proba", "x_edge"]]
-        .set_index("lp-proba")
-        .sort_index()
-    )
+        tick_idx   = np.linspace(0, len(binLimits) - 1, tickCount, dtype=int)
+        lp_ticks   = [int(round(binLimits[i])) for i in tick_idx]
+        ax_edge.set_xticks(lp_ticks)
+        mapping = (
+            x_edgeMap[["lp-proba", "x_edge"]]
+            .set_index("lp-proba")
+            .sort_index()
+        )
 
-    tick_idx   = np.linspace(0, len(binLimits) - 1, tickCount, dtype=int)
-    lp_ticks   = [int(round(binLimits[i])) for i in tick_idx]
-    edge_labels = [
-        pct_fmt(mapping.loc[lp, "x_edge"]) if lp in mapping.index else (pct_fmt(1.0) if lp < 20 else "")
-        for lp in lp_ticks
-    ]
+        edge_labels = [
+            pct_fmt(mapping.loc[lp, "x_edge"]) if lp in mapping.index else (pct_fmt(1.0) if lp < 20 else "")
+            for lp in lp_ticks
+        ]
 
-    ax_edge.set_xticks(lp_ticks)
-    ax_edge.set_xticklabels(edge_labels)
-    ax_edge.set_xlabel("Prawdopodobieństwo nieprawidłowości")
-    
+        ax_edge.set_xticklabels(edge_labels)
+        ax_edge.set_xlabel("Prawdopodobieństwo nieprawidłowości")
+
     plt.tight_layout()
+    plt.draw()
     plt.show(block=False)
+    plt.pause(0.1)
     plt.pause(0.1)
 
 def displaySomething ():
@@ -549,15 +600,10 @@ def displaySomething ():
     print("Warning: The following rows in `przeliczenia` matched 0 or more than 1 row in `Y`:")
     print(warn_rows)
 
-    recounted = joined[joined["_merge" == "both"]]
-
-    Drecount = recounted["Drecount"] = recounted["Rafał TrzaskowskiD"] - recounted["Karol NawrockiD"]
-    recounted["DrecountPlus"] = recounted["Drecount"].apply (lambda x : x if x >= 0 else 0)
-    recounted["DrecountMinus"] = recounted["Drecount"].apply (lambda x : x if 0 >= x else 0)
-    Dratio = recounted["Dratio"] = recounted["Drecount"] / recounted["D"]
-    
     # Haman
 
+    outExcel = pd.ExcelWriter('nieprawdopodobne2przel.xlsx', engine="xlsxwriter")
+    
     hamanLeftCols  = ["Gmina",
                       "Nr komisji",
                       "Liczba kart ważnych",
@@ -572,6 +618,7 @@ def displaySomething ():
     
     
     haman = pd.read_excel(DATA_DIR / "haman-converte-fixed.xlsx")
+    haman["lp-haman total"] = haman["lp-haman"] + (haman["tabl#"]-1)*145
     renameDict = {c: f"haman-{c}" for c in haman.columns if not 'haman' in c}
     haman = haman.rename(columns=renameDict)
     hamanRightColsRenamed = [renameDict.get(c, c) for c in hamanRightCols]
@@ -587,6 +634,8 @@ def displaySomething ():
          )
     )
 
+    joined.to_excel (outExcel, sheet_name='joinedDebug', index=True)
+    
     # --------------------------------------------------------------------------
     # 3.  rows of *haman* that never matched  →  rejects
     # --------------------------------------------------------------------------
@@ -601,7 +650,17 @@ def displaySomething ():
         .query('_mergeH2 == "left_only"')
     )
 
-    cols = ["x_edge", "lp-proba"]
+    recounted = joined[joined["_merge"] == "both"]
+
+    Drecount = recounted["Drecount"] = recounted["Rafał TrzaskowskiD"] - recounted["Karol NawrockiD"]
+    recounted["DrecountPlus"] = recounted["Drecount"].apply (lambda x : x if x >= 0 else 0)
+    recounted["DrecountMinus"] = recounted["Drecount"].apply (lambda x : x if 0 >= x else 0)
+    Dratio = recounted["Dratio"] = recounted["Drecount"] / recounted["D"]
+    
+    DratioHaman = recounted ["DratioHaman"] = recounted["Drecount"] / recounted ["haman-blad"]
+    
+    cols = ["x_edge", "lp-proba", "lp-haman total"]
+    colsProba = ["x_edge", "lp-proba"]
     good = recounted[recounted["NIE"]==1][cols]
     almostGood = recounted[(recounted["TAK"]==1)
                            & ((recounted["Karol NawrockiD"]-recounted["Rafał TrzaskowskiD"])
@@ -610,26 +669,45 @@ def displaySomething ():
                     & ((recounted["Karol NawrockiD"]-recounted["Rafał TrzaskowskiD"])
                        .apply (lambda n: n < -2  or 2 < n))
                     & (recounted["Dratio"] > 0)][cols]
+    badHaman = recounted[(recounted["TAK"]==1)
+                    & ((recounted["Karol NawrockiD"]-recounted["Rafał TrzaskowskiD"])
+                       .apply (lambda n: n < -2  or 2 < n))
+                    & (recounted["DratioHaman"] > 0)][cols]
     reverse =  recounted[(recounted["TAK"]==1)
                     & ((recounted["Karol NawrockiD"]-recounted["Rafał TrzaskowskiD"])
                        .apply (lambda n: n < -2  or 2 < n))
                     & (recounted["Dratio"] < 0)][cols]
-    drawTests (good, almostGood, bad, reverse, x_edgeMap=Y[cols], hiRes=False)
-    drawTests (good, almostGood, bad, reverse, x_edgeMap=Y[cols], hiRes=True)
+    reverseHaman =  recounted[(recounted["TAK"]==1)
+                    & ((recounted["Karol NawrockiD"]-recounted["Rafał TrzaskowskiD"])
+                       .apply (lambda n: n < -2  or 2 < n))
+                    & (recounted["DratioHaman"] < 0)][cols]
+    #drawTests (good, almostGood, bad, reverse, x_edgeMap=Y[colsProba], hiRes=False)
+    drawTests (good, almostGood, bad, reverse, x_edgeMap=Y[colsProba], hiRes=False, bar_frame=True)
+    drawTests (good, almostGood, bad, reverse, x_edgeMap=Y[colsProba], hiRes=False, bar_frame=True, bw=True)
+    #drawTests (good, almostGood, bad, reverse, x_edgeMap=Y[colsProba], hiRes=True)
+
+    #drawTests (good, almostGood, badHaman, reverseHaman, haman=True, hiRes=False)
+    drawTests (good, almostGood, badHaman, reverseHaman, haman=True, hiRes=False, bar_frame=True)
+    drawTests (good, almostGood, badHaman, reverseHaman, haman=True, hiRes=False, bar_frame=True, bw=True)
+    #drawTests (good, almostGood, badHaman, reverseHaman, haman=True, hiRes=True)
     zoom = 3300
     goodX = good[good['lp-proba'] < zoom]
     almostGoodX = almostGood[almostGood['lp-proba'] < zoom]
     badX = bad[bad['lp-proba'] < zoom]
     reverseX = reverse[reverse['lp-proba'] < zoom]
-    drawTests (goodX, almostGoodX, badX, reverseX, x_edgeMap=Y[cols], hiRes=False)
-    drawTests (goodX, almostGoodX, badX, reverseX, x_edgeMap=Y[cols], hiRes=True)
+    #drawTests (goodX, almostGoodX, badX, reverseX, x_edgeMap=Y[colsProba], hiRes=False)
+    drawTests (goodX, almostGoodX, badX, reverseX, x_edgeMap=Y[colsProba], hiRes=False, bar_frame=True)
+    drawTests (goodX, almostGoodX, badX, reverseX, x_edgeMap=Y[colsProba], hiRes=False, bar_frame=True, bw=True)
+    #drawTests (goodX, almostGoodX, badX, reverseX, x_edgeMap=Y[colsProba], hiRes=True)
     zoom = 240
     goodX2 = good[good['lp-proba'] < zoom]
     almostGoodX2 = almostGood[almostGood['lp-proba'] < zoom]
     badX2 = bad[bad['lp-proba'] < zoom]
     reverseX2 = reverse[reverse['lp-proba'] < zoom]
-    drawTests (goodX2, almostGoodX2, badX2, reverseX2, x_edgeMap=Y[cols], hiRes=False)
-    drawTests (goodX2, almostGoodX2, badX2, reverseX2, x_edgeMap=Y[cols], hiRes=True)
+    #drawTests (goodX2, almostGoodX2, badX2, reverseX2, x_edgeMap=Y[colsProba], hiRes=False)
+    drawTests (goodX2, almostGoodX2, badX2, reverseX2, x_edgeMap=Y[colsProba], hiRes=False, bar_frame=True)
+    drawTests (goodX2, almostGoodX2, badX2, reverseX2, x_edgeMap=Y[colsProba], hiRes=False, bar_frame=True, bw=True)
+    #drawTests (goodX2, almostGoodX2, badX2, reverseX2, x_edgeMap=Y[colsProba], hiRes=True)
     frauds = recounted[recounted["TAK"]==1]
     #drawDrecount(Drecount)
     #drawDrecountLowres(Drecount)
@@ -644,7 +722,6 @@ def displaySomething ():
 
 
     
-    outExcel = pd.ExcelWriter('nieprawdopodobne2przel.xlsx', engine="xlsxwriter")
         
     recounted.to_excel (outExcel, sheet_name='recounted', index=True)
 
@@ -664,403 +741,6 @@ def displaySomething ():
     outExcel.close()
     
     return
-
-    
-    if mergedInfix:
-        print ('classify')
-        Y["class"] = Y.apply(classify, axis=1)
-    else:
-        print ('NO classify')
-        Y["class"] = "black";
-        #Y.loc[:, "class"] = "black"
-    Y["color"] = Y["class"].map(colors)
-
-    #print (nowAfterInit-nowStart)
-
-    nowRead = datetime.now()
-
-    #print ('reading time', nowRead-nowStart)
-    denom = (Y[c[rok][0]] + Y[c[rok][1]]) ** 0.5
-    obs_norm  = Y["obs_diff"]  / denom
-    fit_norm  = Y["fit_diff"]  / denom
-
-    if False:
-        fig_raw, ax_raw = plt.subplots(figsize=(38.4, 21.6), dpi=100)
-        ax_raw.scatter(
-            Y["fit_diff"],
-            Y["obs_diff"],
-            s=8, marker=".", c=Y["color"], alpha=0.8
-        )
-        ax_raw.axvline(0, color="grey", linewidth=0.8)
-        ax_raw.axhline(0, color="grey", linewidth=0.8)
-        ax_raw.set_xlabel("fit_diff")
-        ax_raw.set_ylabel("obs_diff")
-        ax_raw.set_title("obs_diff vs fit_diff " + lVisible)
-        fig_raw.tight_layout()
-
-        # ---------- Window 2 : normalised --------------------------------------------
-        fig_norm, ax_norm = plt.subplots(figsize=(38.4, 21.6), dpi=100)
-        ax_norm.scatter(
-            fit_norm,
-            obs_norm,
-            s=6, marker=".", color=Y["color"], alpha=0.8
-        )
-        ax_norm.axvline(0, color="grey", linewidth=0.8)
-        ax_norm.axhline(0, color="grey", linewidth=0.8)
-
-        ax_Dnorm.axhline( Ylimit_Dnorm, color="grey", linewidth=0.8)
-        ax_Dnorm.axhline(-Ylimit_Dnorm, color="grey", linewidth=0.8)
-
-        ax_norm.set_xlabel("fit_diff (norm)")
-        ax_norm.set_ylabel("obs_diff (norm)")
-        ax_norm.set_title("Normalised obs_diff vs fit_diff " + lVisible)
-        fig_norm.tight_layout()
-
-    if histogramy:
-        fig_D, ax_D = plt.subplots(figsize=(38.4, 21.6), dpi=100)
-        D_trans = squash(Y["D"], Ylimit_D, K_D)
-        ax_D.scatter(
-            Y["fit_diff"],
-            D_trans,
-            s=8, marker=".", color=Y["color"], alpha=0.8
-        )
-
-
-        xmin, xmax = ax_D.get_xlim()
-        x_vals = np.array([xmin, xmax])
-        #ax_D.plot(x_vals,  x_vals,  color="grey", linewidth=0.8)  # X = Y
-        #ax_D.plot(x_vals, -x_vals,  color="grey", linewidth=0.8)  # X = -Y
-
-        ax_D.set_ylim(-Ylimit_D*1.3, Ylimit_D*1.3)   # ← pick your ymin,ymax here
-
-        ax_D.axvline(0, color="grey", linewidth=0.8)
-        ax_D.axhline(0, color="grey", linewidth=0.8)
-
-        ax_D.axhline( Ylimit_D, color="grey", linewidth=0.8)
-        ax_D.axhline(-Ylimit_D, color="grey", linewidth=0.8)
-
-        squash_line_segments(ax_D,     Ylimit_D,     K_D,  sign=+1,
-                             color="grey", linewidth=0.8)
-        squash_line_segments(ax_D,     Ylimit_D,     K_D,  sign=-1,
-                             color="grey", linewidth=0.8)
-
-
-        ax_D.set_xlabel("fit_diff")
-        ax_D.set_ylabel("D")
-        ax_D.set_title("obs_diff vs fit_diff " + lVisible)
-        fig_D.tight_layout()
-
-        # ---------- Window 2 : normalised --------------------------------------------
-        Dnorm_trans = squash(Y["Dnorm"], Ylimit_Dnorm, K_Dnorm)
-
-        fig_Dnorm, ax_Dnorm = plt.subplots(figsize=(38.4, 21.6), dpi=100)
-        ax_Dnorm.scatter(
-            fit_norm,
-            Dnorm_trans,
-            s=6, marker=".", color=Y["color"], alpha=0.8
-        )
-        ax_Dnorm.axvline(0, color="grey", linewidth=0.8)
-        ax_Dnorm.axhline(0, color="grey", linewidth=0.8)
-
-        xmin, xmax = ax_Dnorm.get_xlim()
-        x_vals = np.array([xmin, xmax])
-
-        ax_Dnorm.set_xlim(xmin, xmax)
-        ax_Dnorm.set_ylim(-Ylimit_Dnorm*1.3, Ylimit_Dnorm*1.3)   # ← pick your ymin,ymax here
-
-        ax_Dnorm.axhline( Ylimit_Dnorm, color="grey", linewidth=0.8)
-        ax_Dnorm.axhline(-Ylimit_Dnorm, color="grey", linewidth=0.8)
-
-        squash_line_segments(ax_Dnorm, Ylimit_Dnorm, K_Dnorm, sign=+1,
-                             color="grey", linewidth=0.8)
-        squash_line_segments(ax_Dnorm, Ylimit_Dnorm, K_Dnorm, sign=-1,
-                             color="grey", linewidth=0.8)
-
-        ax_Dnorm.set_xlabel("fit_diff (norm)")
-        ax_Dnorm.set_ylabel("D (norm)")
-        ax_Dnorm.set_title("Normalised obs_diff vs fit_diff " + lVisible)
-        fig_Dnorm.tight_layout()
-
-        plt.show()
-
-        fig, (ax1, ax2) = plt.subplots(
-            nrows=1, ncols=2, figsize=(60, 20), constrained_layout=True
-        )
-
-
-        # ── left-hand histogram: raw D ────────────────────────────────────────────────
-        ax1.hist(
-            Y["D"], bins=601, alpha=0.8, color="steelblue", range=(-300, 300)
-        )
-        ax1.axvline(0, color="black", linewidth=0.8)          # central line at 0
-        ax1.set_title("Histogram D = (c1−c2) − predicted " + lVisible)
-        ax1.set_xlabel("D")
-        ax1.set_ylabel("precincts")
-        ax1.set_xlim(-200, 200)
-
-        # ── right-hand histogram: normalised D ────────────────────────────────────────
-        ax2.hist(
-            Y["Dnorm"], bins=800, alpha=0.8, color="indianred", range=(-10, 10)
-        )
-        ax2.axvline(0, color="black", linewidth=0.8)          # central line at 0
-        ax2.set_title("Histogram Dnorm = (c1−c2) − predicted (normalized) " + lVisible)
-        ax2.set_xlabel("normalized D")
-        ax2.set_ylabel("precincts")
-        ax2.set_xlim(-10, 10)
-
-        plt.show()
-
-        fig, ax1 = plt.subplots(
-            nrows=1, ncols=1, figsize=(60, 20), constrained_layout=True
-        )
-
-        # ── left-hand histogram: raw D ────────────────────────────────────────────────
-        #vals = ((Y["D"] + 2) // 4).astype(int)       # the integer data
-        edges = np.arange(-302.5, 301.5, 6)
-        ax1.hist(
-            Y["D"], bins=edges, alpha=0.8, color="steelblue")
-        ax1.set_xlim(-100, 100)
-        ax1.axvline(0, color="black", linewidth=0.8)          # central line at 0
-        ax1.set_title("Histogram D = (c1−c2) − predicted (grouped)" + lVisible)
-        ax1.set_xlabel("D")
-        ax1.set_ylabel("precincts")
-        ax1.set_xlim(-300, 300)
-
-        plt.show()
-        
-        fig, (ax1, ax2) = plt.subplots(
-            nrows=1, ncols=2, figsize=(60, 20), constrained_layout=True
-        )
-
-
-        # ── left-hand histogram: raw D ────────────────────────────────────────────────
-        ax1.hist(
-            Y["Dnaw"],
-            bins=601, alpha=0.8, color="blue", range=(-300, 300)
-        )
-        ax1.axvline(0, color="black", linewidth=0.8)          # central line at 0
-        ax1.set_title("Histogram delta NAW = NAWROCKI − predicted " + lVisible)
-        ax1.set_xlabel("D NAW")
-        ax1.set_ylabel("precincts")
-        ax1.set_xlim(-200, 200)
-
-        # ── right-hand histogram: normalised D ────────────────────────────────────────
-        ax2.hist(
-            Y["Dnaw_norm"], bins=800, alpha=0.8, color="steelblue", range=(-10, 10)
-        )
-        ax2.axvline(0, color="black", linewidth=0.8)          # central line at 0
-        ax2.set_title("Histogram delta NAW norm = NAWROCKI − predicted (normalized) " + lVisible)
-        ax2.set_xlabel("normalized D NAW")
-        ax2.set_ylabel("precincts")
-        ax2.set_xlim(-10, 10)
-
-        plt.show()
-
-
-        fig, (ax1, ax2) = plt.subplots(
-            nrows=1, ncols=2, figsize=(60, 20), constrained_layout=True
-        )
-
-
-        # ── left-hand histogram: raw D ────────────────────────────────────────────────
-        ax1.hist(
-            Y["Dtrza"],
-            bins=601, alpha=0.8, color="red", range=(-300, 300)
-        )
-        ax1.axvline(0, color="black", linewidth=0.8)          # central line at 0
-        ax1.set_title("Histogram delta TRZA = TRZASKOWSKI − predicted " + lVisible)
-        ax1.set_xlabel("D TRZA")
-        ax1.set_ylabel("precincts")
-        ax1.set_xlim(-200, 200)
-
-        # ── right-hand histogram: normalised D ────────────────────────────────────────
-        ax2.hist(
-            Y["Dtrza_norm"], bins=800, alpha=0.8, color="indianred", range=(-10, 10)
-        )
-        ax2.axvline(0, color="black", linewidth=0.8)          # central line at 0
-        ax2.set_title("Histogram delta TRZA norm = TRZASKOWSKI − predicted (normalized) " + lVisible)
-        ax2.set_xlabel("normalized D TRZA")
-        ax2.set_ylabel("precincts")
-        ax2.set_xlim(-10, 10)
-
-        plt.show()
-
-
-    nowCalc = datetime.now()
-
-    # ------------------------------------------------------------
-    # 8C.  List ±N outliers for D and for relative D
-    # ------------------------------------------------------------
-
-    if addOutliers:
-        writer = pd.ExcelWriter(f"outliers-{filename}", engine="xlsxwriter")
-
-        # ---------- helper: take any Series of scores ----------------
-        #    TOP_N = Y.shape[0]//3
-        TOP_N = 400
-
-        def sheet_name(label, sign):
-            return f"{label}_{sign}"
-
-        criterion = "Dnorm"
-
-        large = Y.nlargest(TOP_N, criterion)
-        small = Y.nsmallest(TOP_N, criterion)
-        #mid = Y.nsmallest(TOP_N*2, criterion).nlargest(TOP_N, criterion)
-
-        def add_outliers(series: pd.Series, label: str, sign : str,  k: int = TOP_N):
-            slicer = series.nlargest(k) if "pos" == sign else series.nsmallest(k)
-            #for sign, slicer in [("pos", series.nlargest(k)),
-            #                     ("neg", series.nsmallest(k))]:
-            sheet = sheet_name(label, sign)
-            df = (
-                slicer.rename("metric")
-                .to_frame()
-                .join(Y, how="left")     # keep all original cols
-                .reset_index()              # bring keys back as columns
-            )
-            df.to_excel(writer, sheet_name=sheet, index=False)
-
-        # ---------- 6B.  ±100 outliers for D and D_rel ---------------
-        add_outliers(Y["D"], "D", "pos")
-        add_outliers(Y["D"], "D", "neg")
-        add_outliers(Y["Dnorm"], "Dnorm", "pos")
-        add_outliers(Y["Dnorm"], "Dnorm", "neg")
-        #add_outliers(Y["D"],      "D")
-        #add_outliers(Y["Dnorm"],  "Dnorm")
-        top_rows = (
-            Y[Y["D"] > 0]                  # 1. bierzemy tylko wiersze z D > 0
-            .nlargest(TOP_N, "x_edge")     # 2. wybieramy TOP_N wg największego x_edge
-        )
-        top_rows.to_excel(writer, sheet_name="x_edgePOS", index=False)
-        bottom_rows = (
-            Y[Y["D"] < 0]                  # 1. bierzemy tylko wiersze z D > 0
-            .nlargest(TOP_N, "x_edge")     # 2. wybieramy TOP_N wg największego x_edge
-        )
-        bottom_rows.to_excel(writer, sheet_name="x_edgeNEG", index=False)
-
-        
-        add_outliers(Y["Dnaw"], "Dnaw", "pos")
-        add_outliers(Y["Dnaw"], "Dnaw", "neg")
-        add_outliers(Y["Dnaw_norm"], "Dnaw_norm", "pos")
-        add_outliers(Y["Dnaw_norm"], "Dnaw_norm", "neg")
-        top_rows = (
-            Y[Y["Dnaw"] > 0]                  # 1. bierzemy tylko wiersze z D > 0
-            .nlargest(TOP_N, "naw_edge")     # 2. wybieramy TOP_N wg największego x_edge
-        )
-        top_rows.to_excel(writer, sheet_name="naw_edgePOS", index=False)
-        bottom_rows = (
-            Y[Y["Dnaw"] < 0]                  # 1. bierzemy tylko wiersze z D > 0
-            .nlargest(TOP_N, "naw_edge")     # 2. wybieramy TOP_N wg największego x_edge
-        )
-        bottom_rows.to_excel(writer, sheet_name="naw_edgeNEG", index=False)
-
-        
-        add_outliers(Y["Dtrza"], "Dtrza", "pos")
-        add_outliers(Y["Dtrza"], "Dtrza", "neg")
-        add_outliers(Y["Dtrza_norm"], "Dtrza_norm", "pos")
-        add_outliers(Y["Dtrza_norm"], "Dtrza_norm", "neg")
-        top_rows = (
-            Y[Y["Dtrza"] > 0]                  # 1. bierzemy tylko wiersze z D > 0
-            .nlargest(TOP_N, "trza_edge")     # 2. wybieramy TOP_N wg największego x_edge
-        )
-        top_rows.to_excel(writer, sheet_name="trza_edgePOS", index=False)
-        bottom_rows = (
-            Y[Y["Dtrza"] < 0]                  # 1. bierzemy tylko wiersze z D > 0
-            .nlargest(TOP_N, "trza_edge")     # 2. wybieramy TOP_N wg największego x_edge
-        )
-        bottom_rows.to_excel(writer, sheet_name="trza_edgeNEG", index=False)
-
-        
-        # ---------- 6C.  save & finish -------------------------------
-        writer.close()
-        print(f"✓  All outlier tables written to outliers.xlsx")
-
-    nowCalcEnd = datetime.now()
-
-    print ('outliers time', nowCalcEnd-nowCalc)
-
-
-    # CYFERKI
-
-    if not cyferki:
-        return
-    printed = set()
-    ludnoscAboveLabel = f">= {ludnosc}"
-    ludnoscBelowLabel = f"< {ludnosc}"
-    
-    histograms = {}
-    pentagrams = {}
-    for ttt, nm in [(Y, 'all')]:
-        for e in use2:
-            s = {}
-            p = {}
-            count = {}
-            for idx, row in ttt.iterrows():
-                smallKey = row['Województwo'] if wojewodztwa else ''
-                if warszawa and 'Warszawa' == row['Powiat']:
-                    smallKey = 'Warszawa'
-                #print ('smallkey', smallKey, type (smallKey), 's', s, type(s))
-                if ludnosc:
-                    gm = row['Gmina']
-                    if gm not in printed:
-                        printed.add(gm)
-                        if row["Ludnosc"] < ludnosc:
-                            None
-                            #print ('small', row['Gmina'], row["Ludnosc"], ludnosc)
-                        else:
-                            print  ('BIG', row['Gmina'])
-                    smallKey += ludnoscBelowLabel if row["Ludnosc"] < ludnosc else ludnoscAboveLabel
-                if diff:
-                    smallKey += "NAW wygrywa" if row['TRZASKOWSKI Rafał Kazimierz'] < row ['NAWROCKI Karol Tadeusz'] else "TRZA wygrywa"
-                if diffRegr:
-                    smallKey += "big D" if 0.2<row['Dnorm'] else "smallD "
-                if smallKey not in s:
-                    s[smallKey] = [0]*10
-                    p[smallKey] = [0]*5
-                    count[smallKey] = 0
-                    
-                if not pd.isna(row[e]) and ('all'==cyferki or row['class']==cyferki):
-                    v = row[e]
-                    if v < 50:
-                        continue
-                    s[smallKey][round(v)%10] += 1
-                    p[smallKey][round(v)%5] += 1
-                    count[smallKey] += 1
-            for k in s:
-                if 200 <= count[k]:
-                    s[k].append(count[k])
-                    p[k].append(count[k])
-                    if k not in histograms:
-                        histograms[k] = {}
-                        pentagrams[k] = {}
-                    histograms [k][nm + ' ' + titles[e]] = s[k]
-                    pentagrams [k][nm + ' ' + titles[e]] = p[k]
-
-
-    #haveHistograms = [e for e in use2 if e in histograms]
-    for k in histograms:
-        ccc = 0
-        for key in histograms[k].keys():
-            #if key not in pentagrams:                   # sanity check
-            #    continue
-            colour = palette[ccc % len(palette)]
-            ccc += 1
-            plot_histogram_pair(
-                title=k+' '+key,
-                histo_data=histograms[k][key],
-                penta_data=pentagrams[k][key],
-                lVisible=lVisible + ' ' + cyferki,
-                p_conf=0.95,
-                bar_colour  = colour
-            )
-        plt.show()
-
-    #plot_histograms([(e, histograms[e]) for e in histograms], lVisible + ' ' + cyferki, p_conf=0.95
-    #                )
-    #plot_histograms([(e, pentagrams[e]) for e in pentagrams], lVisible + ' ' + cyferki, p_conf=0.95,
-    #                category_labels=['0 i 5','1 i 6', '2 i 7', '3 i 8', '4 i 9'])
-
 
 def main():
     parser = argparse.ArgumentParser(
@@ -1145,7 +825,7 @@ def main():
         rok = 2025
     KEY1, KEY2 = terytGminy[rok], nrKomisji[rok]
     displaySomething()
-    input ("introduises votre sexe dans la machine")
+    input ("introduisez votre sexe dans la machine")
         
 if __name__ == "__main__":
     main()
